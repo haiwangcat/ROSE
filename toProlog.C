@@ -10,7 +10,10 @@ see LICENSE in the root folder of this project
 
 
 #include <iostream>
+#include <fstream>
 #include "rose.h"
+#include "TermPrinter.h"
+#include "PrologTerm.h"
 
 int main ( int argc, char ** argv ) {
 	//frontend processing
@@ -19,13 +22,19 @@ int main ( int argc, char ** argv ) {
 
 	//Create dot and pdf files
 	//DOT generation (numbering:preoder)
-	AstDOTGeneration dotgen;
-	dotgen.generateInputFiles(root,AstDOTGeneration::PREORDER);
+	//AstDOTGeneration dotgen;
+	//dotgen.generateInputFiles(root,AstDOTGeneration::PREORDER);
 	//PDF generation
-	AstPDFGeneration pdfgen;
-	pdfgen.generateInputFiles(root);
-	std::cout << root->unparseToCompleteString();
+	//AstPDFGeneration pdfgen;
+	//pdfgen.generateInputFiles(root);
 	//create prolog term
+	BasicTermPrinter tp;
+	tp.traverseInputFiles(root);
+	PrologTerm* genTerm = tp.getTerm();
+	//ofstream ofile("orig_out.txt");
+	//ofile << (root->unparseToCompleteString());
+	//ofile.close();
+	cout << genTerm->getRepresentation() << "." << endl;
 	return 0;
 
        
