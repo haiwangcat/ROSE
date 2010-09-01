@@ -1047,8 +1047,6 @@ def sidlParse(_sidlFile):
         print "Cannot read file", sidlFile
 
     result = parser.parse(data) #, debug=log)
-    print(str(result))
-    print
     print(repr(result))
     return 0
 

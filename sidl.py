@@ -34,6 +34,8 @@ import ply.yacc as yacc
 
 from ply.lex import TOKEN
 
+#             import pdb; pdb.set_trace()
+
 class AstNode:
     """
     Base class. All other SIDL AST nodes should inherit from this one:
@@ -44,17 +46,39 @@ class AstNode:
         object.
     """
     def __init__(self, nodeType, *children):
+        print 'new', nodeType, '(', str(children), ')'
         self.nodeType = nodeType
         self.children = children
 
-    def __repr__(self): 
-        #print 'in repr', self.__class__.__name__, ': ', self.nodeType 
-        #import pdb; pdb.set_trace()
-        if len(self.children) < 2:
-            return repr(self.children)
-        return str(self.__class__.__name__) + '(' + str(self.nodeType) + ', ' \
-            + reduce(lambda x,y: repr(x)+', '+repr(y), self.children) \
-            + ')'
+    def unquote(self, s):
+        """
+        remove one layer of quotation in a string:
+        "'hello\\n'" --> "hello\n"
+        """
+        r = ""
+        i = 1
+        while i < len(s)-1:
+            c = s[i]
+            if c == '\\':
+                i += 1
+            else:
+                r += s[i]
+            i += 1
+        return r
+
+    def __repr__(self):
+        return self.myrepr()
+
+    def myrepr(self): 
+        r = str(self.__class__.__name__) + '(' + str(self.nodeType)
+        for i in range(0, len(self.children)):
+            r += ', '
+            if isinstance(self.children[i], AstNode):
+                r += self.children[i].myrepr()
+            else:
+                r += repr(self.children[i])
+        r += ')'
+        return r
 
     def __str__(self):
         #print 'in str', self.__class__.__name__, ': ', self.nodeType, ', len =', len(self.children)
@@ -67,7 +91,7 @@ class AstNode:
             return str(self.nodeType) + ' ' + str(self.children)
 
         return str(self.nodeType) + ' ' \
-            + reduce(lambda x,y: mystr(x)+str(y), self.children)
+            + reduce(lambda x, y: mystr(x)+str(y), self.children)
 
 class IfxNode(AstNode):
     """Base class for infix operators"""
@@ -79,15 +103,25 @@ class IfxNode(AstNode):
 class ListNode(AstNode):
     def __init__(self, children):
         self.children = children
-    def __repr__(self):
+    def myrepr(self):
         #print 'list node repr(), len =', len(self.children)
         
         if len(self.children) == 0:
             return 'ListNode([])'
         elif len(self.children) == 1:
             return 'ListNode(' + repr(self.children[0]) + ')'
-        return 'ListNode(' + reduce(lambda x,y: repr(x)+', '+repr(y), self.children) + ')'
-
+        else:
+            r = 'ListNode(['
+            l = len(self.children)
+            for i in range(0, l):
+                if isinstance(self.children[i], AstNode):
+                    r += self.children[i].myrepr()
+                else:
+                    r += repr(self.children[i])
+                if (i < l-1):
+                    r += ', '
+        return r + '])'
+        
     def __str__(self):
         #print 'list node str(), len =', len(self.children)
         
