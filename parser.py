@@ -28,7 +28,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-import logging, string, sys
+import logging, sys, re
 import ply.lex as lex
 import ply.yacc as yacc
 from ply.lex import TOKEN
@@ -53,7 +53,7 @@ tokens = [ 'VOID', 'ARRAY', 'RARRAY', 'BOOLEAN', 'CHAR', 'DCOMPLEX', 'DOUBLE',
 
            'IDENTIFIER', 'EXTENSION', 'VERSION_STRING',
 
-           'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'COMMA_RBRACE', 
+           'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 
            #'LBRACKET', 'RBRACKET',
            'SEMICOLON', 'COMMA', 'DOT', 'ATTRIB_BEGIN', 'ATTRIB_ID',
            'ATTRIB_STRING', 'ATTRIB_EQ', 'ATTRIB_COMMA', 'ATTRIB_END',
@@ -74,6 +74,7 @@ t_ignore = ' \t\f'
 # Define a rule so we can track line numbers
 def t_newline(t):
     r'[\r\n]+'
+    #print "parsing line", t.lexer.lineno
     t.lexer.lineno += len(t.value)
 
 # Comments
@@ -112,67 +113,64 @@ reserved_words = {
 #}
 ,
 #reserved_words = {
-    "abstract"         : 'ABSTRACT',
-    "and"              : 'LOGICAL_AND',
-    "copy"             : 'COPY',
-#    "column-major"     : 'COLUMN_MAJOR',
-    "else"             : 'ELSE',
-    "ensure"           : 'ENSURE',
-    "extends"          : 'EXTENDS',
-    "final"            : 'FINAL',
-    "from"             : 'FROM',
-    "iff"              : 'IFF',
-    "implements"       : 'IMPLEMENTS',
-    "implements-all"   : 'IMPLEMENTS_ALL',
-    "implies"          : 'IMPLIES',
-    "import"           : 'IMPORT',
-    "in"               : 'IN',
-    "inout"            : 'INOUT',
-    "invariant"        : 'INVARIANT',
-    "is"               : 'IS',
-    "local"            : 'LOCAL',
-    "mod"              : 'MODULUS',
-    "not"              : 'NOT',
-    "null"             : 'NULL',
-    "nonblocking"      : 'NONBLOCKING',
-    "oneway"           : 'ONEWAY',
-    "order"            : 'ORDER',
-    "or"               : 'LOGICAL_OR',
-    "out"              : 'OUT',
-    "package"          : 'PACKAGE',
-    "pure"             : 'PURE',
-    "rem"              : 'REMAINDER',
-    "require"          : 'REQUIRE',
-    "result"           : 'RESULT',
-#    "row-major"        : 'ROW_MAJOR',
-    "static"           : 'STATIC',
-    "then"             : 'THEN',
-    "throws"           : 'THROWS',
-    "version"          : 'VERSION',
-    "xor"              : 'LOGICAL_XOR'
+    r'abstract'         : 'ABSTRACT',
+    r'and'              : 'LOGICAL_AND',
+    r'copy'             : 'COPY',
+#   r'column-major'     : 'COLUMN_MAJOR',
+    r'else'             : 'ELSE',
+    r'ensure'           : 'ENSURE',
+    r'extends'          : 'EXTENDS',
+    r'final'            : 'FINAL',
+    r'from'             : 'FROM',
+    r'iff'              : 'IFF',
+    r'implements'       : 'IMPLEMENTS',
+    r'implies'          : 'IMPLIES',
+    r'import'           : 'IMPORT',
+    r'in'               : 'IN',
+    r'inout'            : 'INOUT',
+    r'invariant'        : 'INVARIANT',
+    r'is'               : 'IS',
+    r'local'            : 'LOCAL',
+    r'mod'              : 'MODULUS',
+    r'not'              : 'NOT',
+    r'null'             : 'NULL',
+    r'nonblocking'      : 'NONBLOCKING',
+    r'oneway'           : 'ONEWAY',
+    r'order'            : 'ORDER',
+    r'or'               : 'LOGICAL_OR',
+    r'out'              : 'OUT',
+    r'package'          : 'PACKAGE',
+    r'pure'             : 'PURE',
+    r'rem'              : 'REMAINDER',
+    r'require'          : 'REQUIRE',
+    r'result'           : 'RESULT',
+#   r'row-major'        : 'ROW_MAJOR',
+    r'static'           : 'STATIC',
+    r'then'             : 'THEN',
+    r'throws'           : 'THROWS',
+    r'version'          : 'VERSION',
+    r'xor'              : 'LOGICAL_XOR'
 }
 
-def t_IDENTIFIER(t):
-    r'[a-zA-Z][a-zA-Z_0-9]*'
-    # While this code seems to defy the purpose of having an efficient
-    # scanner; the PLY documentation actually argues against defining
-    # rules for keywords. The reason is that apparently the regex
-    # engine is slower than the hastable lookup below
-    t.type = reserved_words.get(t.value,'IDENTIFIER')    # Check for reserved words
+t_EXTENSION     = r'\[\w+\]'
+
+version_string  = r'(\d)\.(\d)+(\.(\d)+)+'
+@TOKEN(version_string)
+def t_VERSION_STRING(t):
+     # we need to define version_string as a function, so it is
+     # applied before float_literal
+    updateLineNo(t)
     return t
 
-# identifiers
-t_EXTENSION       = r'\[([a-zA-Z]\d|_)+\]'
-t_VERSION_STRING  = r'(\d)\.(\d)+(.(\d)+)+'
 
 # count how many newline characters are included in the token
 def updateLineNo(t):
-    t.lexer.lineno += string.count(t.value, '\r')
-    t.lexer.lineno += string.count(t.value, '\n')
+    t.lexer.lineno += t.value.count('\r')
+    t.lexer.lineno += t.value.count('\n')
 
 
 # Work around the fact that we need a lookahead of 2 for the grammar at some points
-ws = r'[ \r\n\f\t(' + comment + r')]*'
+ws = r'([ \r\n\f\t]|' + comment + r')*'
 comma_column_major = r','+ws+r'column-major'
 @TOKEN(comma_column_major)
 def t_COMMA_COLUMN_MAJOR(t):
@@ -183,17 +181,36 @@ comma_row_major = r','+ws+r'row-major'
 def t_COMMA_ROW_MAJOR(t):
     updateLineNo(t)
 
-comma_rbrace = r','+ws+r'}'
-@TOKEN(comma_rbrace)
-def t_COMMA_RBRACE(t):
-    updateLineNo(t)
+# comma_rbrace_msc = r'(,'+ws+r')?}('+ws+r';)?'
+# @TOKEN(comma_rbrace_msc)
+# def t_COMMA_RBRACE_MSC(t):
+#     print 'COMMARBRACEMSC "', t.value, '"'
+#     updateLineNo(t)
 
 identifier_colon = r'[a-zA-Z][a-zA-Z_0-9]*'+ws+r':'
 @TOKEN(identifier_colon)
 def t_IDENTIFIER_COLON(t):
     # TODO: do this more efficiently
-    t.value = re.search('^[a-zA-Z][a-zA-Z_0-9]*', t.value).group(0)
+    t.value = re.search(r'^[a-zA-Z][a-zA-Z_0-9]*', t.value).group(0)
     updateLineNo(t)
+
+implements_all = r'implements-all'
+@TOKEN(implements_all)
+def t_IMPLEMENTS_ALL(t):
+     # we need to define version_string as a function, so it is
+     # applied before identifier
+    updateLineNo(t)
+    return t
+
+identifier = r'[a-zA-Z][a-zA-Z_0-9]*'
+@TOKEN(identifier)
+def t_IDENTIFIER(t):
+    # While this code seems to defy the purpose of having an efficient
+    # scanner; the PLY documentation actually argues against defining
+    # rules for keywords. The reason is that apparently the regex
+    # engine is slower than the hashtable lookup below
+    t.type = reserved_words.get(t.value,'IDENTIFIER')    # Check for reserved words
+    return t
 
 # separators
 t_LPAREN     =   r'\('
@@ -249,11 +266,11 @@ t_GE= r'>='
 t_GT= r'>'
 t_LE= r'<='
 t_LT= r'<'
+t_NE= r'!='
 t_ASSIGN= r'='
 t_BITWISE_AND= r'&'
 t_BITWISE_XOR= r'\^'
 t_MINUS= r'-'
-t_NE= r'!='
 t_BITWISE_OR= r'\|'
 t_PLUS= r'\+'
 t_POWER = r'\*\*'
@@ -296,13 +313,13 @@ def t_SIMPLE_FLOATING_POINT_LITERAL(t):
     t.value = float(t.value)
     return t
 
-@TOKEN(decimal_literal)
-def t_DECIMAL_LITERAL(t):
+@TOKEN(integer_literal)
+def t_INTEGER_LITERAL(t):
     t.value = int(t.value)
     return t
 
-@TOKEN(integer_literal)
-def t_INTEGER_LITERAL(t):
+@TOKEN(decimal_literal)
+def t_DECIMAL_LITERAL(t):
     t.value = int(t.value)
     return t
 
@@ -342,22 +359,36 @@ def cons(p):
     else:
         p[0] = [p[1]] + p[2]
 
-def consx(p):
-    # use this for 'token*' patterns
-    # construct a list p[1]:p[2] and store result in p[0]
-    # if there is no p[2], return an empty list
-    if len(p) == 2:
-        p[0] = []
-    else:
-        p[0] = [p[1]] + p[2]
 
 def cons13(p):
+    # use this for '(token , )+' patterns
     # construct a list p[1]:p[3] and store result in p[0]
-    if len(p) == 2:
+    #for i in range(0, len(p)): 
+    #    print i, p[i]
+    #print ""
+    if len(p) < 4:
         if p[1] == None:
             p[0] = p[1]
         else:
             p[0] = []
+    else:
+        p[0] = [p[1]] + p[3]
+
+def consx(p):
+    # use this for 'token*' patterns
+    # construct a list p[1]:p[2] and store result in p[0]
+    # if there is no p[2], return an empty list
+    if p[1] == []:
+        p[0] = []
+    else:
+        p[0] = [p[1]] + p[2]
+
+def consx13(p):
+    # use this for '(token , )*' patterns
+    # construct a list p[1]:p[3] and store result in p[0]
+    # if there is no p[2], return an empty list
+    if p[1] == []:
+        p[0] = []
     else:
         p[0] = [p[1]] + p[3]
 
@@ -366,6 +397,11 @@ def try2nd(p):
         p[0] = []
     else:
         p[0] = p[2]
+
+# FIXME: this is all necessary because of the lookahead problem mentioned above
+def no_comma(t):
+    if t[0] == ',':
+        error([t], "unexpected ','")
 
 def error(p, description):
     print description
@@ -389,7 +425,10 @@ def p_error(errorToken):
         i += 1
         if i == errorToken.lineno:
             sys.stdout.write(line)
-            print ' '*(pos)+'^'*len(errorToken.value)
+            l = 1
+            if hasattr(errorToken.value, '__len__'):
+                l = len(errorToken.value)
+            print ' '*(pos)+'^'*l
             break
         pos -= len(line)
     sys.stdout.write("Possible reason(s): ")
@@ -441,10 +480,12 @@ def p_import_error(p):
 
 def p_package_1(p):
     'package : PACKAGE name LBRACE userTypes RBRACE'
+    no_comma(p[5])
     p[0] = sidl.AstNode('package', p[2], 'no version', sidl.ListNode(p[4]))
 
 def p_package_2(p):
     'package : PACKAGE name version LBRACE userTypes RBRACE'
+    no_comma(p[6])
     p[0] = sidl.AstNode('package', p[2], p[3], sidl.ListNode(p[5]))
 
 def p_package_error_1(p):
@@ -461,14 +502,13 @@ def p_userTypes(p): # *
     consx(p)
 
 def p_userType(p):
-    'userType : typeCustomAttrs cipse'
+    'userType : typeCustomAttrs cipse maybeSemicolon'
     p[0] = sidl.AstNode('user type', sidl.ListNode(p[1]), p[2])
 
 def p_cipse(p):
     '''cipse : class
              | interface
              | package
-             | package SEMICOLON
              | struct
              | enum'''
     p[0] = p[1]
@@ -497,12 +537,13 @@ def p_name(p):
     p[0] = sidl.AstNode('identifier', p[1])
 
 def p_enum(p):
-    '''enum : ENUM name LBRACE enumerators RBRACE maybeSemicolon
-            | ENUM name LBRACE enumerators COMMA_RBRACE maybeSemicolon'''
+    'enum : ENUM name LBRACE enumerators RBRACE'
+    #import pdb; pdb.set_trace()
     p[0] = sidl.AstNode('enum', sidl.ListNode(p[2]), p[4])
 
 def p_enumerators(p): # +
     '''enumerators : enumerator 
+                   | enumerator COMMA
                    | enumerator COMMA enumerators'''
     cons13(p)
 
@@ -515,7 +556,8 @@ def p_enumerator(p):
         p[0] = sidl.AstNode('enumerator', p[2], p[1], p[3])
 
 def p_struct(p):
-    'struct : STRUCT name LBRACE structItems RBRACE maybeSemicolon'
+    'struct : STRUCT name LBRACE structItems RBRACE'
+    no_comma(p[5])
     p[0] = sidl.AstNode('struct', sidl.ListNode(p[2]), p[4])
 
 def p_structItems(p): # *
@@ -532,7 +574,8 @@ def p_structItem_2(p):
     p[0] = p[1]
 
 def p_class(p):
-    'class : CLASS name maybeExtendsOne implementsSomeAllLists LBRACE invariants methods RBRACE maybeSemicolon'
+    'class : CLASS name maybeExtendsOne implementsSomeAllLists LBRACE invariants methods RBRACE'
+    no_comma(p[8])
     p[0] = sidl.AstNode('class', p[2], p[3], sidl.ListNode(p[4]), sidl.ListNode(p[6]), sidl.ListNode(p[7]))
 
 def p_implementsSomeAllLists(p):
@@ -562,8 +605,9 @@ def p_methods(p): # *
     consx(p)
 
 def p_interface(p):
-   'interface : INTERFACE name extendsList LBRACE invariants methods RBRACE maybeSemicolon'
-   p[0] = sidl.AstNode('interface', p[2], sidl.ListNode(p[3]), sidl.ListNode(p[5]), sidl.ListNode(p[6]))
+    'interface : INTERFACE name extendsList LBRACE invariants methods RBRACE'
+    no_comma(p[7])
+    p[0] = sidl.AstNode('interface', p[2], sidl.ListNode(p[3]), sidl.ListNode(p[5]), sidl.ListNode(p[6]))
 
 def p_scopedIDs(p): # +
     '''scopedIDs : scopedID
@@ -571,8 +615,9 @@ def p_scopedIDs(p): # +
     cons13(p)
 
 def p_extendsList(p):
-    'extendsList : EXTENDS scopedIDs'
-    p[0] = p[2]
+    '''extendsList : empty 
+                   | EXTENDS scopedIDs'''
+    try2nd(p)
 
 def p_maybeExtendsOne(p):
     '''maybeExtendsOne : empty
@@ -669,14 +714,14 @@ def p_assertion_2(p):
     p[0] = 'assertion', '<anonymous>', p[1]
 
 def p_maybeArgList(p):
-   '''maybeArgList : argList
-                   | empty'''
-   p[0] = p[1]
+    '''maybeArgList : argList
+                    | empty'''
+    p[0] = p[1]
 
 def p_argList(p): # +
-   '''argList : arg
-              | arg COMMA argList'''
-   cons13(p)
+    '''argList : arg
+               | arg COMMA argList'''
+    cons13(p)
 
 def p_arg_1(p):
     'arg : argAttrs mode type name'
@@ -717,23 +762,23 @@ def p_mode(p):
     p[0] = sidl.AstNode('mode', p[1])
 
 def p_type(p):
-  '''type : primitiveType 
-          | array 
-          | scopedID'''
-  p[0] = p[1]
+    '''type : primitiveType 
+            | array 
+            | scopedID'''
+    p[0] = p[1]
 
 def p_primitiveType(p):
-  '''primitiveType : BOOLEAN 
-                   | CHAR
-                   | INT 
-                   | LONG 
-                   | FLOAT
-                   | DOUBLE
-                   | FCOMPLEX
-                   | DCOMPLEX 
-                   | STRING 
-                   | OPAQUE'''
-  p[0] = sidl.AstNode('primitiveType', p[1])
+    '''primitiveType : BOOLEAN 
+                     | CHAR
+                     | INT 
+                     | LONG 
+                     | FLOAT
+                     | DOUBLE
+                     | FCOMPLEX
+                     | DCOMPLEX 
+                     | STRING 
+                     | OPAQUE'''
+    p[0] = sidl.AstNode('primitiveType', p[1])
 
 def p_array(p):
     'array : ARRAY LT scalarType dimension orientation GT'
@@ -773,7 +818,7 @@ def p_extents(p): # +
 def p_simpleIntExpression(p):
     '''simpleIntExpression : simpleIntTerm
                            | simpleIntTerm plusMinus simpleIntTerm'''
-    if len(p) == 1:
+    if len(p) == 2:
         p[0] = p[1]
     elif p[2] == '+':
         p[0] = p[1] + p[3]
@@ -794,7 +839,7 @@ def p_simpleIntTerm_3(p):
 
 def p_simpleIntPrimary_1(p):
     'simpleIntPrimary : name'
-    p[0] = lookup(p[1])
+    p[0] = p[1]
 
 def p_simpleIntPrimary_2(p):
     'simpleIntPrimary : integer'
@@ -804,10 +849,14 @@ def p_simpleIntPrimary_3(p):
     'simpleIntPrimary : LPAREN simpleIntExpression RPAREN'
     p[0] = p[2]
 
-def p_assertExpr(p):
+def p_assertExpr_1(p):
     '''assertExpr : orExpr IMPLIES orExpr
                   | orExpr IFF orExpr'''
-    p[0] = p[2], p[1], p[3]
+    p[0] = sidl.IfxExpression(p[2], p[1], p[3])
+
+def p_assertExpr_2(p):
+    '''assertExpr : orExpr'''
+    p[0] = p[1]
 
 # TODO:
 #   simplify the grammar by using the following declaration
@@ -914,6 +963,11 @@ def p_unaryExpr_1(p):
                  | TILDE funcEval'''
     p[0] = sidl.Expression(p[1], p[2])
 
+def p_unaryExpr_2(p):
+    'unaryExpr : funcEval'
+    p[0] = p[1]
+
+
 # TODO funcEval is btw. not a good name...
 def p_funcEval_1(p):
     'funcEval : IDENTIFIER LPAREN funcArgs RPAREN'
@@ -936,9 +990,9 @@ def p_funcEval_5(p):
     p[0] = p[2]
 
 def p_funcArgs(p): # +
-   '''funcArgs : orExpr
-               | orExpr COMMA funcArgs'''
-   cons13(p)
+    '''funcArgs : orExpr
+                | orExpr COMMA funcArgs'''
+    cons13(p)
 
 def p_maybeDot(p):
     '''maybeDot : DOT
@@ -972,8 +1026,11 @@ def p_literal(p):
     p[0] = p[1]
 
 def p_complex(p):
-   'complex : LBRACE number COMMA number RBRACE'
-   p[0] = ('complex', p[2], p[4])
+    'complex : LBRACE number COMMA number RBRACE'
+    nocomma(p[5])
+    if indexof(';', p[5]) > -1:
+        error(p, "Unexpected ';'")
+    p[0] = ('complex', p[2], p[4])
 
 def p_number(p):
     '''number : empty numliteral 
@@ -988,19 +1045,24 @@ def plusMinus(p):
         p[0] = p[2]
 
 def p_plusmins(p):
-   '''plusMinus : PLUS
-                | MINUS'''
-   p[0] = p[1]
+    '''plusMinus : PLUS
+                 | MINUS'''
+    p[0] = p[1]
 
 def p_numliteral(p):
-   '''numliteral : INTEGER_LITERAL 
-                 | SIMPLE_FLOATING_POINT_LITERAL 
-                 | FLOATING_POINT_LITERAL'''
-   p[0] = p[1]
+    '''numliteral : INTEGER_LITERAL 
+                  | SIMPLE_FLOATING_POINT_LITERAL 
+                  | FLOATING_POINT_LITERAL'''
+    p[0] = p[1]
 
-def p_integer(p):
+def p_integer_1(p):
     'integer : plusMinus INTEGER_LITERAL'
     plusMinus(p)
+
+def p_integer_2(p):
+    'integer : INTEGER_LITERAL'
+    p[0] = p[1]
+
 
 # # def prettyprint(t):
 # #     call 'print_'t
@@ -1024,16 +1086,18 @@ def p_integer(p):
 # # def pretty((op, a, b)):
 # #     print a, op, b
 
+_debug = 0
 
 def sidlParse(_sidlFile):
     global sidlFile
     sidlFile = _sidlFile
 
-    debug = 0
-    optimize = 1
+    debug = _debug
+    optimize = 1-_debug
 
     lex.lex(debug=debug,optimize=optimize)
     #lex.runmain()
+    
     logging.basicConfig(filename='parser.log',level=logging.DEBUG,
                         filemode = "w", format = "%(filename)10s:%(lineno)4d:%(message)s")
     log = logging.getLogger()
@@ -1046,7 +1110,7 @@ def sidlParse(_sidlFile):
     except IndexError:
         print "Cannot read file", sidlFile
 
-    result = parser.parse(data) #, debug=log)
+    result = parser.parse(data,debug=log)
     print(repr(result))
     return 0
 
@@ -1057,9 +1121,9 @@ if __name__ == '__main__':
         # generate 'parsetab.py' which contains the
         # automaton. Subsequent runs can then use python -O $0.
         print 'Generating scanner...'
-        lex.lex(debug=0, optimize=1)
+        lex.lex(debug=_debug, optimize=1-_debug)
         print 'Generating parser...'
-        yacc.yacc(debug=0, optimize=1)
+        yacc.yacc(debug=_debug, optimize=1-_debug)
 
     else:
         sidlParse(sys.argv[1])

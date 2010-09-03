@@ -1,8 +1,17 @@
 all: test
 
-run: babel2
-	./babel2 ../shams/example-5/DistrArray.sidl
-	./babel2 ../babel.git/runtime/sidl/sidl.sidl
+TESTS=../shams/example-5/DistrArray.sidl \
+      ../babel.git/runtime/sidl/sidl.sidl \
+      $(wildcard ../babel.git/regression/*/*.sidl)
+
+TESTOUT=$(patsubst %.sidl,%.test, $(TESTS))
+
+
+%.test: %.sidl babel2 
+	./babel2 $<
+
+run: $(TESTOUT)
+
 clean:
 	rm -rf babel2 *.pyc *.pyo parsetab.py* lextab.py* parser.log parser.out
 
