@@ -6,6 +6,7 @@ TESTS=../shams/example-5/DistrArray.sidl \
 
 TESTOUT=$(patsubst %.sidl,%.test, $(TESTS))
 
+run2: ../babel.git/runtime/sidl/sidl.test
 
 %.test: %.sidl babel2 
 	./babel2 $<

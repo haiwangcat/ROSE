@@ -1110,7 +1110,10 @@ def sidlParse(_sidlFile):
     except IndexError:
         print "Cannot read file", sidlFile
 
-    result = parser.parse(data,debug=log)
+    if debug == 1:
+        debug = log
+
+    result = parser.parse(data,debug=debug)
     print(repr(result))
     return 0
 
@@ -1126,4 +1129,10 @@ if __name__ == '__main__':
         yacc.yacc(debug=_debug, optimize=1-_debug)
 
     else:
-        sidlParse(sys.argv[1])
+        import hotshot, hotshot.stats
+        prof = hotshot.Profile('parser.prof')
+        prof.runcall(sidlParse, sys.argv[1])
+        stats = hotshot.stats.load("parser.prof")
+        stats.strip_dirs()
+        stats.sort_stats('time', 'calls')
+        stats.print_stats(20)
