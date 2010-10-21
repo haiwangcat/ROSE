@@ -31,308 +31,310 @@
 import logging, sys, re
 import ply.lex as lex
 import ply.yacc as yacc
-from ply.lex import TOKEN
+#from ply.lex import TOKEN
 
 import sidl
 
+sys.path.append('.libs')
+import scanner
 
 sidlFile = ''
 
-tokens = [ 'VOID', 'ARRAY', 'RARRAY', 'BOOLEAN', 'CHAR', 'DCOMPLEX', 'DOUBLE',
-           'FCOMPLEX', 'FLOAT', 'INT', 'LONG', 'OPAQUE', 'STRING',
+tokens = [ 'VOID', 'ARRAY', 'RARRAY', 'BOOL', 'CHAR', 'DCOMPLEX', 'DOUBLE',
+            'FCOMPLEX', 'FLOAT', 'INT', 'LONG', 'OPAQUE', 'STRING',
 
-           'CLASS', 'ENUM', 'STRUCT', 'INTERFACE',
+            'CLASS', 'ENUM', 'STRUCT', 'INTERFACE',
 
-           'ABSTRACT', 'LOGICAL_AND', 'COPY', 'COMMA_COLUMN_MAJOR', 'ENSURE',
-           'EXTENDS', 'FINAL', 'FROM', 'IFF', 'IMPLEMENTS', 'IMPLEMENTS_ALL',
-           'IMPLIES', 'IMPORT', 'IN', 'INOUT', 'INVARIANT', 'IS', 'LOCAL',
-           'MODULUS', 'NOT', 'NULL', 'NONBLOCKING', 'ONEWAY', 'LOGICAL_OR',
-           'OUT', 'PACKAGE', 'PURE', 'REMAINDER', 'REQUIRE', 'RESULT', 'COMMA_ROW_MAJOR',
-           'STATIC', 'THROWS', 'VERSION', 'LOGICAL_XOR',
-           # 'THEN', 'ELSE', 'ORDER', 
+            'ABSTRACT', 'LOGICAL_AND', 'COPY', 'COMMA_COLUMN_MAJOR', 'ENSURE',
+            'EXTENDS', 'FINAL', 'FROM', 'IFF', 'IMPLEMENTS', 'IMPLEMENTS_ALL',
+            'IMPLIES', 'IMPORT', 'IN', 'INOUT', 'INVARIANT', 'IS', 'LOCAL',
+            'MODULUS', 'NOT', 'NULL', 'NONBLOCKING', 'ONEWAY', 'LOGICAL_OR',
+            'OUT', 'PACKAGE', 'PURE', 'REMAINDER', 'REQUIRE', 'RESULT', 'COMMA_ROW_MAJOR',
+            'STATIC', 'THROWS', 'VERSION', 'LOGICAL_XOR',
+            # 'THEN', 'ELSE', 'ORDER', 
 
-           'IDENTIFIER', 'EXTENSION', 'VERSION_STRING',
+            'IDENTIFIER', 'EXTENSION', 'VERSION_STRING',
 
-           'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 
-           #'LBRACKET', 'RBRACKET',
-           'SEMICOLON', 'COMMA', 'DOT', 'ATTRIB_BEGIN', 'ATTRIB_ID',
-           'ATTRIB_STRING', 'ATTRIB_EQ', 'ATTRIB_COMMA', 'ATTRIB_END',
+            'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 
+            #'LBRACKET', 'RBRACKET',
+            'SEMICOLON', 'COMMA', 'DOT', 'ATTRIB_BEGIN', 'ATTRIB_ID',
+            'ATTRIB_STRING', 'ATTRIB_EQ', 'ATTRIB_COMMA', 'ATTRIB_END',
 
-           'ASSIGN', 'BITWISE_AND', 'BITWISE_XOR', 'IDENTIFIER_COLON', 'EQ', 'GE',
-           'GT', 'LE', 'LT', 'MINUS', 'NE', 'BITWISE_OR', 'PLUS', 'POWER',
-           'SLASH', 'STAR', 'TILDE', 'LSHIFT', 'RSHIFT',
+            'ASSIGN', 'BITWISE_AND', 'BITWISE_XOR', 'IDENTIFIER_COLON', 'EQ', 'GE',
+            'GT', 'LE', 'LT', 'MINUS', 'NE', 'BITWISE_OR', 'PLUS', 'POWER',
+            'SLASH', 'STAR', 'TILDE', 'LSHIFT', 'RSHIFT',
 
-           'BOOLEAN_LITERAL', 'INTEGER_LITERAL',
-           #'HEX_LITERAL', 'OCTAL_LITERAL', 'FALSE', 'TRUE', 
-           'DECIMAL_LITERAL', 'FLOATING_POINT_LITERAL',
-           'SIMPLE_FLOATING_POINT_LITERAL', 'CHARACTER_LITERAL', 'STRING_LITERAL'
-           ]
+            'BOOLEAN_LITERAL', 'INTEGER_LITERAL',
+            #'HEX_LITERAL', 'OCTAL_LITERAL', 'FALSE', 'TRUE', 
+            'DECIMAL_LITERAL', 'FLOATING_POINT_LITERAL',
+            'SIMPLE_FLOATING_POINT_LITERAL', 'CHARACTER_LITERAL', 'STRING_LITERAL'
+            ]
 
-# White Space
-t_ignore = ' \t\f'
+# # White Space
+# t_ignore = ' \t\f'
 
-# Define a rule so we can track line numbers
-def t_newline(t):
-    r'[\r\n]+'
-    #print "parsing line", t.lexer.lineno
-    t.lexer.lineno += len(t.value)
+# # Define a rule so we can track line numbers
+# def t_newline(t):
+#     r'[\r\n]+'
+#     #print "parsing line", t.lexer.lineno
+#     t.lexer.lineno += len(t.value)
 
-# Comments
-# C or C++ comment (ignore)
-comment = r'(/\*(.|\n)*?\*/)|(//.*)'
-@TOKEN(comment)
-def t_COMMENT(t):
-    updateLineNo(t)
-
-# TODO  <"/**" ~["/"] > { input_stream.backup(1); } : IN_DOC_COMMENT
-
-reserved_words = {
-
-#basic_types = {
-    "void"     :  'VOID',
-    "array"    :  'ARRAY',
-    "rarray"   :  'RARRAY',
-    "bool"     :  'BOOLEAN',
-    "char"     :  'CHAR',
-    "dcomplex" :  'DCOMPLEX',
-    "double"   :  'DOUBLE',
-    "fcomplex" :  'FCOMPLEX',
-    "float"    :  'FLOAT',
-    "int"      :  'INT',
-    "long"     :  'LONG',
-    "opaque"   :  'OPAQUE',
-    "string"   :  'STRING'
-#}
-,
-
-#user_defined_types = {
-    "class"     : 'CLASS',
-    "enum"      : 'ENUM',
-    "struct"    : 'STRUCT',
-    "interface" : 'INTERFACE'
-#}
-,
-#reserved_words = {
-    r'abstract'         : 'ABSTRACT',
-    r'and'              : 'LOGICAL_AND',
-    r'copy'             : 'COPY',
-#   r'column-major'     : 'COLUMN_MAJOR',
-    r'else'             : 'ELSE',
-    r'ensure'           : 'ENSURE',
-    r'extends'          : 'EXTENDS',
-    r'final'            : 'FINAL',
-    r'from'             : 'FROM',
-    r'iff'              : 'IFF',
-    r'implements'       : 'IMPLEMENTS',
-    r'implies'          : 'IMPLIES',
-    r'import'           : 'IMPORT',
-    r'in'               : 'IN',
-    r'inout'            : 'INOUT',
-    r'invariant'        : 'INVARIANT',
-    r'is'               : 'IS',
-    r'local'            : 'LOCAL',
-    r'mod'              : 'MODULUS',
-    r'not'              : 'NOT',
-    r'null'             : 'NULL',
-    r'nonblocking'      : 'NONBLOCKING',
-    r'oneway'           : 'ONEWAY',
-    r'order'            : 'ORDER',
-    r'or'               : 'LOGICAL_OR',
-    r'out'              : 'OUT',
-    r'package'          : 'PACKAGE',
-    r'pure'             : 'PURE',
-    r'rem'              : 'REMAINDER',
-    r'require'          : 'REQUIRE',
-    r'result'           : 'RESULT',
-#   r'row-major'        : 'ROW_MAJOR',
-    r'static'           : 'STATIC',
-    r'then'             : 'THEN',
-    r'throws'           : 'THROWS',
-    r'version'          : 'VERSION',
-    r'xor'              : 'LOGICAL_XOR'
-}
-
-t_EXTENSION     = r'\[\w+\]'
-
-version_string  = r'(\d)\.(\d)+(\.(\d)+)+'
-@TOKEN(version_string)
-def t_VERSION_STRING(t):
-     # we need to define version_string as a function, so it is
-     # applied before float_literal
-    updateLineNo(t)
-    return t
-
-
-# count how many newline characters are included in the token
-def updateLineNo(t):
-    t.lexer.lineno += t.value.count('\r')
-    t.lexer.lineno += t.value.count('\n')
-
-
-# Work around the fact that we need a lookahead of 2 for the grammar at some points
-ws = r'([ \r\n\f\t]|' + comment + r')*'
-comma_column_major = r','+ws+r'column-major'
-@TOKEN(comma_column_major)
-def t_COMMA_COLUMN_MAJOR(t):
-    updateLineNo(t)
-
-comma_row_major = r','+ws+r'row-major'
-@TOKEN(comma_row_major)
-def t_COMMA_ROW_MAJOR(t):
-    updateLineNo(t)
-
-# comma_rbrace_msc = r'(,'+ws+r')?}('+ws+r';)?'
-# @TOKEN(comma_rbrace_msc)
-# def t_COMMA_RBRACE_MSC(t):
-#     print 'COMMARBRACEMSC "', t.value, '"'
+# # Comments
+# # C or C++ comment (ignore)
+# comment = r'(/\*(.|\n)*?\*/)|(//.*)'
+# @TOKEN(comment)
+# def t_COMMENT(t):
 #     updateLineNo(t)
 
-identifier_colon = r'[a-zA-Z][a-zA-Z_0-9]*'+ws+r':'
-@TOKEN(identifier_colon)
-def t_IDENTIFIER_COLON(t):
-    # TODO: do this more efficiently
-    t.value = re.search(r'^[a-zA-Z][a-zA-Z_0-9]*', t.value).group(0)
-    updateLineNo(t)
+# # TODO  <"/**" ~["/"] > { input_stream.backup(1); } : IN_DOC_COMMENT
 
-implements_all = r'implements-all'
-@TOKEN(implements_all)
-def t_IMPLEMENTS_ALL(t):
-     # we need to define version_string as a function, so it is
-     # applied before identifier
-    updateLineNo(t)
-    return t
+# reserved_words = {
 
-identifier = r'[a-zA-Z][a-zA-Z_0-9]*'
-@TOKEN(identifier)
-def t_IDENTIFIER(t):
-    # While this code seems to defy the purpose of having an efficient
-    # scanner; the PLY documentation actually argues against defining
-    # rules for keywords. The reason is that apparently the regex
-    # engine is slower than the hashtable lookup below
-    t.type = reserved_words.get(t.value,'IDENTIFIER')    # Check for reserved words
-    return t
+# #basic_types = {
+#     "void"     :  'VOID',
+#     "array"    :  'ARRAY',
+#     "rarray"   :  'RARRAY',
+#     "bool"     :  'BOOL',
+#     "char"     :  'CHAR',
+#     "dcomplex" :  'DCOMPLEX',
+#     "double"   :  'DOUBLE',
+#     "fcomplex" :  'FCOMPLEX',
+#     "float"    :  'FLOAT',
+#     "int"      :  'INT',
+#     "long"     :  'LONG',
+#     "opaque"   :  'OPAQUE',
+#     "string"   :  'STRING'
+# #}
+# ,
 
-# separators
-t_LPAREN     =   r'\('
-t_RPAREN     =   r'\)'
-t_LBRACE     =   r'{'
-t_RBRACE     =   r'}'
-#t_LBRACKET   =   r'\['
-#t_RBRACKET   =   r'\]'
-t_SEMICOLON  =   r';'
-t_COMMA      =   r','
-t_DOT        =   r'\.'
+# #user_defined_types = {
+#     "class"     : 'CLASS',
+#     "enum"      : 'ENUM',
+#     "struct"    : 'STRUCT',
+#     "interface" : 'INTERFACE'
+# #}
+# ,
+# #reserved_words = {
+#     r'abstract'         : 'ABSTRACT',
+#     r'and'              : 'LOGICAL_AND',
+#     r'copy'             : 'COPY',
+# #   r'column-major'     : 'COLUMN_MAJOR',
+#     r'else'             : 'ELSE',
+#     r'ensure'           : 'ENSURE',
+#     r'extends'          : 'EXTENDS',
+#     r'final'            : 'FINAL',
+#     r'from'             : 'FROM',
+#     r'iff'              : 'IFF',
+#     r'implements'       : 'IMPLEMENTS',
+#     r'implies'          : 'IMPLIES',
+#     r'import'           : 'IMPORT',
+#     r'in'               : 'IN',
+#     r'inout'            : 'INOUT',
+#     r'invariant'        : 'INVARIANT',
+#     r'is'               : 'IS',
+#     r'local'            : 'LOCAL',
+#     r'mod'              : 'MODULUS',
+#     r'not'              : 'NOT',
+#     r'null'             : 'NULL',
+#     r'nonblocking'      : 'NONBLOCKING',
+#     r'oneway'           : 'ONEWAY',
+#     r'order'            : 'ORDER',
+#     r'or'               : 'LOGICAL_OR',
+#     r'out'              : 'OUT',
+#     r'package'          : 'PACKAGE',
+#     r'pure'             : 'PURE',
+#     r'rem'              : 'REMAINDER',
+#     r'require'          : 'REQUIRE',
+#     r'result'           : 'RESULT',
+# #   r'row-major'        : 'ROW_MAJOR',
+#     r'static'           : 'STATIC',
+#     r'then'             : 'THEN',
+#     r'throws'           : 'THROWS',
+#     r'version'          : 'VERSION',
+#     r'xor'              : 'LOGICAL_XOR'
+# }
 
+# t_EXTENSION     = r'\[\w+\]'
 
-#/* SPECIAL MODES */
-t_ATTRIB_BEGIN = r'%attrib{' # > : IN_ATTRIB_LIST
-#
-#<IN_ATTRIB_LIST
-#TOKEN :
-#{
-#  < ATTRIB_ID      : <LETTER> ( <LETTER> | <DIGIT> | "_")*
-#| < ATTRIB_STRING :
-#      "\""
-#      (   (~["\"","\\","\n","\r"])
-#        | ("\\"
-#            ( ["n","t","b","r","f","\\","'","\""]
-#            | ["0"-"7"] ( ["0"-"7"] )?
-#            | ["0"-"3"] ["0"-"7"] ["0"-"7"]
-#            )
-#          )
-#      )*
-#      "\""
-#
-#| < ATTRIB_EQ = "="
-#| < ATTRIB_COMMA = ","
-ATTRIB_END = r'}' # > : DEFAULT
-#}
-#
-#<IN_ATTRIB_LIST
-#SPECIAL_TOKEN :
-#{
-#  " "
-#| "\t"
-#| "\n"
-#| "\r"
-#| "\f"
-#}
-
-# operators
-t_LSHIFT= r'<<<'
-t_RSHIFT= r'>>>'
-t_EQ= r'=='
-t_GE= r'>='
-t_GT= r'>'
-t_LE= r'<='
-t_LT= r'<'
-t_NE= r'!='
-t_ASSIGN= r'='
-t_BITWISE_AND= r'&'
-t_BITWISE_XOR= r'\^'
-t_MINUS= r'-'
-t_BITWISE_OR= r'\|'
-t_PLUS= r'\+'
-t_POWER = r'\*\*'
-t_SLASH= r'/'
-t_STAR= r'\*'
-t_TILDE= r'~'
-
-# literals
-digit = r'(\d)'
-digits = r'(\d)+'
-exponent = r'([eE])([+-])?(\d)+'
-exponentp = r'('+exponent+r')?'
-decimal_literal = r'([1-9])(\d)*'
-hex_literal     = r'0[xX]([0-9a-fA-F])+'
-octal_literal   = r'0([0-7])*'
-integer_literal = r'((' + decimal_literal + r'[lL]?' \
-               + r')|(' + hex_literal + r'[lL]?' \
-               + r')|(' + octal_literal + r'[lL]?' \
-               + r'))'
-
-dot = r'\.'
-simple_floating_point_literal = digits + dot + digits
-
-floating_point_literal = \
-           r'(' + simple_floating_point_literal + exponent  + r'([fFdD])?' \
-        +r')|(' + simple_floating_point_literal + exponentp + r'([fFdD])'  \
-        +r')|(' + digit                   + dot + exponentp + r'([fFdD])?' \
-        +r')|(' + dot + digits                  + exponentp + r'([fFdD])?' \
-        +r')|(' + digits                        + exponent  + r'([fFdD])?' \
-        +r')|'  + digits                        + exponentp + r'([fFdD])'  \
-        +r')'
+# version_string  = r'(\d)\.(\d)+(\.(\d)+)+'
+# @TOKEN(version_string)
+# def t_VERSION_STRING(t):
+#      # we need to define version_string as a function, so it is
+#      # applied before float_literal
+#     updateLineNo(t)
+#     return t
 
 
-t_BOOLEAN_LITERAL = r'((false)|(true))'
-#t_FALSE          = r'false'
-#t_TRUE           = r'true'
-
-@TOKEN(simple_floating_point_literal)
-def t_SIMPLE_FLOATING_POINT_LITERAL(t):
-    t.value = float(t.value)
-    return t
-
-@TOKEN(integer_literal)
-def t_INTEGER_LITERAL(t):
-    t.value = int(t.value)
-    return t
-
-@TOKEN(decimal_literal)
-def t_DECIMAL_LITERAL(t):
-    t.value = int(t.value)
-    return t
-
-string_innards = r'([^\'\\\n\r])'                    \
-                 + r'|(\\' + r'([ntbrf\\\'"]'        \
-                   + r'|(([0-7])([0-7])?)'           \
-                   + r'|(([0-3])([0-7])([0-7]))'     \
-                 + r')'                              \
-               + r')'
+# # count how many newline characters are included in the token
+# def updateLineNo(t):
+#     t.lexer.lineno += t.value.count('\r')
+#     t.lexer.lineno += t.value.count('\n')
 
 
-character_literal = r'\'(' + string_innards + r')\''
-string_literal = r'"(' + string_innards + r'*)"'
+# # Work around the fact that we need a lookahead of 2 for the grammar at some points
+# ws = r'([ \r\n\f\t]|' + comment + r')*'
+# comma_column_major = r','+ws+r'column-major'
+# @TOKEN(comma_column_major)
+# def t_COMMA_COLUMN_MAJOR(t):
+#     updateLineNo(t)
+
+# comma_row_major = r','+ws+r'row-major'
+# @TOKEN(comma_row_major)
+# def t_COMMA_ROW_MAJOR(t):
+#     updateLineNo(t)
+
+# # comma_rbrace_msc = r'(,'+ws+r')?}('+ws+r';)?'
+# # @TOKEN(comma_rbrace_msc)
+# # def t_COMMA_RBRACE_MSC(t):
+# #     print 'COMMARBRACEMSC "', t.value, '"'
+# #     updateLineNo(t)
+
+# identifier_colon = r'[a-zA-Z][a-zA-Z_0-9]*'+ws+r':'
+# @TOKEN(identifier_colon)
+# def t_IDENTIFIER_COLON(t):
+#     # TODO: do this more efficiently
+#     t.value = re.search(r'^[a-zA-Z][a-zA-Z_0-9]*', t.value).group(0)
+#     updateLineNo(t)
+
+# implements_all = r'implements-all'
+# @TOKEN(implements_all)
+# def t_IMPLEMENTS_ALL(t):
+#      # we need to define version_string as a function, so it is
+#      # applied before identifier
+#     updateLineNo(t)
+#     return t
+
+# identifier = r'[a-zA-Z][a-zA-Z_0-9]*'
+# @TOKEN(identifier)
+# def t_IDENTIFIER(t):
+#     # While this code seems to defy the purpose of having an efficient
+#     # scanner; the PLY documentation actually argues against defining
+#     # rules for keywords. The reason is that apparently the regex
+#     # engine is slower than the hashtable lookup below
+#     t.type = reserved_words.get(t.value,'IDENTIFIER')    # Check for reserved words
+#     return t
+
+# # separators
+# t_LPAREN     =   r'\('
+# t_RPAREN     =   r'\)'
+# t_LBRACE     =   r'{'
+# t_RBRACE     =   r'}'
+# #t_LBRACKET   =   r'\['
+# #t_RBRACKET   =   r'\]'
+# t_SEMICOLON  =   r';'
+# t_COMMA      =   r','
+# t_DOT        =   r'\.'
+
+
+# #/* SPECIAL MODES */
+# t_ATTRIB_BEGIN = r'%attrib{' # > : IN_ATTRIB_LIST
+# #
+# #<IN_ATTRIB_LIST
+# #TOKEN :
+# #{
+# #  < ATTRIB_ID      : <LETTER> ( <LETTER> | <DIGIT> | "_")*
+# #| < ATTRIB_STRING :
+# #      "\""
+# #      (   (~["\"","\\","\n","\r"])
+# #        | ("\\"
+# #            ( ["n","t","b","r","f","\\","'","\""]
+# #            | ["0"-"7"] ( ["0"-"7"] )?
+# #            | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+# #            )
+# #          )
+# #      )*
+# #      "\""
+# #
+# #| < ATTRIB_EQ = "="
+# #| < ATTRIB_COMMA = ","
+# ATTRIB_END = r'}' # > : DEFAULT
+# #}
+# #
+# #<IN_ATTRIB_LIST
+# #SPECIAL_TOKEN :
+# #{
+# #  " "
+# #| "\t"
+# #| "\n"
+# #| "\r"
+# #| "\f"
+# #}
+
+# # operators
+# t_LSHIFT= r'<<<'
+# t_RSHIFT= r'>>>'
+# t_EQ= r'=='
+# t_GE= r'>='
+# t_GT= r'>'
+# t_LE= r'<='
+# t_LT= r'<'
+# t_NE= r'!='
+# t_ASSIGN= r'='
+# t_BITWISE_AND= r'&'
+# t_BITWISE_XOR= r'\^'
+# t_MINUS= r'-'
+# t_BITWISE_OR= r'\|'
+# t_PLUS= r'\+'
+# t_POWER = r'\*\*'
+# t_SLASH= r'/'
+# t_STAR= r'\*'
+# t_TILDE= r'~'
+
+# # literals
+# digit = r'(\d)'
+# digits = r'(\d)+'
+# exponent = r'([eE])([+-])?(\d)+'
+# exponentp = r'('+exponent+r')?'
+# decimal_literal = r'([1-9])(\d)*'
+# hex_literal     = r'0[xX]([0-9a-fA-F])+'
+# octal_literal   = r'0([0-7])*'
+# integer_literal = r'((' + decimal_literal + r'[lL]?' \
+#                + r')|(' + hex_literal + r'[lL]?' \
+#                + r')|(' + octal_literal + r'[lL]?' \
+#                + r'))'
+
+# dot = r'\.'
+# simple_floating_point_literal = digits + dot + digits
+
+# floating_point_literal = \
+#            r'(' + simple_floating_point_literal + exponent  + r'([fFdD])?' \
+#         +r')|(' + simple_floating_point_literal + exponentp + r'([fFdD])'  \
+#         +r')|(' + digit                   + dot + exponentp + r'([fFdD])?' \
+#         +r')|(' + dot + digits                  + exponentp + r'([fFdD])?' \
+#         +r')|(' + digits                        + exponent  + r'([fFdD])?' \
+#         +r')|'  + digits                        + exponentp + r'([fFdD])'  \
+#         +r')'
+
+
+# t_BOOLEAN_LITERAL = r'((false)|(true))'
+# #t_FALSE          = r'false'
+# #t_TRUE           = r'true'
+
+# @TOKEN(simple_floating_point_literal)
+# def t_SIMPLE_FLOATING_POINT_LITERAL(t):
+#     t.value = float(t.value)
+#     return t
+
+# @TOKEN(integer_literal)
+# def t_INTEGER_LITERAL(t):
+#     t.value = int(t.value)
+#     return t
+
+# @TOKEN(decimal_literal)
+# def t_DECIMAL_LITERAL(t):
+#     t.value = int(t.value)
+#     return t
+
+# string_innards = r'([^\'\\\n\r])'                    \
+#                  + r'|(\\' + r'([ntbrf\\\'"]'        \
+#                    + r'|(([0-7])([0-7])?)'           \
+#                    + r'|(([0-3])([0-7])([0-7]))'     \
+#                  + r')'                              \
+#                + r')'
+
+
+# character_literal = r'\'(' + string_innards + r')\''
+# string_literal = r'"(' + string_innards + r'*)"'
 
 
 # Error handling rule
@@ -768,7 +770,7 @@ def p_type(p):
     p[0] = p[1]
 
 def p_primitiveType(p):
-    '''primitiveType : BOOLEAN 
+    '''primitiveType : BOOL 
                      | CHAR
                      | INT 
                      | LONG 
@@ -1095,7 +1097,7 @@ def sidlParse(_sidlFile):
     debug = _debug
     optimize = 1-_debug
 
-    lex.lex(debug=debug,optimize=optimize)
+    #lex.lex(debug=debug,optimize=optimize)
     #lex.runmain()
     
     logging.basicConfig(filename='parser.log',level=logging.DEBUG,
@@ -1103,17 +1105,18 @@ def sidlParse(_sidlFile):
     log = logging.getLogger()
     parser = yacc.yacc(debug=debug,optimize=optimize)
 
-    try:
-        f = open(sidlFile)
-        data = f.read()
-        f.close()
-    except IndexError:
-        print "Cannot read file", sidlFile
+    # try:
+    #     f = open(sidlFile)
+    #     data = f.read()
+    #     f.close()
+    # except IndexError:
+    #     print "Cannot read file", sidlFile
 
     if debug == 1:
         debug = log
-
-    result = parser.parse(data,debug=debug)
+    
+    #import pdb; pdb.set_trace()
+    result = parser.parse(sidlFile,lexer=scanner,debug=debug)
     print(repr(result))
     return 0
 
@@ -1123,8 +1126,8 @@ if __name__ == '__main__':
         # Run the scanner and parser in non-optimizing mode. This will
         # generate 'parsetab.py' which contains the
         # automaton. Subsequent runs can then use python -O $0.
-        print 'Generating scanner...'
-        lex.lex(debug=_debug, optimize=1-_debug)
+        # print 'Generating scanner...'
+        # lex.lex(debug=_debug, optimize=1-_debug)
         print 'Generating parser...'
         yacc.yacc(debug=_debug, optimize=1-_debug)
 
