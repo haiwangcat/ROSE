@@ -2,7 +2,8 @@
 %option yylineno
 %option stack
 %x IN_COMMENT
-%x MULTI
+%x MULTI1
+%x MULTI2
 %{
 // File:
 // Package:
@@ -35,21 +36,7 @@
 
 #include <string.h>
 
-static const char* yytype = NULL; // The python token type
-
-enum Token { /*t_VOID = 256, t_ARRAY, t_RARRAY, t_BOOLEAN, t_CHAR, t_DCOMPLEX, t_DOUBLE,
-          t_FCOMPLEX, t_FLOAT, t_INT, t_LONG, t_OPAQUE, t_STRING,
-
-          t_CLASS, t_ENUM, t_STRUCT, t_INTERFACE,
-
-          t_ABSTRACT, t_LOGICAL_AND, t_COPY, t_ENSURE,
-          t_EXTENDS, t_FINAL, t_FROM, t_IFF, t_IMPLEMENTS, t_IMPLEMENTS_ALL,
-          t_IMPLIES, t_IMPORT, t_IN, t_INOUT, t_INVARIANT, t_IS, t_LOCAL,
-          t_MODULUS, t_NOT, t_NULL, t_NONBLOCKING, t_ONEWAY, t_LOGICAL_OR,
-          t_OUT, t_PACKAGE, t_PURE, t_REMAINDER, t_REQUIRE, t_RESULT,
-          t_STATIC, t_THROWS, t_VERSION, t_LOGICAL_XOR,
-	  t_THEN, t_ELSE, t_ORDER,*/
-
+enum Token {
           t_KEYWORD=256,
           t_IDENTIFIER, t_EXTENSION, t_VERSION_STRING,
 
@@ -57,7 +44,7 @@ enum Token { /*t_VOID = 256, t_ARRAY, t_RARRAY, t_BOOLEAN, t_CHAR, t_DCOMPLEX, t
           t_SEMICOLON, t_COMMA, t_DOT, t_ATTRIB_BEGIN, t_ATTRIB_ID,
           t_ATTRIB_STRING, t_ATTRIB_EQ, t_ATTRIB_COMMA, t_ATTRIB_END,
 
-	  t_COMMA_COLUMN_MAJOR, t_COMMA_ROW_MAJOR,
+	  t_COMMA_COLUMN_MAJOR, t_COMMA_ROW_MAJOR, t_IDENTIFIER_COLON,
 
           t_ASSIGN, t_BITWISE_AND, t_BITWISE_XOR, t_COLON, t_EQ, t_GE,
           t_GT, t_LE, t_LT, t_MINUS, t_NE, t_BITWISE_OR, t_PLUS, t_POWER,
@@ -71,110 +58,92 @@ enum Token { /*t_VOID = 256, t_ARRAY, t_RARRAY, t_BOOLEAN, t_CHAR, t_DCOMPLEX, t
 #define update_yypos() { yypos += yyleng; }
 #define ID_TOKEN       { update_yypos(); yytype = yytext; return -1; }
 #define TOKEN(TOKEN)   { update_yypos(); yytype = #TOKEN; return t_##TOKEN; }
+#define UNPUT          { unput(yytext[0]); fprintf(stderr, "unputting for '%s'\n", yytext);}
 
-static int yypos = 0;
+static int yypos = 0; // Character count in file
+static const char* yytype = NULL; // The python token type
+static char* ident_end = NULL; // Used by IDENTIFIER_COLON
 
 %}
 
-DECIMAL_LITERAL [1-9][0-9]*
-HEX_LITERAL     0[xX][0-9a-fA-F]+
-OCTAL_LITERAL   0[0-7]*
+DECIMAL_LITERAL               [1-9][0-9]*
+HEX_LITERAL                   0[xX][0-9a-fA-F]+
+OCTAL_LITERAL                 0[0-7]*
 SIMPLE_FLOATING_POINT_LITERAL [0-9]+\.[0-9]+
-EXPONENT        [eE][\+-]?[0-9]+
-CHARACTER_LITERAL '(~['\\\n\r]|(\\[ntbrf\\'"]|([0-7][0-7]?)|([0-3][0-7][0-7]))'
-STRING_LITERAL    "(~["\\\n\r]|(\\[ntbrf\\'"]|([0-7][0-7]?)|([0-3][0-7][0-7]))"
+EXPONENT                      [eE][\+-]?[0-9]+
+CHARACTER_LITERAL             '(~['\\\n\r]|(\\[ntbrf\\'"]|([0-7][0-7]?)|([0-3][0-7][0-7]))'
+STRING_LITERAL                "(~["\\\n\r]|(\\[ntbrf\\'"]|([0-7][0-7]?)|([0-3][0-7][0-7]))"
+IDENTIFIER                    [a-zA-Z][a-zA-Z_0-9]*
 
 %%
  /*defeat emacs syntax highlighting"'*/
-[ \t\f] ++yypos; // White Space
 
-  /* Define a rule so we can track line numbers */
-[\r\n] {
-  //print "parsing line", t.lexer.lineno
-  yylineno += strlen(yytext);
-//  yypos = 0;
-}
+
+<INITIAL,MULTI1,MULTI2>{ 
+  [ \t\f] update_yypos(); // White Space
+  [\r\n]  update_yypos();
  
-"//".*  // C++ comment (ignore)
-
-<INITIAL,MULTI>{
-  "/*"              update_yypos(); yy_push_state(IN_COMMENT);
+  "//".*  update_yypos(); // C++ comment
+  "/*"    update_yypos(); yy_push_state(IN_COMMENT); /* C comment */
 }
 <IN_COMMENT>{
-  "*/"              update_yypos(); yy_pop_state();
-  [^*\n]+     update_yypos(); /* eat comment in chunks */
-    "*"       update_yypos(); /* eat the lone star */
-    \n        /*yypos = 0;*/ yylineno++;
+  "*/"        update_yypos(); yy_pop_state();
+  [^*\n]+     update_yypos(); // eat comment in chunks
+  "*"         update_yypos(); // eat the lone star
+  [\r\n]      update_yypos();
 }
 
   /* TODO  <"/**" ~["/"] > { input_stream.backup(1); } : IN_DOC_COMMENT */
 
-(void|array|rarray|bool|char|dcomplex|double|fcomplex|float|int|long|opaque|string) |
-(class|enum|struct|interface) |
-(abstract|and|copy) |
-(else|ensure|extends|final|from|iff|implements|implements-all|implies|import|in) |
-(inout|invariant|is|local|mod|not|null|nonblocking|oneway|order|or|out|package) |
-(pure|rem|require|result) |
-(static|then|throws|version|xor) {
-  unsigned c;
-  for (c = 0; c < yyleng; c++) {
+  /* Keywords */
+void|array|rarray|bool|char|dcomplex|double|fcomplex|float|int|long|opaque|string |
+class|enum|struct|interface|abstract|and|copy |
+else|ensure|extends|final|from|iff|implements|implements-all|implies|import|in |
+inout|invariant|is|local|mod|not|null|nonblocking|oneway|order|or|out|package |
+pure|rem|require|result |
+static|then|throws|version|xor {
+  char *c;
+  for (c = yytext; c < yytext+yyleng; c++) {
     // parser expects upper case for terminal symbols
-    yytext[c] = toupper(yytext[c]);
+    if (*c == '-')
+      *c = '_';
+    else
+      *c = toupper(*c);
   }
   ID_TOKEN
 }
 
-[a-zA-Z][a-zA-Z_0-9]* TOKEN(IDENTIFIER)
-
-"["[a-zA-Z0-9_]+"]" TOKEN(EXTENSION)
-
+{IDENTIFIER}             TOKEN(IDENTIFIER)
+"["[a-zA-Z0-9_]+"]"      TOKEN(EXTENSION)
 [0-9]\.[0-9]+(\.[0-9]+)+ TOKEN(VERSION_STRING)
 
-  /* Work around the fact that we need a lookahead of 2 for the grammar at some points */
+  /* Work around the fact that we need a lookahead of 2 for the
+     grammar at some points */
+
 <INITIAL>{
-","            update_yypos(); BEGIN(MULTI);
+  ","           BEGIN(MULTI1); update_yypos(); 
+}               
+<MULTI1>{       
+  row-major     BEGIN(INITIAL);	           TOKEN(COMMA_ROW_MAJOR);
+  column-major  BEGIN(INITIAL);	           TOKEN(COMMA_COLUMN_MAJOR);
+  .	        BEGIN(INITIAL); yyless(0); TOKEN(COMMA);
+}	        
+	        
+<INITIAL>{      
+  {IDENTIFIER}  BEGIN(MULTI2); update_yypos(); ident_end = yytext+yyleng;
+}	        
+<MULTI2>{       
+  :	        *ident_end=0; BEGIN(INITIAL);            TOKEN(IDENTIFIER_COLON)
+  .	        *ident_end=0; BEGIN(INITIAL); yyless(0); TOKEN(IDENTIFIER);
 }
-<MULTI>{
-row-major      TOKEN(COMMA_ROW_MAJOR);
-column-major   TOKEN(COMMA_COLUMN_MAJOR);
-.              REJECT; BEGIN(INITIAL); TOKEN(COMMA);
-}
-
-
-   
-  /*identifier_colon = r'[a-zA-Z][a-zA-Z_0-9]*'+ws+r':'					   */
-  /*@TOKEN(identifier_colon)								   */
-  /*def t_IDENTIFIER_COLON(t):								   */
-  /*	// TODO: do this more efficiently						   */
-  /*	t.value = re.search(r'^[a-zA-Z][a-zA-Z_0-9]*', t.value).group(0)		   */
-  /*	updateLineNo(t)									   */
-  /*											   */
-  /* implements_all = r'implements-all'							   */
-  /* @TOKEN(implements_all)								   */
-  /* def t_IMPLEMENTS_ALL(t):								   */
-  /*	  // we need to define version_string as a function, so it is			   */
-  /*	  // applied before identifier							   */
-  /*	 updateLineNo(t)								   */
-  /*	 ID_TOKEN // RETURN_TOKEN( t									   */
-  /*											   */
-  /* identifier = r'[a-zA-Z][a-zA-Z_0-9]*'						   */
-  /* @TOKEN(identifier)									   */
-  /* def t_IDENTIFIER(t):								   */
-  /*	 // While this code seems to defy the purpose of having an efficient		   */
-  /*	 // scanner; the PLY documentation actually argues against defining		   */
-  /*	 // rules for keywords. The reason is that apparently the regex			   */
-  /*	 // engine is slower than the hashtable lookup below				   */
-  /*	 t.type = reserved_words.get(t.value,'IDENTIFIER')    // Check for reserved words  */
-  /*	 ID_TOKEN // RETURN_TOKEN( t */
 
   /* separators */
-"(" TOKEN(LPAREN)
-")" TOKEN(RPAREN) 
-"{" TOKEN(LBRACE) 
-"}" TOKEN(RBRACE) 
-";" TOKEN(SEMICOLON) 
-  /* "," TOKEN(COMMA) */
-"." TOKEN(DOT) 
+"("   TOKEN(LPAREN)
+")"   TOKEN(RPAREN) 
+"{"   TOKEN(LBRACE) 
+"}"   TOKEN(RBRACE) 
+";"   TOKEN(SEMICOLON) 
+"."   TOKEN(DOT) 
 
   /* operators */
 "="   TOKEN(ASSIGN);
@@ -198,8 +167,7 @@ column-major   TOKEN(COMMA_COLUMN_MAJOR);
 ">>>" TOKEN(RSHIFT);
 
   /* literals */
-false|true ID_TOKEN /* RETURN_TOKEN(BOOLEAN_LITERAL); */
-
+false|true ID_TOKEN
 
 ({DECIMAL_LITERAL}|{HEX_LITERAL}|{OCTAL_LITERAL})[lL]? {
         TOKEN(INTEGER_LITERAL);
@@ -231,7 +199,6 @@ scanner_input(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args, "s", &fn))
     return NULL;
-  //fprintf(stderr, "opening:%s\n", fn);
   yyin = fopen(fn, "r");
   return Py_BuildValue("i", 0); 
 }
@@ -240,6 +207,7 @@ static PyObject*
 scanner_token(PyObject *self, PyObject *args)
 {
   int type = yylex();
+  //while (yylex()) { fprintf(stderr, "token:%s\n", yytext); fflush(stderr);} exit(1);
   if (type == 0) {
     // Free references to Token
     Py_DECREF(token_init);
@@ -254,7 +222,7 @@ scanner_token(PyObject *self, PyObject *args)
      token_dict   = PyModule_GetDict(token_module);
      token_init   = PyDict_GetItemString(token_dict, "Token");
   }
-  //fprintf(stderr, "token:%s", yytext); fflush(stderr);
+  //fprintf(stderr, "token:%s\n", yytext); fflush(stderr);
   return PyObject_CallFunction(token_init, "(ssii)", 
 			       yytype, yytext, yylineno, yypos);
 }

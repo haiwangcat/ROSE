@@ -32,6 +32,15 @@ Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #             import pdb; pdb.set_trace()
 
+def make_sexpr(child):
+    """helper function for sexpr()"""
+    if isinstance(child, AstNode):
+        return child.sexpr()
+    else:
+#        print child
+#        import pdb; pdb.set_trace()
+        return child
+        
 class AstNode:
     """
     Base class. All other SIDL AST nodes should inherit from this one:
@@ -48,6 +57,15 @@ class AstNode:
 
     def __repr__(self):
         return self.myrepr()
+
+    def sexpr(self):
+        """return an s-expression representing this node"""
+        #print '@ ', self.type
+
+        s = [self.type]
+        for child in self.children:
+            s.append(make_sexpr(child))
+        return tuple(s)
 
     def myrepr(self): 
         r = str(self.__class__.__name__) + '(' + str(self.type)
@@ -73,22 +91,25 @@ class AstNode:
         return str(self.type) + ' ' \
             + reduce(lambda x, y: mystr(x)+str(y), self.children)
 
-class IfxNode(AstNode):
-    """Base class for infix operators"""
-    def __str__(self):
-        return str(self.children[0]) + ' ' \
-            + self.type + ' ' \
-            + str(self.children[1])
-
 class ListNode(AstNode):
-    def __init__(self, *children):
-        AstNode.__init__(self, '<LIST>', children)
+    def __init__(self, children):
+        self.type = []
+        self.children = children
+        assert(isinstance(self.children, list))
+
+    def sexpr(self):
+        """return an s-expression representing this node"""
+        s = []
+        #print self.children.__class__
+        for child in self.children:
+            s.append(make_sexpr(child))
+        return s
 
     def myrepr(self):
         #print 'list node repr(), len =', len(self.children)
         
         if len(self.children) == 0:
-            return '[]'
+            return 'list'
         elif len(self.children) == 1:
             return 'sidl.ListNode(' + repr(self.children[0]) + ')'
         else:
@@ -114,12 +135,20 @@ class ListNode(AstNode):
    
 
 class File(AstNode):
+    def __init__(self, *children): return AstNode.__init__(self, 'file', *children)
     def requires(): return children[0]
     def imports():  return children[1]
     def packages(): return children[2]
 
 class Expression(AstNode):
+    def __init__(self, *children): return AstNode.__init__(self, 'expression', *children)
     pass
 
-class IfxExpression(IfxNode, Expression):
+class IfxExpression(Expression):
+    """Base class for infix operators"""
+    def __init__(self, *children): return AstNode.__init__(self, 'ifxexpr', *children)
+    def __str__(self):
+        return str(self.children[0]) + ' ' \
+            + self.type + ' ' \
+            + str(self.children[1])
     pass

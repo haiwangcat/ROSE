@@ -1,6 +1,6 @@
 class Token: 
     def __init__(self,ttype,value,lineno,lexpos):
-        #print "token=",ttype,value,lineno,lexpos
+        # print "token=",ttype,value,lineno,lexpos
         self.type = ttype
         self.value = value
         self.lineno = lineno
