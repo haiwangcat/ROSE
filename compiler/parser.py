@@ -33,7 +33,11 @@ import ply.lex as lex
 import ply.yacc as yacc
 #from ply.lex import TOKEN
 
+def trace():
+    import pdb; pdb.set_trace();
+
 import sidl
+from patmat import matcher, Variable, match
 
 sys.path.append('.libs')
 import scanner
@@ -517,7 +521,7 @@ def p_cipse(p):
 
 def p_cipse_error(p):
     'cipse : error'
-    error(p, 'Bad user defined type: Unexpected keyword')
+    error(p, 'Bad user-defined type: Unexpected keyword')
     
 def p_typeCustomAttrs(p): # *
     '''typeCustomAttrs : typeAttrOrCustomAttrList typeCustomAttrs
@@ -541,7 +545,7 @@ def p_name(p):
 def p_enum(p):
     'enum : ENUM name LBRACE enumerators RBRACE'
     #import pdb; pdb.set_trace()
-    p[0] = sidl.AstNode('enum', sidl.ListNode(p[2]), p[4])
+    p[0] = sidl.AstNode('enum', p[2], sidl.ListNode(p[4]))
 
 def p_enumerators(p): # +
     '''enumerators : enumerator 
@@ -628,11 +632,11 @@ def p_maybeExtendsOne(p):
 
 def p_implementsList(p):
     'implementsList : IMPLEMENTS scopedIDs'
-    p[0] = sidl.ListNode(p[1])
+    p[0] = sidl.AstNode('implements', p[2])
 
 def p_implementsAllList(p):
     'implementsAllList : IMPLEMENTS_ALL scopedIDs'
-    p[0] = sidl.ListNode(p[1])
+    p[0] = sidl.AstNode('implements-all', p[2])
 
 def p_method(p):
     'method : methodAttrs typeVoid methodName LPAREN maybeArgList RPAREN maybeExceptClause maybeFromClause  SEMICOLON requireAssertions ensureAssertions'
@@ -689,8 +693,8 @@ def p_fromClause(p):
     p[0] = 'from', p[2]
 
 def p_invariant(p):
-    'invariant : INVARIANT error' #( LOOKAHEAD( Assertion ) Assertion )+
-    p[0] = p[1]
+    'invariant : INVARIANT assertion'
+    p[0] = 'invariant', p[1]
     
 def p_requireAssertions(p):
     '''requireAssertions : REQUIRE assertions
@@ -705,6 +709,7 @@ def p_ensureAssertions(p):
 def p_assertions(p): # +
     '''assertions : assertion
                   | assertion assertions'''
+    # FIXME: one last shift/reduce conflict lurking here
     cons(p)
 
 def p_assertion_1(p):
@@ -784,7 +789,7 @@ def p_primitiveType(p):
 
 def p_array(p):
     'array : ARRAY LT scalarType dimension orientation GT'
-    p[0] = 'array', p[3], p[4], p[5]
+    p[0] = sidl.AstNode('array', p[3], p[4], p[5])
 
 def p_scalarType(p):
     '''scalarType : primitiveType 
@@ -1009,7 +1014,7 @@ def p_maybeSemicolon(p):
 def p_scopedID(p):
     '''scopedID : maybeDot identifiers empty
                 | maybeDot identifiers EXTENSION'''
-    p[0] = sidl.Expression('scope', sidl.ListNode(p[2]), p[3])
+    p[0] = sidl.Expression('scopedid', sidl.ListNode(p[2]), p[3])
 
 def p_identifiers(p): # +
     '''identifiers : IDENTIFIER
@@ -1075,10 +1080,193 @@ def p_integer_2(p):
 # # def pattern(f, *args, **kw):
 # #     return f(*args, **kw)
 
-# # def pretty:
-# pretty('+', a, b) --> print pretty(a), '+', pretty(b)
-# pretty(op, a, b)  --> print pretty(a), pretty(op), pretty(b)
-# pretty(a)         --> print a
+
+    # # match-any case
+    # if (len(args) == 1):
+    #     args[0] = a
+    #     return true
+    # # match against first
+    # if (a.type == args[0]):
+    #     for arg in args:
+    #     args[0] = a
+    #     return true
+
+def pretty(sexpr, n=0):
+    "pretty print s-expressions"
+    op = Variable()
+    a = Variable()
+    b = Variable()
+    requires = Variable()
+    imports = Variable()
+    packages = Variable()
+    name = Variable()
+    version = Variable()
+    extends = Variable()
+    implements = Variable()
+    invariants = Variable()
+    methods = Variable()
+    usertypes = Variable()
+    attrs = Variable()
+    defn = Variable()
+    typ = Variable()
+    args = Variable()
+    excepts = Variable()
+    froms = Variable()
+    requires = Variable()
+    ensures = Variable()
+    mode = Variable()
+    dimension = Variable()
+    orientation = Variable()
+
+    def ln(s):
+        return ' '*n+s+'\n'
+
+    if match(sexpr, ('file', requires, imports, packages)):
+        return ln(pretty(requires.binding, n)) \
+             + ln(pretty(imports.binding, n)) \
+             + ln(pretty(packages.binding, n))
+    elif match(sexpr, ('package', ('identifier', name), version, usertypes)):
+        return ln('package ' + name.binding + ' ' + pretty(version.binding, n) + ' {') \
+            + pretty(usertypes.binding, n+2) + ln('}')
+    elif match(sexpr, ('user type', attrs, defn)):
+        return pretty(attrs.binding, n) + pretty(defn.binding, n)
+    elif match(sexpr, ('class', name, extends, implements, invariants, methods)):
+      return 'class' + pretty(name.binding) \
+          + ' ' + pretty(extends.binding, n) \
+          + ' ' + pretty(implements.binding, n) \
+          + ' ' + pretty(invariants.binding, n) + '{' \
+                + pretty(methods.binding, n) \
+           + '}'
+    elif match(sexpr, ('interface', name, extends, invariants, methods)):
+      return ln('class' + pretty(name.binding) \
+          + ' ' + pretty(extends.binding, n) \
+          + ' ' + pretty(invariants.binding, n) + '{\n' \
+                + pretty(methods.binding, n) \
+           + '}')
+    elif match(sexpr, ('method', typ, name, attrs, args, excepts, froms, requires, ensures)):
+      return ln(pretty(attrs.binding) \
+          + ' ' + pretty(typ.binding) \
+          + ' ' + pretty(name.binding) \
+          + '(' + pretty(args.binding, n) \
+          + ') '+ pretty(excepts.binding, n) \
+          + '  ' + pretty(froms.binding, n) \
+          + '  ' + pretty(requires.binding, n) \
+          + '  ' + pretty(ensures.binding, n) + ';')
+    elif match(sexpr, ('arg', attrs, mode, typ, name)):
+        return pretty(attrs.binding) \
+            + ' ' + pretty(mode.binding) \
+            + ' ' + pretty(typ.binding) \
+            + ' ' + pretty(name.binding)
+    elif match(sexpr, ('array', typ, dimension, orientation)):
+        return 'array<' + pretty(typ.binding) \
+            + ' ' + pretty(dimension.binding) \
+            + ' ' + pretty(orientation.binding) \
+            + '> '
+    elif match(sexpr, ('expression', 'scopedid', a, b)):
+        return '.' + pretty(a.binding) + ' ' + pretty(b.binding) + ' '
+    elif match(sexpr, ('identifier', name)): 
+        return name.binding
+    elif match(sexpr, ('version', version)): 
+        return version.binding
+    elif match(sexpr, ('mode', name)): 
+        return name.binding
+    elif match(sexpr, (op, a, b)): 
+        return pretty(a.binding, n) + op.binding + pretty(b.binding, n)
+    elif match(sexpr, (op, a)): 
+        return op.binding + pretty(a.binding, n)
+    elif match(sexpr, []):
+        return ''
+    elif match(sexpr, a): 
+        #import pdb; pdb.set_trace()
+        if (isinstance(a.binding, list)):
+            return reduce(lambda x, y: x+y, map(lambda x: pretty(x, n), a.binding), '')
+        else:
+            try: 
+                print a.binding.type
+            except:
+                print a.binding
+            #import pdb; pdb.set_trace()
+            return str(a.binding)
+    else:
+        raise
+
+
+@matcher
+def pretty2(sexpr, n=0):
+    "pretty print s-expressions"
+    def ln(s):
+        return ' '*n+s+'\n'
+
+    with match(sexpr):
+        if ('file', Requires, Imports, Packages):
+            return ln(pretty2(Requires, n)) + ln(pretty2(Imports, n)) + ln(pretty2(Packages, n))
+
+        elif ('package', ('identifier', Name), Version, Usertypes):
+            return ln('package ' + Name + ' ' + pretty2(Version, n) + ' {') \
+                + pretty2(Usertypes, n+2) + ln('}')
+     
+        elif ('User type', Attrs, Defn):
+            return pretty2(Attrs, n) + pretty2(Defn, n)
+     
+        elif ('class', Name, Extends, Implements, Invariants, Methods):
+            return 'class' + pretty2(Name) \
+              + ' ' + pretty2(Extends, n) \
+              + ' ' + pretty2(Implements, n) \
+              + ' ' + pretty2(Invariants, n) + '{' \
+                    + pretty2(Methods, n) \
+               + '}'
+        elif ('interface', Name, Extends, Invariants, Methods):
+          return ln('class' + pretty2(Name) \
+              + ' ' + pretty2(Extends, n) \
+              + ' ' + pretty2(Invariants, n) + '{\n' \
+                    + pretty2(Methods, n) \
+               + '}')
+        elif ('method', Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
+          return ln(pretty2(Attrs) \
+              + ' ' + pretty2(Typ) \
+              + ' ' + pretty2(Name) \
+              + '(' + pretty2(Args, n) \
+              + ') '+ pretty2(Excepts, n) \
+              + '  ' + pretty2(Froms, n) \
+              + '  ' + pretty2(Requires, n) \
+              + '  ' + pretty2(Ensures, n) + ';')
+        elif ('arg', Attrs, Mode, Typ, Name):
+            return pretty2(Attrs) \
+                + ' ' + pretty2(Mode) \
+                + ' ' + pretty2(Typ) \
+                + ' ' + pretty2(Name)
+        elif ('array', Typ, Dimension, Orientation):
+            return 'array<' + pretty2(Typ) \
+                + ' ' + pretty2(Dimension) \
+                + ' ' + pretty2(Orientation) \
+                + '> '
+        elif ('expression', 'scopedid', A, B):
+            return '.' + pretty2(A) + ' ' + pretty2(B) + ' '
+        elif ('identifier', Name): 
+            return Name
+        elif ('version', Version): 
+            return Version
+        elif ('mode', Name): 
+            return Name
+        elif (Op, A, B): 
+            return pretty2(A, n) + op + pretty2(B, n)
+        elif (Op, A): 
+            return Op + pretty2(A, n)
+        elif []:
+            return ''
+        elif A: 
+            #import pdb; pdb.set_trace()
+            if (isinstance(A, list)):
+                return reduce(lambda x, y: x+y, map(lambda x: pretty2(x, n), A), '')
+            else:
+                try: 
+                    print A.type
+                except:
+                    print A
+                #Import pdb; pdb.set_trace()
+                return str(A)
+        else:
+            raise
 
 # --------------
 # def pretty((op, a, b)):
@@ -1117,10 +1305,37 @@ def sidlParse(_sidlFile):
     
     #import pdb; pdb.set_trace()
     result = parser.parse(sidlFile,lexer=scanner,debug=debug)
-    print(repr(result))
+    #print(repr(result))
+    print pretty2(result.sexpr())
     return 0
 
 if __name__ == '__main__':
+    print "testing"
+    a = Variable()
+    b = Variable()
+    print "match('a', 'b') = ", match('a', 'b'), a, b
+    a = Variable()
+    b = Variable()
+    print "match(a, 'b') = ", match(a, 'b'), a, b
+    a = Variable()
+    b = Variable()
+    print "match('a', b) = ", match('a', b), a, b
+    a = Variable()
+    b = Variable()
+    print "match((1, 2), (b, b)) = ", match((1, 2), (b, b)), a, b
+    a = Variable()
+    b = Variable()
+    print "match(('a', 'b'), b) = ", match(('a','b'), b), a, b
+    a = Variable()
+    b = Variable()
+    print "match(('a', 'b'), ('a', 'b')) = ", match(('a', 'b'), ('a', 'b')), a, b
+    a = Variable()
+    b = Variable()
+    print "match(('a', 'b'), ('a', b)) = ", match(('a', 'b'), ('a', b)), a, b
+    a = Variable()
+    b = Variable()
+    print "match(('a', (1, 'a')), (a, (b, a))) = ", match(('a', (1, 'a')), (a, (b, a))), a, b
+
     # TODO: use getopt instead
     if sys.argv[1] == '--compile':
         # Run the scanner and parser in non-optimizing mode. This will
