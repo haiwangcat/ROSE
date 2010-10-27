@@ -38,5 +38,6 @@ lint:
 babel2: parser.py
 	python $< --compile
 	python $< --compile
-	echo "/usr/bin/env python -O $< \$$@" >$@
+	echo "LD_LIBRARY_PATH=$(PYTHON_SHARED_LIBRARY_DIR):LD_LIBRARY_PATH" >$@
+	echo "$(PYTHON) -O $< \$$@" >>$@
 	chmod u+x $@

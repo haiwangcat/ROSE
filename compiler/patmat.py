@@ -123,6 +123,7 @@ import patmat
     matchindent = [] # indent level of current match block
     for line in src[fc.co_firstlineno+1:]+['<<EOF>>']:
         n += 1
+        # dest.append('# %s:%s\n' % (fc.co_filename, n+fc.co_firstlineno))
 
         # check for empty line
         il = indentlevel(line)
@@ -162,7 +163,7 @@ import patmat
             regalloc.append([])
             matchindent.append(il)
             matchbegin.append(n)
-            line = ' '*il+'if True:\n'
+            line = ""
         
         # inside a matching rule
         if len(lexpr) > 0:
@@ -175,7 +176,12 @@ import patmat
                     skip = True
 
             if not skip:
-                m = re.match(r'^('+' '*withindent[-1]+r')((el)?if) +(.*): *$', line)
+                # remove one layer of indentation
+                newind = withindent[-1]-matchindent[-1]
+                line = line[newind:]
+
+                m = re.match(r'^('+' '*newind+r')((el)?if) +(.*):(.*)$', line)
+
                 if m:
                     rexpr = m.group(4)
                     regalloc[-1] = []
@@ -186,6 +192,12 @@ import patmat
                     d = depthstr(len(lexpr)-1)
                     for i in range(0,len(regalloc[-1])):
                         line = line.replace(regalloc[-1][i], '_reg%s%d' % (d,i))
+
+                    # split off the part behind the ':' as new line
+                    then = m.group(5)
+                    if len(then) > 0:
+                        dest.append(line)
+                        line = ' '*il+then+'\n'
 
         # every time
         if len(matchbegin) > 0:

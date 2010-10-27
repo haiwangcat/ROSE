@@ -1177,97 +1177,73 @@ def pretty(sexpr, n=0):
     elif match(sexpr, []):
         return ''
     elif match(sexpr, a): 
-        #import pdb; pdb.set_trace()
         if (isinstance(a.binding, list)):
             return reduce(lambda x, y: x+y, map(lambda x: pretty(x, n), a.binding), '')
         else:
-            try: 
-                print a.binding.type
-            except:
-                print a.binding
-            #import pdb; pdb.set_trace()
             return str(a.binding)
     else:
         raise
 
 
 @matcher
-def pretty2(sexpr, n=0):
+def pretty2(sexpr, n=0, sep=' '):
     "pretty print s-expressions"
-    def ln(s):
-        return ' '*n+s+'\n'
+
+    def tmap(f, l): 
+        return tuple(map(f, l))
 
     with match(sexpr):
         if ('file', Requires, Imports, Packages):
-            return ln(pretty2(Requires, n)) + ln(pretty2(Imports, n)) + ln(pretty2(Packages, n))
+            return "%s\n%s\n%s\n" % \
+                (pretty2(Requires), pretty2(Imports), pretty2(Packages))
 
         elif ('package', ('identifier', Name), Version, Usertypes):
-            return ln('package ' + Name + ' ' + pretty2(Version, n) + ' {') \
-                + pretty2(Usertypes, n+2) + ln('}')
+            return '%s package %s {\n%s\n}\n' \
+                % (Name, pretty2(Version), pretty2(Usertypes, 2))
      
-        elif ('User type', Attrs, Defn):
-            return pretty2(Attrs, n) + pretty2(Defn, n)
+        elif ('user type', Attrs, Defn):
+            return pretty2(Attrs) + ' ' + pretty2(Defn)
      
         elif ('class', Name, Extends, Implements, Invariants, Methods):
-            return 'class' + pretty2(Name) \
-              + ' ' + pretty2(Extends, n) \
-              + ' ' + pretty2(Implements, n) \
-              + ' ' + pretty2(Invariants, n) + '{' \
-                    + pretty2(Methods, n) \
-               + '}'
+            n+=2
+            return ' '*(n-2)+'class %s extends {%s} implements {%s} invariants{%s} {%s}\n' \
+                % tmap(pretty2, (Name, Extends, Implements, Invariants, Methods))
+        
         elif ('interface', Name, Extends, Invariants, Methods):
-          return ln('class' + pretty2(Name) \
-              + ' ' + pretty2(Extends, n) \
-              + ' ' + pretty2(Invariants, n) + '{\n' \
-                    + pretty2(Methods, n) \
-               + '}')
+            n+=2
+            return ' '*(n-2)+'interface %s extends {%s} invariants{%s} {%s}\n' \
+                % tmap(pretty2, (Name, Extends, Invariants, Methods))
+
         elif ('method', Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
-          return ln(pretty2(Attrs) \
-              + ' ' + pretty2(Typ) \
-              + ' ' + pretty2(Name) \
-              + '(' + pretty2(Args, n) \
-              + ') '+ pretty2(Excepts, n) \
-              + '  ' + pretty2(Froms, n) \
-              + '  ' + pretty2(Requires, n) \
-              + '  ' + pretty2(Ensures, n) + ';')
+            return ' '*n+'%s %s %s(%s) %s %s %s %s \n' \
+                % tmap(pretty2, (Attrs, Typ, Name, Args, Excepts, Froms, Requires, Ensures))
+
         elif ('arg', Attrs, Mode, Typ, Name):
-            return pretty2(Attrs) \
-                + ' ' + pretty2(Mode) \
-                + ' ' + pretty2(Typ) \
-                + ' ' + pretty2(Name)
+            return '%s %s %s %s' % tmap(pretty2, (Attrs, Mode, Typ, Name))
+
         elif ('array', Typ, Dimension, Orientation):
-            return 'array<' + pretty2(Typ) \
-                + ' ' + pretty2(Dimension) \
-                + ' ' + pretty2(Orientation) \
-                + '> '
+            return 'array<%s %s %s>' % tmap(pretty2, (Typ, Dimension, Orientation))
+
+        elif ('enum', ('identifier', Name), Enumerators):
+            return 'enum %s {%s}' % (Name, pretty2(Enumerators, n+2))
+
         elif ('expression', 'scopedid', A, B):
-            return '.' + pretty2(A) + ' ' + pretty2(B) + ' '
-        elif ('identifier', Name): 
-            return Name
-        elif ('version', Version): 
-            return Version
-        elif ('mode', Name): 
-            return Name
-        elif (Op, A, B): 
-            return pretty2(A, n) + op + pretty2(B, n)
-        elif (Op, A): 
-            return Op + pretty2(A, n)
-        elif []:
-            return ''
+            return '.%s%s ' % (pretty2(A), pretty2(B))
+
+        elif ('identifier', Name): return Name
+        elif ('version', Version): return Version
+        elif ('mode', Name): return Name
+        elif (Op, A, B): return ' '.join((pretty2(A), Op, pretty2(B)))
+        elif (Op, A):    return ' '.join(            (Op, pretty2(A)))
+        elif []: return ''
         elif A: 
-            #import pdb; pdb.set_trace()
             if (isinstance(A, list)):
-                return reduce(lambda x, y: x+y, map(lambda x: pretty2(x, n), A), '')
+                return sep.join(map(pretty2, A))
             else:
-                try: 
-                    print A.type
-                except:
-                    print A
-                #Import pdb; pdb.set_trace()
                 return str(A)
         else:
             raise
-
+    raise
 # --------------
 # def pretty((op, a, b)):
 #     op.pretty
@@ -1310,32 +1286,6 @@ def sidlParse(_sidlFile):
     return 0
 
 if __name__ == '__main__':
-    print "testing"
-    a = Variable()
-    b = Variable()
-    print "match('a', 'b') = ", match('a', 'b'), a, b
-    a = Variable()
-    b = Variable()
-    print "match(a, 'b') = ", match(a, 'b'), a, b
-    a = Variable()
-    b = Variable()
-    print "match('a', b) = ", match('a', b), a, b
-    a = Variable()
-    b = Variable()
-    print "match((1, 2), (b, b)) = ", match((1, 2), (b, b)), a, b
-    a = Variable()
-    b = Variable()
-    print "match(('a', 'b'), b) = ", match(('a','b'), b), a, b
-    a = Variable()
-    b = Variable()
-    print "match(('a', 'b'), ('a', 'b')) = ", match(('a', 'b'), ('a', 'b')), a, b
-    a = Variable()
-    b = Variable()
-    print "match(('a', 'b'), ('a', b)) = ", match(('a', 'b'), ('a', b)), a, b
-    a = Variable()
-    b = Variable()
-    print "match(('a', (1, 'a')), (a, (b, a))) = ", match(('a', (1, 'a')), (a, (b, a))), a, b
-
     # TODO: use getopt instead
     if sys.argv[1] == '--compile':
         # Run the scanner and parser in non-optimizing mode. This will
