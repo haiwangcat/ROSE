@@ -1,20 +1,116 @@
+#!/usr/bin/env python
+# -*- python -*-
+## @package patmat
+#
+# Pattern matching support for s-expressions in Python.
+#
+# This module augments Python with a pattern-matchng syntax which
+# significantly reduces the amount of typing necessary to write sidl
+# code generators.
+#
+# The functionality is implemented in 100% Python. To use pattern
+# matching in a function, the function must use the \@matcher
+# decorator.
+#
+# \subsection example Example
+#
+# \code
+# @matcher def demo(sexpr):
+#    with match(sexpr):
+#        if ('first', Second):
+#            print "found second:", Second
+#        elif None:
+#            print "found None"
+#        elif A:
+#            print "found other: ", A
+#        else: raise # never reached
+# \endcode
+#
+# The pattern matching block begins with the \code with match(expr):
+# \endcode expression. In the enclosed block, the \c if and \c elif
+# statements receive a new semantic, thich can be thought of a
+# translation to the following form:
+#
+# \code
+# @matcher def demo(sexpr):
+#    Second = Variable()
+#    A = Variable()
+#    if match(sexpr, ('first', Second)):
+#        print "found second:", Second.binding
+#    elif match(sexpr, None):
+#        print "found None"
+#    elif match(sexpr, A):
+#        print "found other: ", A.binding
+#    else: raise # never reached
+# \endcode
+#
+# \li All variables starting with upper case characters are treated as
+#     free variables; this is following the conventions of
+#     logic-oriented programming languages.
+#
+# \li \todo The underscore \c _ is treated as an anonymous variable.
+# 
+# \li The first level of \c if and \c elif expressions under the \c
+#     with \c match(expr): line are expanded to call the function \c
+#     match(expr, ... .
+# 
+# \li All occurences of upper case variables are replaced by
+#     references to the values bound by those variables.
+#
+# \li These match blocks can be infinitely nested.
+#
+# This transformation is performed by the matcher decorator. The
+# transformed version of the function can be compiled to a python
+# source file an loaded at a later time if desired for performance
+# reasons.
+#
+# Please report bugs to <adrian@llnl.gov>.
+#
+# \authors
+# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n 
+# Produced at the Lawrence Livermore National Laboratory.                   \n 
+# Written by the Components Team <components@llnl.gov>                      \n 
+# UCRL-CODE-2002-054                                                        \n 
+# All rights reserved.                                                      \n 
+#                                                                           \n 
+# This file is part of Babel. For more information, see                     \n 
+# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n 
+# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n 
+# License.                                                                  \n 
+#                                                                           \n 
+# This program is free software; you can redistribute it and/or modify it   \n 
+# under the terms of the GNU Lesser General Public License (as published by \n 
+# the Free Software Foundation) version 2.1 dated February 1999.            \n 
+#                                                                           \n 
+# This program is distributed in the hope that it will be useful, but       \n 
+# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n 
+# conditions of the GNU Lesser General Public License for more details.     \n 
+#                                                                           \n 
+# You should have recieved a copy of the GNU Lesser General Public License  \n 
+# along with this program; if not, write to the Free Software Foundation,   \n 
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n 
+#                                                                           \n 
 import re, sys
 
 class Variable:
-    'A variable for use with match()'
+    '''A logical variable for use with match()'''
     def __init__(self):
         self.binding = None
 
     def bind(self, value, bindings):
+        """
+        Bind the variable to a \c value and record the variable onto the trail stack
+        \param bindings   the trail stack
+        """
         #print "binding", self, "to", value
         self.binding = value
         bindings.append(self)
 
-    def unbind(self):
-        #print "unbinding", self
-        self.binding = None
-        
     def free(self):
+        """
+        Remove any binding of this variable
+        """
         return self.binding == None
 
     def __str__(self):
@@ -24,15 +120,23 @@ class Variable:
             return str(self.binding)
 
 def match(a, b):
+    """
+    Unify the expression \c a with the expression \c b.
+
+    Although often conveniently used in the \c with \c match():
+    syntax, this function can also be called directly. Note that match
+    is commutative. \code match(a, b) == match(b, a) \endcode
+    """
     return unify(a, b, [])
 
 def unify(a, b, bindings):
-    "a basic unification algorithm without occurs-check"
+    """a basic unification algorithm without occurs-check"""
     
-    def unbind():
-        "remove all variable bindings in case of failure"
-        for i in range(0,len(bindings)):
-            bindings.pop().unbind()
+    def unbind(bindings):
+        """remove all variable bindings in case of failure"""
+        for var in bindings:
+            var.binding = None
+        bindings = []
 
     if isinstance(a, Variable): # Variable
         if a.free():
@@ -45,30 +149,30 @@ def unify(a, b, bindings):
     elif isinstance(a, tuple): # Term
         if isinstance(b, tuple): # Term
             if len(a) != len(b):
-                unbind()
+                unbind(bindings)
                 return False
             for i in range(0, len(a)):
                 if not unify(a[i], b[i], bindings):
-                    unbind()
+                    unbind(bindings)
                     return False
             return True
         else: # Atom
-            unbind()
+            unbind(bindings)
             return False
     else: # Atom
         if isinstance(b, tuple): # Term
-            unbind()
+            unbind(bindings)
             return False
         else: # Atom
             if a == b:
                 return True
             else:
-                unbind()
+                unbind(bindings)
                 return False
             
 
 def matcher(f):
-    "a decorator to perform the pattern matching transformation"
+    """a decorator to perform the pattern matching transformation"""
 
     compile_matcher(f)
     modname = '%s_matcher' % f.__name__
@@ -78,16 +182,23 @@ def matcher(f):
     return f
 
 def compile_matcher(f):
+    """
+    Compile a function f with pattern matching into a regular Python function.
+    \return None. The function is written to a file <f.__name__>_matcher.py
+    """
+    
     def indentlevel(s):
         if re.match(r'^ *$', s):
             return -1
         return len(re.match(r'^ *', s).group(0))
 
     def scan_variables(rexpr):
+        reserved_words = r'(False)|(True)|(None)|(NotImplemented)|(Ellipsis)'
         matches = re.findall(r'([A-Z][a-zA-Z0-9]*)($|[^\(])', rexpr)
 
         for m in matches:
-            regalloc[-1].append(m[0])
+            if not re.match(reserved_words, m[0]):
+                regalloc[-1].append(m[0])
         numregs[-1] = max(numregs[-1], len(matches))
 
     def depthstr(n):
@@ -205,8 +316,6 @@ import patmat
             # ... can be done more efficiently
             j = 0
             for alloc in regalloc:
-                print regalloc
-                #trace()
                 d = depthstr(j)
                 for i in range(0,len(alloc)):
                     line = line.replace(alloc[i], '_reg%s%d.binding' % (d,i))

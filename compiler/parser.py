@@ -1,32 +1,57 @@
+#!/usr/bin/env python
 # -*- python -*-
-# File:
-# Package:
-# Revision:    @(#) $Id$
-# Description: basic constants associated with generated source code
+## @package parser
 #
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC
-# Produced at the Lawrence Livermore National Laboratory.
-# Written by the Components Team <components@llnl.gov>
-# UCRL-CODE-2002-054
-# All rights reserved.
+# A parser for SIDL files.
 #
-# This file is part of Babel. For more information, see
-# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
-# for Our Notice and the LICENSE file for the GNU Lesser General Public
-# License.
+# The parser is known to parse all .sidl files contained in
+# the Babel distribution.
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License (as published by
-# the Free Software Foundation) version 2.1 dated February 1999.
+# This parser uses the PLY (Python Lex & Yacc) published under BSD
+# license and available at http://www.dabeaz.com/ply/ . For practical
+# reasons, this library is included in this distribution in the ply/
+# subdirectory.
 #
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
-# conditions of the GNU Lesser General Public License for more details.
+# There are two choices of scanners available. The first one is
+# written in Python and is included in this file. For performance
+# resons, there exists also a second scanner written in C and
+# flex. Currently the Python scanner is commented out and the faster C
+# scanner is used.
 #
-# You should have recieved a copy of the GNU Lesser General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+# The parser generates a sidl class hierarchy which can then be
+# converted to s-expressions. Future versions may skip the sidl class
+# and generate the s-expressions directly.
+# http://people.csail.mit.edu/rivest/Sexp.txt
+#
+# Please report bugs to <adrian@llnl.gov>.
+#   
+# \authors
+# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n 
+# Produced at the Lawrence Livermore National Laboratory.                   \n 
+# Written by the Components Team <components@llnl.gov>                      \n 
+# UCRL-CODE-2002-054                                                        \n 
+# All rights reserved.                                                      \n 
+#                                                                           \n 
+# This file is part of Babel. For more information, see                     \n 
+# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n 
+# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n 
+# License.                                                                  \n 
+#                                                                           \n 
+# This program is free software; you can redistribute it and/or modify it   \n 
+# under the terms of the GNU Lesser General Public License (as published by \n 
+# the Free Software Foundation) version 2.1 dated February 1999.            \n 
+#                                                                           \n 
+# This program is distributed in the hope that it will be useful, but       \n 
+# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n 
+# conditions of the GNU Lesser General Public License for more details.     \n 
+#                                                                           \n 
+# You should have recieved a copy of the GNU Lesser General Public License  \n 
+# along with this program; if not, write to the Free Software Foundation,   \n 
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n 
+#                                                                           \n 
+# \mainpage 
+# Welcome to Babel 2!
 
 import logging, sys, re
 import ply.lex as lex
@@ -349,17 +374,20 @@ def t_error(t):
 # ------------- Parser
 
 def p_start(p):
-    'start : requires imports userTypes'
+    '''start : requires imports userTypes'''
     #{ return jjtThis; }
     p[0] = sidl.File(sidl.ListNode(p[1]), sidl.ListNode(p[2]), sidl.ListNode(p[3]))
 
 def p_empty(p):
-    'empty :'
+    '''empty :'''
     p[0] = []
 
 def cons(p):
-    # use this for 'token+' patterns
-    # construct a list p[1]:p[2] and store result in p[0]
+    """
+    use this for \i 'token+' patterns
+
+    Construct a list \c p[1]:p[2] and store result in \c p[0].
+    """
     if len(p) == 2:
         p[0] = [p[1]]
     else:
@@ -367,8 +395,11 @@ def cons(p):
 
 
 def cons13(p):
-    # use this for '(token , )+' patterns
-    # construct a list p[1]:p[3] and store result in p[0]
+    """
+    use this for \i '(token , )+' patterns
+
+    Construct a list \c p[1]:p[3] and store result in \c p[0].
+    """
     #for i in range(0, len(p)): 
     #    print i, p[i]
     #print ""
@@ -381,18 +412,26 @@ def cons13(p):
         p[0] = [p[1]] + p[3]
 
 def consx(p):
-    # use this for 'token*' patterns
-    # construct a list p[1]:p[2] and store result in p[0]
-    # if there is no p[2], return an empty list
+    """
+    use this for \i 'token*' patterns
+
+    Construct a list \c p[1]:p[2] and store result in \c p[0].
+
+    If there is no \c p[2], return an empty list.
+    """
     if p[1] == []:
         p[0] = []
     else:
         p[0] = [p[1]] + p[2]
 
 def consx13(p):
-    # use this for '(token , )*' patterns
-    # construct a list p[1]:p[3] and store result in p[0]
-    # if there is no p[2], return an empty list
+    """
+    use this for '(token , )*' patterns
+
+    Construct a list \c p[1]:p[3] and store result in \cp[0].
+
+    If there is no \c p[2], return an empty list.
+    """
     if p[1] == []:
         p[0] = []
     else:
@@ -440,11 +479,11 @@ def p_error(errorToken):
     sys.stdout.write("Possible reason(s): ")
 
 def p_version(p):
-    'version : VERSION version_'
+    '''version : VERSION version_'''
     p[0] = sidl.AstNode('version', p[1])
 
 def p_version_error(p):
-    'version : VERSION error'
+    '''version : VERSION error'''
     error(p, 'Bad version string:')
 
 
@@ -460,11 +499,11 @@ def p_requires(p): # *
     consx(p)
 
 def p_require(p):
-    'require : REQUIRE scopedID version SEMICOLON'
+    '''require : REQUIRE scopedID version SEMICOLON'''
     p[0] = sidl.AstNode('require', p[2], p[3])
 
 def p_require_error(p):
-    'require : REQUIRE error version SEMICOLON'
+    '''require : REQUIRE error version SEMICOLON'''
     error(p, 'Bad require expression: Bad scoped identifier')
 
 def p_imports(p): # *
@@ -473,33 +512,33 @@ def p_imports(p): # *
     consx(p)
 
 def p_import_1(p):
-    'import : IMPORT scopedID SEMICOLON'
+    '''import : IMPORT scopedID SEMICOLON'''
     p[0] = sidl.AstNode('import', p[2])
 
 def p_import_2(p):
-    'import : IMPORT scopedID version SEMICOLON'
+    '''import : IMPORT scopedID version SEMICOLON'''
     p[0] = sidl.AstNode('import', p[2], p[3])
 
 def p_import_error(p):
-    'import : IMPORT error SEMICOLON'
+    '''import : IMPORT error SEMICOLON'''
     error(p, 'Bad import expression: Bad identifier')
 
 def p_package_1(p):
-    'package : PACKAGE name LBRACE userTypes RBRACE'
+    '''package : PACKAGE name LBRACE userTypes RBRACE'''
     no_comma(p[5])
     p[0] = sidl.AstNode('package', p[2], 'no version', sidl.ListNode(p[4]))
 
 def p_package_2(p):
-    'package : PACKAGE name version LBRACE userTypes RBRACE'
+    '''package : PACKAGE name version LBRACE userTypes RBRACE'''
     no_comma(p[6])
     p[0] = sidl.AstNode('package', p[2], p[3], sidl.ListNode(p[5]))
 
 def p_package_error_1(p):
-    'package : PACKAGE error'
+    '''package : PACKAGE error'''
     error(p, 'Bad package definition: Bad package name')
 
 def p_package_error_2(p):
-    'package : PACKAGE name error'
+    '''package : PACKAGE name error'''
     error(p, 'Bad package definition: Bad package version')
 
 def p_userTypes(p): # *
@@ -508,7 +547,7 @@ def p_userTypes(p): # *
     consx(p)
 
 def p_userType(p):
-    'userType : typeCustomAttrs cipse maybeSemicolon'
+    '''userType : typeCustomAttrs cipse maybeSemicolon'''
     p[0] = sidl.AstNode('user type', sidl.ListNode(p[1]), p[2])
 
 def p_cipse(p):
@@ -520,7 +559,7 @@ def p_cipse(p):
     p[0] = p[1]
 
 def p_cipse_error(p):
-    'cipse : error'
+    '''cipse : error'''
     error(p, 'Bad user-defined type: Unexpected keyword')
     
 def p_typeCustomAttrs(p): # *
@@ -539,12 +578,11 @@ def p_typeAttr(p):
     p[0] = sidl.AstNode('type attribute', p[1])
 
 def p_name(p):
-    'name : IDENTIFIER'
+    '''name : IDENTIFIER'''
     p[0] = sidl.AstNode('identifier', p[1])
 
 def p_enum(p):
-    'enum : ENUM name LBRACE enumerators RBRACE'
-    #import pdb; pdb.set_trace()
+    '''enum : ENUM name LBRACE enumerators RBRACE'''
     p[0] = sidl.AstNode('enum', p[2], sidl.ListNode(p[4]))
 
 def p_enumerators(p): # +
@@ -562,7 +600,7 @@ def p_enumerator(p):
         p[0] = sidl.AstNode('enumerator', p[2], p[1], p[3])
 
 def p_struct(p):
-    'struct : STRUCT name LBRACE structItems RBRACE'
+    '''struct : STRUCT name LBRACE structItems RBRACE'''
     no_comma(p[5])
     p[0] = sidl.AstNode('struct', sidl.ListNode(p[2]), p[4])
 
@@ -572,15 +610,15 @@ def p_structItems(p): # *
     consx(p)
 
 def p_structItem_1(p):
-    'structItem : type name SEMICOLON'
+    '''structItem : type name SEMICOLON'''
     p[0] = sidl.AstNode('struct item', p[1], p[2])
 
 def p_structItem_2(p):
-    'structItem : rarray SEMICOLON'
+    '''structItem : rarray SEMICOLON'''
     p[0] = p[1]
 
 def p_class(p):
-    'class : CLASS name maybeExtendsOne implementsSomeAllLists LBRACE invariants methods RBRACE'
+    '''class : CLASS name maybeExtendsOne implementsSomeAllLists LBRACE invariants methods RBRACE'''
     no_comma(p[8])
     p[0] = sidl.AstNode('class', p[2], p[3], sidl.ListNode(p[4]), sidl.ListNode(p[6]), sidl.ListNode(p[7]))
 
@@ -611,7 +649,7 @@ def p_methods(p): # *
     consx(p)
 
 def p_interface(p):
-    'interface : INTERFACE name extendsList LBRACE invariants methods RBRACE'
+    '''interface : INTERFACE name extendsList LBRACE invariants methods RBRACE'''
     no_comma(p[7])
     p[0] = sidl.AstNode('interface', p[2], sidl.ListNode(p[3]), sidl.ListNode(p[5]), sidl.ListNode(p[6]))
 
@@ -631,15 +669,15 @@ def p_maybeExtendsOne(p):
     try2nd(p)
 
 def p_implementsList(p):
-    'implementsList : IMPLEMENTS scopedIDs'
+    '''implementsList : IMPLEMENTS scopedIDs'''
     p[0] = sidl.AstNode('implements', p[2])
 
 def p_implementsAllList(p):
-    'implementsAllList : IMPLEMENTS_ALL scopedIDs'
+    '''implementsAllList : IMPLEMENTS_ALL scopedIDs'''
     p[0] = sidl.AstNode('implements-all', p[2])
 
 def p_method(p):
-    'method : methodAttrs typeVoid methodName LPAREN maybeArgList RPAREN maybeExceptClause maybeFromClause  SEMICOLON requireAssertions ensureAssertions'
+    '''method : methodAttrs typeVoid methodName LPAREN maybeArgList RPAREN maybeExceptClause maybeFromClause  SEMICOLON requireAssertions ensureAssertions'''
     p[0] = sidl.AstNode('method', p[2], p[3], sidl.ListNode(p[1]), sidl.ListNode(p[5]), p[7], p[8], sidl.ListNode(p[10]), sidl.ListNode(p[11]))
 
 def p_method_error(p):
@@ -680,7 +718,7 @@ def p_maybeExceptClause(p):
     p[0] = p[1]
 
 def p_exceptClause(p):
-    'exceptClause : THROWS scopedIDs'
+    '''exceptClause : THROWS scopedIDs'''
     p[0] = p[2]
 
 def p_maybeFromClause(p):
@@ -689,11 +727,11 @@ def p_maybeFromClause(p):
     p[0] = p[1]
 
 def p_fromClause(p):
-    'fromClause : FROM scopedID'
+    '''fromClause : FROM scopedID'''
     p[0] = 'from', p[2]
 
 def p_invariant(p):
-    'invariant : INVARIANT assertion'
+    '''invariant : INVARIANT assertion'''
     p[0] = 'invariant', p[1]
     
 def p_requireAssertions(p):
@@ -713,11 +751,11 @@ def p_assertions(p): # +
     cons(p)
 
 def p_assertion_1(p):
-    'assertion : IDENTIFIER_COLON assertExpr SEMICOLON'
+    '''assertion : IDENTIFIER_COLON assertExpr SEMICOLON'''
     p[0] = 'assertion', p[1], p[2]
 
 def p_assertion_2(p):
-    'assertion : assertExpr SEMICOLON'
+    '''assertion : assertExpr SEMICOLON'''
     p[0] = 'assertion', '<anonymous>', p[1]
 
 def p_maybeArgList(p):
@@ -731,11 +769,11 @@ def p_argList(p): # +
     cons13(p)
 
 def p_arg_1(p):
-    'arg : argAttrs mode type name'
+    '''arg : argAttrs mode type name'''
     p[0] = sidl.AstNode('arg', sidl.ListNode(p[1]), p[2], p[3], p[4])
 
 def p_arg_2(p):
-    'arg : argAttrs mode rarray'
+    '''arg : argAttrs mode rarray'''
     p[0] = sidl.AstNode('arg', p[1], p[2], p[3])
 
 def p_argAttrs(p):
@@ -745,7 +783,7 @@ def p_argAttrs(p):
     p[0] = p[1]
 
 def p_customAttrList(p):
-    'customAttrList : ATTRIB_BEGIN customAttrs ATTRIB_END'
+    '''customAttrList : ATTRIB_BEGIN customAttrs ATTRIB_END'''
     p[0] = p[2]
 
 def p_customAttrs(p):
@@ -755,11 +793,11 @@ def p_customAttrs(p):
 
 
 def p_customAttr_1(p):
-    'customAttr : ATTRIB_ID'
+    '''customAttr : ATTRIB_ID'''
     p[0] = sidl.AstNode('custom attribute', p[1])
 
 def p_customAttr_2(p):
-    'customAttr : ATTRIB_ID ATTRIB_EQ ATTRIB_STRING'
+    '''customAttr : ATTRIB_ID ATTRIB_EQ ATTRIB_STRING'''
     p[0] = sidl.AstNode('custom assoc attribute', p[1], p[3])
 
 def p_mode(p):
@@ -788,7 +826,7 @@ def p_primitiveType(p):
     p[0] = sidl.AstNode('primitiveType', p[1])
 
 def p_array(p):
-    'array : ARRAY LT scalarType dimension orientation GT'
+    '''array : ARRAY LT scalarType dimension orientation GT'''
     p[0] = sidl.AstNode('array', p[3], p[4], p[5])
 
 def p_scalarType(p):
@@ -809,7 +847,7 @@ def p_orientation(p):
     try2nd(p)
 
 def p_rarray(p):
-    'rarray : RARRAY LT primitiveType dimension GT name LPAREN maybeExtents RPAREN'
+    '''rarray : RARRAY LT primitiveType dimension GT name LPAREN maybeExtents RPAREN'''
     p[0] = 'rarray', p[3], p[4], p[6], sidl.ListNode(p[8])
 
 def p_maybeExtents(p):
@@ -833,27 +871,27 @@ def p_simpleIntExpression(p):
         p[0] = p[1] - p[3]
 
 def p_simpleIntTerm_1(p):
-    'simpleIntTerm : simpleIntPrimary'
+    '''simpleIntTerm : simpleIntPrimary'''
     p[0] = p[1]
 
 def p_simpleIntTerm_2(p):
-    'simpleIntTerm : simpleIntPrimary STAR simpleIntPrimary'
+    '''simpleIntTerm : simpleIntPrimary STAR simpleIntPrimary'''
     p[0] = p[1] * p[3]
 
 def p_simpleIntTerm_3(p):
-    'simpleIntTerm : simpleIntPrimary SLASH simpleIntPrimary'
+    '''simpleIntTerm : simpleIntPrimary SLASH simpleIntPrimary'''
     p[0] = p[1] / p[3]
 
 def p_simpleIntPrimary_1(p):
-    'simpleIntPrimary : name'
+    '''simpleIntPrimary : name'''
     p[0] = p[1]
 
 def p_simpleIntPrimary_2(p):
-    'simpleIntPrimary : integer'
+    '''simpleIntPrimary : integer'''
     p[0] = p[1]
 
 def p_simpleIntPrimary_3(p):
-    'simpleIntPrimary : LPAREN simpleIntExpression RPAREN'
+    '''simpleIntPrimary : LPAREN simpleIntExpression RPAREN'''
     p[0] = p[2]
 
 def p_assertExpr_1(p):
@@ -881,7 +919,7 @@ def p_assertExpr_2(p):
 # 
 
 def p_orExpr_1(p):
-    'orExpr : andExpr'
+    '''orExpr : andExpr'''
     p[0] = p[1]
 
 def p_orExpr_2(p):
@@ -890,15 +928,15 @@ def p_orExpr_2(p):
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
 
 def p_andExpr_1(p):
-    'andExpr : bitwiseExpr'
+    '''andExpr : bitwiseExpr'''
     p[0] = p[1]
 
 def p_andExpr_2(p):
-    'andExpr : bitwiseExpr LOGICAL_AND andExpr'
+    '''andExpr : bitwiseExpr LOGICAL_AND andExpr'''
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
 
 def p_bitwiseExpr_1(p):
-    'bitwiseExpr : equalityExpr'
+    '''bitwiseExpr : equalityExpr'''
     p[0] = p[1]
 
 def p_bitwiseExpr_2(p):
@@ -908,7 +946,7 @@ def p_bitwiseExpr_2(p):
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
 
 def p_equalityExpr_1(p):
-    'equalityExpr : relationalExpr'
+    '''equalityExpr : relationalExpr'''
     p[0] = p[1]
 
 def p_equalityExpr_2(p):
@@ -917,7 +955,7 @@ def p_equalityExpr_2(p):
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
 
 def p_relationalExpr_1(p):
-    'relationalExpr : shiftExpr'
+    '''relationalExpr : shiftExpr'''
     p[0] = p[1]
 
 def p_relationalExpr_2(p):
@@ -928,7 +966,7 @@ def p_relationalExpr_2(p):
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
 
 def p_shiftExpr_1(p):
-    'shiftExpr : addExpr'
+    '''shiftExpr : addExpr'''
     p[0] = p[1]
 
 def p_shiftExpr_2(p):
@@ -937,7 +975,7 @@ def p_shiftExpr_2(p):
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
 
 def p_addExpr_1(p):
-    'addExpr : multExpr'
+    '''addExpr : multExpr'''
     p[0] = p[1]
 
 def p_addExpr_2(p):
@@ -946,7 +984,7 @@ def p_addExpr_2(p):
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
 
 def p_multExpr_1(p):
-    'multExpr : powerExpr'
+    '''multExpr : powerExpr'''
     p[0] = p[1]
 
 def p_multExpr_2(p):
@@ -957,7 +995,7 @@ def p_multExpr_2(p):
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
 
 def p_powerExpr_1(p):
-    'powerExpr : unaryExpr'
+    '''powerExpr : unaryExpr'''
     p[0] = p[1]
 
 def p_powerExpr_2(p):
@@ -971,29 +1009,29 @@ def p_unaryExpr_1(p):
     p[0] = sidl.Expression(p[1], p[2])
 
 def p_unaryExpr_2(p):
-    'unaryExpr : funcEval'
+    '''unaryExpr : funcEval'''
     p[0] = p[1]
 
 
 # TODO funcEval is btw. not a good name...
 def p_funcEval_1(p):
-    'funcEval : IDENTIFIER LPAREN funcArgs RPAREN'
+    '''funcEval : IDENTIFIER LPAREN funcArgs RPAREN'''
     p[0] = sidl.Expression('funcEval', p[1], p[3])
 
 def p_funcEval_2(p):
-    'funcEval : IDENTIFIER LPAREN RPAREN'
+    '''funcEval : IDENTIFIER LPAREN RPAREN'''
     p[0] = sidl.Expression('funcEval', p[1], [])
 
 def p_funcEval_3(p):
-    'funcEval : IDENTIFIER'
+    '''funcEval : IDENTIFIER'''
     p[0] = sidl.Expression('variableReference', p[1])
 
 def p_funcEval_4(p):
-    'funcEval : literal'
+    '''funcEval : literal'''
     p[0] = p[1]
 
 def p_funcEval_5(p):
-    'funcEval : LPAREN orExpr RPAREN'
+    '''funcEval : LPAREN orExpr RPAREN'''
     p[0] = p[2]
 
 def p_funcArgs(p): # +
@@ -1033,7 +1071,7 @@ def p_literal(p):
     p[0] = p[1]
 
 def p_complex(p):
-    'complex : LBRACE number COMMA number RBRACE'
+    '''complex : LBRACE number COMMA number RBRACE'''
     nocomma(p[5])
     if indexof(';', p[5]) > -1:
         error(p, "Unexpected ';'")
@@ -1063,11 +1101,11 @@ def p_numliteral(p):
     p[0] = p[1]
 
 def p_integer_1(p):
-    'integer : plusMinus INTEGER_LITERAL'
+    '''integer : plusMinus INTEGER_LITERAL'''
     plusMinus(p)
 
 def p_integer_2(p):
-    'integer : INTEGER_LITERAL'
+    '''integer : INTEGER_LITERAL'''
     p[0] = p[1]
 
 
@@ -1091,102 +1129,8 @@ def p_integer_2(p):
     #     args[0] = a
     #     return true
 
-def pretty(sexpr, n=0):
-    "pretty print s-expressions"
-    op = Variable()
-    a = Variable()
-    b = Variable()
-    requires = Variable()
-    imports = Variable()
-    packages = Variable()
-    name = Variable()
-    version = Variable()
-    extends = Variable()
-    implements = Variable()
-    invariants = Variable()
-    methods = Variable()
-    usertypes = Variable()
-    attrs = Variable()
-    defn = Variable()
-    typ = Variable()
-    args = Variable()
-    excepts = Variable()
-    froms = Variable()
-    requires = Variable()
-    ensures = Variable()
-    mode = Variable()
-    dimension = Variable()
-    orientation = Variable()
-
-    def ln(s):
-        return ' '*n+s+'\n'
-
-    if match(sexpr, ('file', requires, imports, packages)):
-        return ln(pretty(requires.binding, n)) \
-             + ln(pretty(imports.binding, n)) \
-             + ln(pretty(packages.binding, n))
-    elif match(sexpr, ('package', ('identifier', name), version, usertypes)):
-        return ln('package ' + name.binding + ' ' + pretty(version.binding, n) + ' {') \
-            + pretty(usertypes.binding, n+2) + ln('}')
-    elif match(sexpr, ('user type', attrs, defn)):
-        return pretty(attrs.binding, n) + pretty(defn.binding, n)
-    elif match(sexpr, ('class', name, extends, implements, invariants, methods)):
-      return 'class' + pretty(name.binding) \
-          + ' ' + pretty(extends.binding, n) \
-          + ' ' + pretty(implements.binding, n) \
-          + ' ' + pretty(invariants.binding, n) + '{' \
-                + pretty(methods.binding, n) \
-           + '}'
-    elif match(sexpr, ('interface', name, extends, invariants, methods)):
-      return ln('class' + pretty(name.binding) \
-          + ' ' + pretty(extends.binding, n) \
-          + ' ' + pretty(invariants.binding, n) + '{\n' \
-                + pretty(methods.binding, n) \
-           + '}')
-    elif match(sexpr, ('method', typ, name, attrs, args, excepts, froms, requires, ensures)):
-      return ln(pretty(attrs.binding) \
-          + ' ' + pretty(typ.binding) \
-          + ' ' + pretty(name.binding) \
-          + '(' + pretty(args.binding, n) \
-          + ') '+ pretty(excepts.binding, n) \
-          + '  ' + pretty(froms.binding, n) \
-          + '  ' + pretty(requires.binding, n) \
-          + '  ' + pretty(ensures.binding, n) + ';')
-    elif match(sexpr, ('arg', attrs, mode, typ, name)):
-        return pretty(attrs.binding) \
-            + ' ' + pretty(mode.binding) \
-            + ' ' + pretty(typ.binding) \
-            + ' ' + pretty(name.binding)
-    elif match(sexpr, ('array', typ, dimension, orientation)):
-        return 'array<' + pretty(typ.binding) \
-            + ' ' + pretty(dimension.binding) \
-            + ' ' + pretty(orientation.binding) \
-            + '> '
-    elif match(sexpr, ('expression', 'scopedid', a, b)):
-        return '.' + pretty(a.binding) + ' ' + pretty(b.binding) + ' '
-    elif match(sexpr, ('identifier', name)): 
-        return name.binding
-    elif match(sexpr, ('version', version)): 
-        return version.binding
-    elif match(sexpr, ('mode', name)): 
-        return name.binding
-    elif match(sexpr, (op, a, b)): 
-        return pretty(a.binding, n) + op.binding + pretty(b.binding, n)
-    elif match(sexpr, (op, a)): 
-        return op.binding + pretty(a.binding, n)
-    elif match(sexpr, []):
-        return ''
-    elif match(sexpr, a): 
-        if (isinstance(a.binding, list)):
-            return reduce(lambda x, y: x+y, map(lambda x: pretty(x, n), a.binding), '')
-        else:
-            return str(a.binding)
-    else:
-        raise
-
-
 @matcher
-def pretty2(sexpr, n=0, sep=' '):
+def pretty(sexpr, n=0, sep=' '):
     "pretty print s-expressions"
 
     def tmap(f, l): 
@@ -1195,50 +1139,60 @@ def pretty2(sexpr, n=0, sep=' '):
     with match(sexpr):
         if ('file', Requires, Imports, Packages):
             return "%s\n%s\n%s\n" % \
-                (pretty2(Requires), pretty2(Imports), pretty2(Packages))
+                (pretty(Requires), pretty(Imports), pretty(Packages))
 
         elif ('package', ('identifier', Name), Version, Usertypes):
-            return '%s package %s {\n%s\n}\n' \
-                % (Name, pretty2(Version), pretty2(Usertypes, 2))
+            return 'package %s %s {\n%s\n}\n' \
+                % (Name, pretty(Version), pretty(Usertypes, 2))
      
         elif ('user type', Attrs, Defn):
-            return pretty2(Attrs) + ' ' + pretty2(Defn)
+            return pretty(Attrs, n, '\n') + ' ' + pretty(Defn, n, '\n')
      
         elif ('class', Name, Extends, Implements, Invariants, Methods):
-            n+=2
-            return ' '*(n-2)+'class %s extends {%s} implements {%s} invariants{%s} {%s}\n' \
-                % tmap(pretty2, (Name, Extends, Implements, Invariants, Methods))
+            return 'class %s extends {%s} implements {%s} invariants{%s} {\n' \
+                % tmap(lambda x: pretty(x, 0, ','), \
+                           (Name, Extends, Implements, Invariants)) \
+                           + pretty(Methods, n+2, ';') \
+                           + '\n'+' '*n+'}\n'
         
         elif ('interface', Name, Extends, Invariants, Methods):
             n+=2
-            return ' '*(n-2)+'interface %s extends {%s} invariants{%s} {%s}\n' \
-                % tmap(pretty2, (Name, Extends, Invariants, Methods))
+            return ' '*(n-2)+'interface %s extends {%s} invariants{%s} {\n' \
+                % tmap(lambda x: pretty(x, 0, ','), \
+                           (Name, Extends, Invariants)) \
+                           + pretty(Methods, n+2, ';') \
+                           + '\n'+' '*n+'}\n'
 
         elif ('method', Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
-            return ' '*n+'%s %s %s(%s) %s %s %s %s \n' \
-                % tmap(pretty2, (Attrs, Typ, Name, Args, Excepts, Froms, Requires, Ensures))
+            return '%s %s %s(%s) %s %s %s %s ;' \
+                % tmap(pretty, (Attrs, Typ, Name, Args, Excepts, Froms, Requires, Ensures))
 
         elif ('arg', Attrs, Mode, Typ, Name):
-            return '%s %s %s %s' % tmap(pretty2, (Attrs, Mode, Typ, Name))
+            return '%s %s %s %s' % tmap(pretty, (Attrs, Mode, Typ, Name))
 
         elif ('array', Typ, Dimension, Orientation):
-            return 'array<%s %s %s>' % tmap(pretty2, (Typ, Dimension, Orientation))
+            return 'array<%s %s %s>' % tmap(pretty, (Typ, Dimension, Orientation))
 
         elif ('enum', ('identifier', Name), Enumerators):
-            return 'enum %s {%s}' % (Name, pretty2(Enumerators, n+2))
+            return 'enum %s {%s}' % (Name, pretty(Enumerators, n+2,';'))
 
         elif ('expression', 'scopedid', A, B):
-            return '.%s%s ' % (pretty2(A), pretty2(B))
+            return '.%s%s ' % (pretty(A), pretty(B))
 
+        elif ('attribute', Name): return Name
         elif ('identifier', Name): return Name
         elif ('version', Version): return Version
         elif ('mode', Name): return Name
-        elif (Op, A, B): return ' '.join((pretty2(A), Op, pretty2(B)))
-        elif (Op, A):    return ' '.join(            (Op, pretty2(A)))
+        elif (Op, A, B): return ' '.join((pretty(A), Op, pretty(B)))
+        elif (Op, A):    return ' '.join(            (Op, pretty(A)))
         elif []: return ''
         elif A: 
             if (isinstance(A, list)):
-                return sep.join(map(pretty2, A))
+                if n > 0: # indentation heuristic
+                    return '\n'+' '*n+(sep+'\n'+' '*n).join( \
+                        map(lambda x: pretty(x, n, sep), A))
+                else:
+                    return (sep+' ').join(map(lambda x: pretty(x, n, sep), A))
             else:
                 return str(A)
         else:
@@ -1282,7 +1236,7 @@ def sidlParse(_sidlFile):
     #import pdb; pdb.set_trace()
     result = parser.parse(sidlFile,lexer=scanner,debug=debug)
     #print(repr(result))
-    print pretty2(result.sexpr())
+    print pretty(result.sexpr())
     return 0
 
 if __name__ == '__main__':

@@ -1,34 +1,36 @@
+#!/usr/bin/env python
 # -*- python -*-
-"""
-File:
-Package:
-Revision:    @(#) $Id$
-Description: A SIDL Class hierarchy
+## @package sidl
+#
+# A SIDL class hierarchy
+#
+# \authors Please report bugs to <adrian@llnl.gov>.
+# \authors
+# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n 
+# Produced at the Lawrence Livermore National Laboratory.                   \n 
+# Written by the Components Team <components@llnl.gov>                      \n 
+# UCRL-CODE-2002-054                                                        \n 
+# All rights reserved.                                                      \n 
+#                                                                           \n 
+# This file is part of Babel. For more information, see                     \n 
+# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n 
+# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n 
+# License.                                                                  \n 
+#                                                                           \n 
+# This program is free software; you can redistribute it and/or modify it   \n 
+# under the terms of the GNU Lesser General Public License (as published by \n 
+# the Free Software Foundation) version 2.1 dated February 1999.            \n 
+#                                                                           \n 
+# This program is distributed in the hope that it will be useful, but       \n 
+# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n 
+# conditions of the GNU Lesser General Public License for more details.     \n 
+#                                                                           \n 
+# You should have recieved a copy of the GNU Lesser General Public License  \n 
+# along with this program; if not, write to the Free Software Foundation,   \n 
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n 
+#
 
-Copyright (c) 2010, Lawrence Livermore National Security, LLC
-Produced at the Lawrence Livermore National Laboratory.
-Written by the Components Team <components@llnl.gov>
-UCRL-CODE-2002-054
-All rights reserved.
-
-This file is part of Babel. For more information, see
-http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
-for Our Notice and the LICENSE file for the GNU Lesser General Public
-License.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License (as published by
-the Free Software Foundation) version 2.1 dated February 1999.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
-conditions of the GNU Lesser General Public License for more details.
-
-You should have recieved a copy of the GNU Lesser General Public License
-along with this program; if not, write to the Free Software Foundation,
-Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-"""
 
 #             import pdb; pdb.set_trace()
 
@@ -37,16 +39,14 @@ def make_sexpr(child):
     if isinstance(child, AstNode):
         return child.sexpr()
     else:
-#        print child
-#        import pdb; pdb.set_trace()
         return child
         
 class AstNode:
     """
-    Base class. All other SIDL AST nodes should inherit from this one:
-      * Calling str(astNode) will result in a human-readable version of the AST.
+    Base class. All other SIDL AST nodes should inherit from this one.
+    \li Calling str(astNode) will result in a human-readable version of the AST.
 
-      * Calling repr(astNode) will return a Python-readable version of
+    \li  Calling repr(astNode) will return a Python-readable version of
         the AST that can be passed to eval() to generate a new Python
         object.
     """
@@ -92,6 +92,7 @@ class AstNode:
             + reduce(lambda x, y: mystr(x)+str(y), self.children)
 
 class ListNode(AstNode):
+    """Node that is a list of other nodes"""
     def __init__(self, children):
         self.type = []
         self.children = children

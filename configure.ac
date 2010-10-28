@@ -1,5 +1,5 @@
 AC_PREREQ(2.64)
-AC_INIT([babel],[1.99],[babel-bugs@cca-forum.org])
+AC_INIT([babel2],[1.99],[babel-bugs@cca-forum.org])
 AC_CONFIG_SRCDIR([COPYRIGHT])
 AC_CONFIG_MACRO_DIR([m4])
 CCA_DIAGNOSE_INIT(toolcheck.log)
@@ -51,7 +51,7 @@ AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
 
-AC_CONFIG_FILES([Makefile compiler/Makefile])
+AC_CONFIG_FILES([Makefile compiler/Makefile Doxyfile])
 
 AC_OUTPUT
 
