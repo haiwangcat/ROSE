@@ -1131,7 +1131,11 @@ def p_integer_2(p):
 
 @matcher
 def pretty(sexpr, n=0, sep=' '):
-    "pretty print s-expressions"
+    """
+    pretty print s-expressions
+
+    This is essentially an unparser for SIDL.
+    """
 
     def tmap(f, l): 
         return tuple(map(f, l))
