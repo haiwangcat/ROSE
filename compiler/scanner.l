@@ -1,4 +1,4 @@
-/* -*- c-mode -*- */
+/* -*- C -*- */
 %option yylineno
 %option stack
 %x IN_COMMENT
@@ -39,17 +39,19 @@
 enum Token {
           t_KEYWORD=256,
           t_IDENTIFIER, t_EXTENSION, t_VERSION_STRING,
+ 
+	  t_LOGICAL_AND, t_LOGICAL_OR, t_LOGICAL_XOR, 
 
           t_LPAREN, t_RPAREN, t_LBRACE, t_RBRACE,
           t_SEMICOLON, t_COMMA, t_DOT, t_ATTRIB_BEGIN, t_ATTRIB_ID,
           t_ATTRIB_STRING, t_ATTRIB_EQ, t_ATTRIB_COMMA, t_ATTRIB_END,
-
-	  t_COMMA_COLUMN_MAJOR, t_COMMA_ROW_MAJOR, t_IDENTIFIER_COLON,
-
-          t_ASSIGN, t_BITWISE_AND, t_BITWISE_XOR, t_COLON, t_EQ, t_GE,
+ 
+          t_COMMA_COLUMN_MAJOR, t_COMMA_ROW_MAJOR, t_IDENTIFIER_COLON,
+ 
+          t_ASSIGN, t_BITWISE_AND, t_BITWISE_XOR, /*t_COLON,*/ t_EQ, t_GE,
           t_GT, t_LE, t_LT, t_MINUS, t_NE, t_BITWISE_OR, t_PLUS, t_POWER,
           t_SLASH, t_STAR, t_TILDE, t_LSHIFT, t_RSHIFT,
-
+ 
           t_BOOLEAN_LITERAL, t_INTEGER_LITERAL,
           t_DECIMAL_LITERAL, t_FLOATING_POINT_LITERAL,
           t_SIMPLE_FLOATING_POINT_LITERAL, t_CHARACTER_LITERAL, t_STRING_LITERAL
@@ -58,11 +60,13 @@ enum Token {
 #define update_yypos() { yypos += yyleng; }
 #define ID_TOKEN       { update_yypos(); yytype = yytext; return -1; }
 #define TOKEN(TOKEN)   { update_yypos(); yytype = #TOKEN; return t_##TOKEN; }
-#define UNPUT          { unput(yytext[0]); fprintf(stderr, "unputting for '%s'\n", yytext);}
+//#define UNPUT          { unput(yytext[0]); /*fprintf(stderr, "unputting for '%s'\n", yytext);*/}
 
 static int yypos = 0; // Character count in file
 static const char* yytype = NULL; // The python token type
+static char* ident = NULL; // Used by IDENTIFIER_COLON
 static char* ident_end = NULL; // Used by IDENTIFIER_COLON
+static const char *fn; // Input file name
 
 %}
 
@@ -97,11 +101,11 @@ IDENTIFIER                    [a-zA-Z][a-zA-Z_0-9]*
 
   /* Keywords */
 void|array|rarray|bool|char|dcomplex|double|fcomplex|float|int|long|opaque|string |
-class|enum|struct|interface|abstract|and|copy |
+class|enum|struct|interface|abstract|copy |
 else|ensure|extends|final|from|iff|implements|implements-all|implies|import|in |
-inout|invariant|is|local|mod|not|null|nonblocking|oneway|order|or|out|package |
+inout|invariant|is|local|mod|not|null|nonblocking|oneway|order|out|package |
 pure|rem|require|result |
-static|then|throws|version|xor {
+static|then|throws|version {
   char *c;
   for (c = yytext; c < yytext+yyleng; c++) {
     // parser expects upper case for terminal symbols
@@ -113,7 +117,10 @@ static|then|throws|version|xor {
   ID_TOKEN
 }
 
-{IDENTIFIER}             TOKEN(IDENTIFIER)
+and TOKEN(LOGICAL_AND)
+or  TOKEN(LOGICAL_OR)
+xor TOKEN(LOGICAL_XOR)
+
 "["[a-zA-Z0-9_]+"]"      TOKEN(EXTENSION)
 [0-9]\.[0-9]+(\.[0-9]+)+ TOKEN(VERSION_STRING)
 
@@ -130,11 +137,11 @@ static|then|throws|version|xor {
 }	        
 	        
 <INITIAL>{      
-  {IDENTIFIER}  BEGIN(MULTI2); update_yypos(); ident_end = yytext+yyleng;
+  {IDENTIFIER}  BEGIN(MULTI2); update_yypos(); ident = yytext; ident_end = yytext+yyleng;
 }	        
 <MULTI2>{       
-  :	        *ident_end=0; BEGIN(INITIAL);            TOKEN(IDENTIFIER_COLON)
-  .	        *ident_end=0; BEGIN(INITIAL); yyless(0); TOKEN(IDENTIFIER);
+  ":"	        BEGIN(INITIAL); yytext=ident; *ident_end=0; TOKEN(IDENTIFIER_COLON)
+   .            BEGIN(INITIAL); yyless(0);    yytext=ident; TOKEN(IDENTIFIER);
 }
 
   /* separators */
@@ -146,32 +153,33 @@ static|then|throws|version|xor {
 "."   TOKEN(DOT) 
 
   /* operators */
-"="   TOKEN(ASSIGN);
-"&"   TOKEN(BITWISE_AND);
-"^"   TOKEN(BITWISE_XOR);
-":"   TOKEN(COLON);
-"=="  TOKEN(EQ);
-">="  TOKEN(GE);
-">"   TOKEN(GT);
-"<="  TOKEN(LE);
-"<"   TOKEN(LT);
-"-"   TOKEN(MINUS);
-"!="  TOKEN(NE);
-"|"   TOKEN(BITWISE_OR);
-"+"   TOKEN(PLUS);
-"**"  TOKEN(POWER); 
-"/"   TOKEN(SLASH);
-"*"   TOKEN(STAR);
-"~"   TOKEN(TILDE);
-"<<<" TOKEN(LSHIFT);
-">>>" TOKEN(RSHIFT);
+"="   TOKEN(ASSIGN)
+"&"   TOKEN(BITWISE_AND)
+"^"   TOKEN(BITWISE_XOR)
+"=="  TOKEN(EQ)
+">="  TOKEN(GE)
+">"   TOKEN(GT)
+"<="  TOKEN(LE)
+"<"   TOKEN(LT)
+"-"   TOKEN(MINUS)
+"!="  TOKEN(NE)
+"|"   TOKEN(BITWISE_OR)
+"+"   TOKEN(PLUS)
+"**"  TOKEN(POWER) 
+"/"   TOKEN(SLASH)
+"*"   TOKEN(STAR)
+"~"   TOKEN(TILDE)
+"<<<" TOKEN(LSHIFT)
+">>>" TOKEN(RSHIFT)
 
   /* literals */
 false|true ID_TOKEN
 
 ({DECIMAL_LITERAL}|{HEX_LITERAL}|{OCTAL_LITERAL})[lL]? {
-        TOKEN(INTEGER_LITERAL);
+        TOKEN(INTEGER_LITERAL)
 }
+
+{SIMPLE_FLOATING_POINT_LITERAL} TOKEN(SIMPLE_FLOATING_POINT_LITERAL)
 
 {SIMPLE_FLOATING_POINT_LITERAL}{EXPONENT}[fFdD]? |
 {SIMPLE_FLOATING_POINT_LITERAL}({EXPONENT})?[fFdD] |
@@ -179,10 +187,17 @@ false|true ID_TOKEN
 \.[0-9]+{EXPONENT}?[fFdD]? |
 [0-9]+{EXPONENT}[fFdD]? |
 [0-9]+{EXPONENT}?[fFdD] { 
-	TOKEN(FLOATING_POINT_LITERAL);
+	TOKEN(FLOATING_POINT_LITERAL)
 }
 
+<<EOF>>   return 0;
 
+. {
+    
+    fprintf(stderr, "**ERROR: %s:%d:\n  unexpected token '%s'.\n", 
+            fn, yylineno, yytext);
+    exit(1);
+}
 %%
 
 #include <Python.h>
@@ -195,8 +210,6 @@ static PyObject* token_init   = NULL;
 static PyObject*
 scanner_input(PyObject *self, PyObject *args)
 {
-  const char *fn;
-
   if (!PyArg_ParseTuple(args, "s", &fn))
     return NULL;
   yyin = fopen(fn, "r");
@@ -207,7 +220,7 @@ static PyObject*
 scanner_token(PyObject *self, PyObject *args)
 {
   int type = yylex();
-  //while (yylex()) { fprintf(stderr, "token:%s\n", yytext); fflush(stderr);} exit(1);
+  //while (yylex()) { fprintf(stdout, "token:'%s' :: %s\n", yytext, yytype); fflush(stdout);} exit(1);
   if (type == 0) {
     // Free references to Token
     Py_DECREF(token_init);

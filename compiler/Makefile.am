@@ -1,9 +1,8 @@
 subdirs=Scanner
-dnl babel2_PYTHON = tree.py leave.py
 
-# Run the program through M4
-#%.preprocessed.py: %.py
-#	m4 -P <$< >$@
+PYTHONPATH=$(top_srcdir)/contrib
+
+python_PYTHON = parser.py
 
 pyexec_LTLIBRARIES = scanner.la
 scanner_la_SOURCES = scanner.l
@@ -20,24 +19,24 @@ TESTOUT=$(patsubst %.sidl,%.test, $(TESTS))
 
 run2: ../../babel.git/runtime/sidl/sidl.test
 
-%.test: %.sidl babel2 
-	./babel2 $<
+%.test: %.sidl braid 
+	./braid $<
 
 run: $(TESTOUT)
 
 clean-local:
-	rm -rf scanner.c babel2 *.pyc *.pyo parsetab.py* lextab.py* parser.log parser.out
+	rm -rf scanner.c braid *.pyc *.pyo parsetab.py* lextab.py* parser.log parser.out
 
-test: babel2
+test: braid
 
 lint:
 	pylint sidl.py
 	pylint parser.py
 
 # Generate the parser tables
-babel2: parser.py
-	python $< --compile
-	python $< --compile
+braid: parser.py
+	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) $< --compile
+	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) $< --compile
 	echo "LD_LIBRARY_PATH=$(PYTHON_SHARED_LIBRARY_DIR):LD_LIBRARY_PATH" >$@
-	echo "$(PYTHON) -O $< \$$@" >>$@
+	echo "env PYTHONPATH=$(PYTHONPATH) $(PYTHON) -O $< \$$@" >>$@
 	chmod u+x $@

@@ -1,5 +1,5 @@
 AC_PREREQ(2.64)
-AC_INIT([babel2],[1.99],[babel-bugs@cca-forum.org])
+AC_INIT([braid],[0.1],[babel-bugs@cca-forum.org])
 AC_CONFIG_SRCDIR([COPYRIGHT])
 AC_CONFIG_MACRO_DIR([m4])
 CCA_DIAGNOSE_INIT(toolcheck.log)

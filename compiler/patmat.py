@@ -229,7 +229,7 @@ import patmat
     lexpr = [] # lhs expr of current match block
     numregs = [] # number of simulatneously live variables
     regalloc = [] # associating variables with registers
-    matchbegin = [] # beginning of current match block
+    withbegin = [] # beginning of current with block
     withindent = [] # indent level of current with block
     matchindent = [] # indent level of current match block
     for line in src[fc.co_firstlineno+1:]+['<<EOF>>']:
@@ -245,15 +245,15 @@ import patmat
         if re.match(r'^( *#.*)$', line):
             continue
 
-        # leaving a match block
-        while len(matchindent) > 0 and il <= matchindent[-1]:
+        # leaving a with block
+        while len(withindent) > 0 and il <= withindent[-1]:
             # declare registers
             for i in range(numregs[-1], -1, -1):
-                dest.insert(matchbegin[-1], ' '*(matchindent[-1]) \
+                dest.insert(withbegin[-1], ' '*(withindent[-1]) \
                                 + '_reg%d = patmat.Variable()\n' % i)
             matchindent.pop()
             withindent.pop()
-            matchbegin.pop()
+            withbegin.pop()
             regalloc.pop()
             numregs.pop()
             lexpr.pop()
@@ -266,14 +266,14 @@ import patmat
         if il <= f_indent:
             break
 
-        # entering a match block
+        # entering a with block
         m = re.match(r'^ +with +match\((.*)\) *: *$', line)
         if m:
             lexpr.append(m.group(1))
             numregs.append(0)
             regalloc.append([])
-            matchindent.append(il)
-            matchbegin.append(n)
+            withindent.append(il)
+            withbegin.append(n-1)
             line = ""
         
         # inside a matching rule
@@ -282,13 +282,13 @@ import patmat
             # record the current indentation
             if len(withindent) <> len(matchindent):
                 if re.match(r'^ *if', line):
-                    withindent.append(il)
+                    matchindent.append(il)
                 else:
                     skip = True
 
             if not skip:
                 # remove one layer of indentation
-                newind = withindent[-1]-matchindent[-1]
+                newind = matchindent[-1]-withindent[-1]
                 line = line[newind:]
 
                 m = re.match(r'^('+' '*newind+r')((el)?if) +(.*):(.*)$', line)
@@ -311,7 +311,7 @@ import patmat
                         line = ' '*il+then+'\n'
 
         # every time
-        if len(matchbegin) > 0:
+        if len(withbegin) > 0:
             # allocate registers for variables
             # ... can be done more efficiently
             j = 0

@@ -60,7 +60,7 @@ class AstNode:
 
     def sexpr(self):
         """return an s-expression representing this node"""
-        #print '@ ', self.type
+        #print '@', self.type
 
         s = [self.type]
         for child in self.children:
@@ -94,14 +94,18 @@ class AstNode:
 class ListNode(AstNode):
     """Node that is a list of other nodes"""
     def __init__(self, children):
+        assert isinstance(children, list)
         self.type = []
         self.children = children
-        assert(isinstance(self.children, list))
 
     def sexpr(self):
         """return an s-expression representing this node"""
         s = []
-        #print self.children.__class__
+        try:
+            print self.children.__class__
+            print self.children.type
+        except:
+            pass
         for child in self.children:
             s.append(make_sexpr(child))
         return s
@@ -136,7 +140,8 @@ class ListNode(AstNode):
    
 
 class File(AstNode):
-    def __init__(self, *children): return AstNode.__init__(self, 'file', *children)
+    def __init__(self, *children): 
+        return AstNode.__init__(self, 'file', *children)
     def requires(): return children[0]
     def imports():  return children[1]
     def packages(): return children[2]

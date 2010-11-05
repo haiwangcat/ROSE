@@ -51,10 +51,10 @@
 # Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n 
 #                                                                           \n 
 # \mainpage 
-# Welcome to Babel 2!
+# Welcome to Braid/Babel 2!
 
 import logging, sys, re
-import ply.lex as lex
+#import ply.lex as lex
 import ply.yacc as yacc
 #from ply.lex import TOKEN
 
@@ -68,6 +68,7 @@ sys.path.append('.libs')
 import scanner
 
 sidlFile = ''
+_debug = 0
 
 tokens = [ 'VOID', 'ARRAY', 'RARRAY', 'BOOL', 'CHAR', 'DCOMPLEX', 'DOUBLE',
             'FCOMPLEX', 'FLOAT', 'INT', 'LONG', 'OPAQUE', 'STRING',
@@ -417,7 +418,7 @@ def consx(p):
 
     Construct a list \c p[1]:p[2] and store result in \c p[0].
 
-    If there is no \c p[2], return an empty list.
+    If there is no \c p[1], return an empty list.
     """
     if p[1] == []:
         p[0] = []
@@ -430,7 +431,7 @@ def consx13(p):
 
     Construct a list \c p[1]:p[3] and store result in \cp[0].
 
-    If there is no \c p[2], return an empty list.
+    If there is no \c p[1], return an empty list.
     """
     if p[1] == []:
         p[0] = []
@@ -461,8 +462,8 @@ def p_error(errorToken):
         print 'successfully parsed', sidlFile
         return
 
-    sys.stdout.write('**ERROR: Syntax error near token "%s" in %s:%d:\n' % \
-                         (errorToken.value, sidlFile, errorToken.lineno))
+    sys.stdout.write('**ERROR: in %s:%d:\n  Syntax error near "%s" (recognized as %s).\n' % 
+                         (sidlFile, errorToken.lineno, errorToken.value, errorToken.type))
     
     i = 0
     pos = errorToken.lexpos
@@ -602,7 +603,7 @@ def p_enumerator(p):
 def p_struct(p):
     '''struct : STRUCT name LBRACE structItems RBRACE'''
     no_comma(p[5])
-    p[0] = sidl.AstNode('struct', sidl.ListNode(p[2]), p[4])
+    p[0] = sidl.AstNode('struct', p[2], sidl.ListNode(p[4]))
 
 def p_structItems(p): # *
     '''structItems : empty
@@ -844,7 +845,7 @@ def p_orientation(p):
     '''orientation : COMMA_ROW_MAJOR
                    | COMMA_COLUMN_MAJOR
                    | empty'''
-    try2nd(p)
+    p[0] = p[1]
 
 def p_rarray(p):
     '''rarray : RARRAY LT primitiveType dimension GT name LPAREN maybeExtents RPAREN'''
@@ -894,14 +895,15 @@ def p_simpleIntPrimary_3(p):
     '''simpleIntPrimary : LPAREN simpleIntExpression RPAREN'''
     p[0] = p[2]
 
+
 def p_assertExpr_1(p):
+    '''assertExpr : orExpr'''
+    p[0] = p[1]
+
+def p_assertExpr_2(p):
     '''assertExpr : orExpr IMPLIES orExpr
                   | orExpr IFF orExpr'''
     p[0] = sidl.IfxExpression(p[2], p[1], p[3])
-
-def p_assertExpr_2(p):
-    '''assertExpr : orExpr'''
-    p[0] = p[1]
 
 # TODO:
 #   simplify the grammar by using the following declaration
@@ -1079,26 +1081,28 @@ def p_complex(p):
 
 def p_number(p):
     '''number : empty numliteral 
-              |  PLUS numliteral
-              | MINUS numliteral'''
+              | plusMinus numliteral'''
     plusMinus(p)
     
 def plusMinus(p):
     if p[1] == '-': 
-        p[0] = -p[2]
+        p[0] = -int(p[2])
     else:
-        p[0] = p[2]
+        p[0] = int(p[2])
 
-def p_plusmins(p):
+def p_plusminus(p):
     '''plusMinus : PLUS
                  | MINUS'''
     p[0] = p[1]
 
-def p_numliteral(p):
-    '''numliteral : INTEGER_LITERAL 
-                  | SIMPLE_FLOATING_POINT_LITERAL 
+def p_numliteral_1(p):
+    '''numliteral : INTEGER_LITERAL'''
+    p[0] = int(p[1])
+
+def p_numliteral_2(p):
+    '''numliteral : SIMPLE_FLOATING_POINT_LITERAL 
                   | FLOATING_POINT_LITERAL'''
-    p[0] = p[1]
+    p[0] = float(p[1])
 
 def p_integer_1(p):
     '''integer : plusMinus INTEGER_LITERAL'''
@@ -1106,28 +1110,9 @@ def p_integer_1(p):
 
 def p_integer_2(p):
     '''integer : INTEGER_LITERAL'''
-    p[0] = p[1]
+    p[0] = int(p[1])
 
-
-# # def prettyprint(t):
-# #     call 'print_'t
-
-# # give every node an id, use id for an indirect call
-
-# # @decorator 
-# # def pattern(f, *args, **kw):
-# #     return f(*args, **kw)
-
-
-    # # match-any case
-    # if (len(args) == 1):
-    #     args[0] = a
-    #     return true
-    # # match against first
-    # if (a.type == args[0]):
-    #     for arg in args:
-    #     args[0] = a
-    #     return true
+# ----------------------------------------------------------------------
 
 @matcher
 def pretty(sexpr, n=0, sep=' '):
@@ -1202,15 +1187,10 @@ def pretty(sexpr, n=0, sep=' '):
         else:
             raise
     raise
-# --------------
-# def pretty((op, a, b)):
-#     op.pretty
 
-# # @pattern
-# # def pretty((op, a, b)):
-# #     print a, op, b
 
-_debug = 0
+# ----------------------------------------------------------------------
+
 
 def sidlParse(_sidlFile):
     global sidlFile
@@ -1255,6 +1235,9 @@ if __name__ == '__main__':
         yacc.yacc(debug=_debug, optimize=1-_debug)
 
     else:
+        sidlParse(sys.argv[1])
+        exit(0)
+        
         import hotshot, hotshot.stats
         prof = hotshot.Profile('parser.prof')
         prof.runcall(sidlParse, sys.argv[1])
