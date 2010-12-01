@@ -34,19 +34,19 @@
 enum Token {
           t_KEYWORD=256,
           t_IDENTIFIER, t_EXTENSION, t_VERSION_STRING,
- 
-	  t_LOGICAL_AND, t_LOGICAL_OR, t_LOGICAL_XOR, 
+
+          t_LOGICAL_AND, t_LOGICAL_OR, t_LOGICAL_XOR,
 
           t_LPAREN, t_RPAREN, t_LBRACE, t_RBRACE,
           t_SEMICOLON, t_COMMA, t_DOT, t_ATTRIB_BEGIN, t_ATTRIB_ID,
           t_ATTRIB_STRING, t_ATTRIB_EQ, t_ATTRIB_COMMA, t_ATTRIB_END,
- 
+
           t_COMMA_COLUMN_MAJOR, t_COMMA_ROW_MAJOR, t_IDENTIFIER_COLON,
- 
+
           t_ASSIGN, t_BITWISE_AND, t_BITWISE_XOR, /*t_COLON,*/ t_EQ, t_GE,
           t_GT, t_LE, t_LT, t_MINUS, t_NE, t_BITWISE_OR, t_PLUS, t_POWER,
           t_SLASH, t_STAR, t_TILDE, t_LSHIFT, t_RSHIFT,
- 
+
           t_BOOLEAN_LITERAL, t_INTEGER_LITERAL,
           t_DECIMAL_LITERAL, t_FLOATING_POINT_LITERAL,
           t_SIMPLE_FLOATING_POINT_LITERAL, t_CHARACTER_LITERAL, t_STRING_LITERAL
@@ -55,7 +55,6 @@ enum Token {
 #define update_yypos() { yypos += yyleng; }
 #define ID_TOKEN       { update_yypos(); yytype = yytext; return -1; }
 #define TOKEN(TOKEN)   { update_yypos(); yytype = #TOKEN; return t_##TOKEN; }
-
 static int yypos = 0; // Character count in file
 static const char* yytype = NULL; // The python token type
 static char* ident = NULL; // Used by IDENTIFIER_COLON
@@ -77,10 +76,10 @@ IDENTIFIER                    [a-zA-Z][a-zA-Z_0-9]*
  /*defeat emacs syntax highlighting"'*/
 
 
-<INITIAL,MULTI1,MULTI2>{ 
+<INITIAL,MULTI1,MULTI2>{
   [ \t\f] update_yypos(); // White Space
   [\r\n]  update_yypos();
- 
+
   "//".*  update_yypos(); // C++ comment
   "/*"    update_yypos(); yy_push_state(IN_COMMENT); /* C comment */
 }
@@ -122,29 +121,29 @@ xor TOKEN(LOGICAL_XOR)
      grammar at some points */
 
 <INITIAL>{
-  ","           BEGIN(MULTI1); update_yypos(); 
-}               
-<MULTI1>{       
-  row-major     BEGIN(INITIAL);	           TOKEN(COMMA_ROW_MAJOR);
-  column-major  BEGIN(INITIAL);	           TOKEN(COMMA_COLUMN_MAJOR);
-  .	        BEGIN(INITIAL); yyless(0); TOKEN(COMMA);
-}	        
-	        
-<INITIAL>{      
+  ","           BEGIN(MULTI1); update_yypos();
+}
+<MULTI1>{
+  row-major     BEGIN(INITIAL);            TOKEN(COMMA_ROW_MAJOR);
+  column-major  BEGIN(INITIAL);            TOKEN(COMMA_COLUMN_MAJOR);
+  .             BEGIN(INITIAL); yyless(0); TOKEN(COMMA);
+}
+
+<INITIAL>{
   {IDENTIFIER}  BEGIN(MULTI2); update_yypos(); ident = yytext; ident_end = yytext+yyleng;
-}	        
-<MULTI2>{       
-  ":"	        BEGIN(INITIAL); yytext=ident; *ident_end=0; TOKEN(IDENTIFIER_COLON)
+}
+<MULTI2>{
+  ":"           BEGIN(INITIAL); yytext=ident; *ident_end=0; TOKEN(IDENTIFIER_COLON)
    .            BEGIN(INITIAL); yyless(0);    yytext=ident; TOKEN(IDENTIFIER);
 }
 
   /* separators */
 "("   TOKEN(LPAREN)
-")"   TOKEN(RPAREN) 
-"{"   TOKEN(LBRACE) 
-"}"   TOKEN(RBRACE) 
-";"   TOKEN(SEMICOLON) 
-"."   TOKEN(DOT) 
+")"   TOKEN(RPAREN)
+"{"   TOKEN(LBRACE)
+"}"   TOKEN(RBRACE)
+";"   TOKEN(SEMICOLON)
+"."   TOKEN(DOT)
 
   /* operators */
 "="   TOKEN(ASSIGN)
@@ -159,7 +158,7 @@ xor TOKEN(LOGICAL_XOR)
 "!="  TOKEN(NE)
 "|"   TOKEN(BITWISE_OR)
 "+"   TOKEN(PLUS)
-"**"  TOKEN(POWER) 
+"**"  TOKEN(POWER)
 "/"   TOKEN(SLASH)
 "*"   TOKEN(STAR)
 "~"   TOKEN(TILDE)
@@ -180,15 +179,15 @@ false|true ID_TOKEN
 [0-9]+\.{EXPONENT}?[fFdD]? |
 \.[0-9]+{EXPONENT}?[fFdD]? |
 [0-9]+{EXPONENT}[fFdD]? |
-[0-9]+{EXPONENT}?[fFdD] { 
-	TOKEN(FLOATING_POINT_LITERAL)
+[0-9]+{EXPONENT}?[fFdD] {
+        TOKEN(FLOATING_POINT_LITERAL)
 }
 
 <<EOF>>   return 0;
 
 . {
-    
-    fprintf(stderr, "**ERROR: %s:%d:\n  unexpected token '%s'.\n", 
+
+    fprintf(stderr, "**ERROR: %s:%d:\n  unexpected token '%s'.\n",
             fn, yylineno, yytext);
     exit(1);
 }
@@ -207,7 +206,7 @@ scanner_input(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args, "s", &fn))
     return NULL;
   yyin = fopen(fn, "r");
-  return Py_BuildValue("i", 0); 
+  return Py_BuildValue("i", 0);
 }
 
 static PyObject*
@@ -230,7 +229,7 @@ scanner_token(PyObject *self, PyObject *args)
      token_init   = PyDict_GetItemString(token_dict, "Token");
   }
   //fprintf(stderr, "token:%s\n", yytext); fflush(stderr);
-  return PyObject_CallFunction(token_init, "(ssii)", 
+  return PyObject_CallFunction(token_init, "(ssii)",
 			       yytype, yytext, yylineno, yypos);
 }
 
@@ -241,3 +240,9 @@ static PyMethodDef ScannerMethods[] = {
      "return a new token from the input stream."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
+
+PyMODINIT_FUNC
+initscanner(void)
+{
+    (void) Py_InitModule("scanner", ScannerMethods);
+}
