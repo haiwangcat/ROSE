@@ -49,11 +49,11 @@
 #     logic-oriented programming languages.
 #
 # \li \todo The underscore \c _ is treated as an anonymous variable.
-# 
+#
 # \li The first level of \c if and \c elif expressions under the \c
 #     with \c match(expr): line are expanded to call the function \c
 #     match(expr, ... .
-# 
+#
 # \li All occurences of upper case variables are replaced by
 #     references to the values bound by those variables.
 #
@@ -67,30 +67,30 @@
 # Please report bugs to <adrian@llnl.gov>.
 #
 # \authors
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n 
-# Produced at the Lawrence Livermore National Laboratory.                   \n 
-# Written by the Components Team <components@llnl.gov>                      \n 
-# UCRL-CODE-2002-054                                                        \n 
-# All rights reserved.                                                      \n 
-#                                                                           \n 
-# This file is part of Babel. For more information, see                     \n 
-# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n 
-# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n 
-# License.                                                                  \n 
-#                                                                           \n 
-# This program is free software; you can redistribute it and/or modify it   \n 
-# under the terms of the GNU Lesser General Public License (as published by \n 
-# the Free Software Foundation) version 2.1 dated February 1999.            \n 
-#                                                                           \n 
-# This program is distributed in the hope that it will be useful, but       \n 
-# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n 
-# conditions of the GNU Lesser General Public License for more details.     \n 
-#                                                                           \n 
-# You should have recieved a copy of the GNU Lesser General Public License  \n 
-# along with this program; if not, write to the Free Software Foundation,   \n 
-# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n 
-#                                                                           \n 
+# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n
+# Produced at the Lawrence Livermore National Laboratory.                   \n
+# Written by the Components Team <components@llnl.gov>                      \n
+# UCRL-CODE-2002-054                                                        \n
+# All rights reserved.                                                      \n
+#                                                                           \n
+# This file is part of Babel. For more information, see                     \n
+# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n
+# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n
+# License.                                                                  \n
+#                                                                           \n
+# This program is free software; you can redistribute it and/or modify it   \n
+# under the terms of the GNU Lesser General Public License (as published by \n
+# the Free Software Foundation) version 2.1 dated February 1999.            \n
+#                                                                           \n
+# This program is distributed in the hope that it will be useful, but       \n
+# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n
+# conditions of the GNU Lesser General Public License for more details.     \n
+#                                                                           \n
+# You should have recieved a copy of the GNU Lesser General Public License  \n
+# along with this program; if not, write to the Free Software Foundation,   \n
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n
+#                                                                           \n
 import re, sys
 
 class Variable:
@@ -131,7 +131,7 @@ def match(a, b):
 
 def unify(a, b, bindings):
     """a basic unification algorithm without occurs-check"""
-    
+
     def unbind(bindings):
         """remove all variable bindings in case of failure"""
         for var in bindings:
@@ -169,7 +169,7 @@ def unify(a, b, bindings):
             else:
                 unbind(bindings)
                 return False
-            
+
 
 def matcher(f):
     """a decorator to perform the pattern matching transformation"""
@@ -186,7 +186,7 @@ def compile_matcher(f):
     Compile a function f with pattern matching into a regular Python function.
     \return None. The function is written to a file <f.__name__>_matcher.py
     """
-    
+
     def indentlevel(s):
         if re.match(r'^ *$', s):
             return -1
@@ -205,12 +205,15 @@ def compile_matcher(f):
         if n == 0: return ""
         else: return chr(n+ord('a'))
 
+    def copy_line():
+        n += 1
+        dest.append(line)
+
     fc = f.func_code
     # access the original source code
     src = open(fc.co_filename, "r").readlines()
     f_indent = indentlevel(src[0])
-    
-    n = 0
+
     dest = []
     # assign a new function name
     # m = re.match(r'^def +([a-zA-Z_][a-zA-Z_0-9]*)(\(.*:) *$', dest[0])
@@ -219,12 +222,13 @@ def compile_matcher(f):
     # funcparms = m.group(2)
     dest.append("""
 #!/usr/env python
-# This file was automatically generated. Do not edit.
+# This file was automatically generated by the @matcher decorator. Do not edit.
 # module %s_matcher
 import patmat
 """ % f.__name__)
     dest.append(src[fc.co_firstlineno])
 
+    n = 2 # number of lines
     # stacks
     lexpr = [] # lhs expr of current match block
     numregs = [] # number of simulatneously live variables
@@ -233,24 +237,27 @@ import patmat
     withindent = [] # indent level of current with block
     matchindent = [] # indent level of current match block
     for line in src[fc.co_firstlineno+1:]+['<<EOF>>']:
-        n += 1
         # dest.append('# %s:%s\n' % (fc.co_filename, n+fc.co_firstlineno))
 
         # check for empty line
         il = indentlevel(line)
-        if il < 0: 
-            continue 
+        if il < 0:
+            n += 1
+            dest.append(line)
+            continue
 
-        # check for comment-only line
+        # check for comment-only line (they mess with the indentation)
         if re.match(r'^( *#.*)$', line):
+            n += 1
+            dest.append(line)
             continue
 
         # leaving a with block
         while len(withindent) > 0 and il <= withindent[-1]:
-            # declare registers
+            # insert registers declarations
             for i in range(numregs[-1], -1, -1):
-                dest.insert(withbegin[-1], ' '*(withindent[-1]) \
-                                + '_reg%d = patmat.Variable()\n' % i)
+                dest.insert(withbegin[-1], ' '*(withindent[-1])
+                            + '_reg%d = patmat.Variable()\n' % i)
             matchindent.pop()
             withindent.pop()
             withbegin.pop()
@@ -258,8 +265,8 @@ import patmat
             numregs.pop()
             lexpr.pop()
             if len(withindent) <> len(matchindent):
-                raise '**ERROR: %s:$d: missing if statement inside of if block' % \
-                    (fc.co_filename. fc.co_firstlineno+2+n)
+                raise('**ERROR: %s:$d: missing if statement inside of if block'%
+                    (fc.co_filename. fc.co_firstlineno+2+n))
             # ... repeat for all closing blocks
 
         # end of function definition
@@ -275,7 +282,7 @@ import patmat
             withindent.append(il)
             withbegin.append(n-1)
             line = ""
-        
+
         # inside a matching rule
         if len(lexpr) > 0:
             skip = False
@@ -291,6 +298,7 @@ import patmat
                 newind = matchindent[-1]-withindent[-1]
                 line = line[newind:]
 
+                # match if() / elif()
                 m = re.match(r'^('+' '*newind+r')((el)?if) +(.*):(.*)$', line)
 
                 if m:
@@ -307,6 +315,7 @@ import patmat
                     # split off the part behind the ':' as new line
                     then = m.group(5)
                     if len(then) > 0:
+                        n += 1
                         dest.append(line)
                         line = ' '*il+then+'\n'
 
@@ -321,9 +330,11 @@ import patmat
                     line = line.replace(alloc[i], '_reg%s%d.binding' % (d,i))
                 j += 1
 
+        # copy the line to the output
+        n += 1
         dest.append(line)
 
-    modname = '%s_matcher' % f.__name__    
+    modname = '%s_matcher' % f.__name__
     f = open(modname+'.py', "w")
     buf = "".join(dest)
     f.write(buf)

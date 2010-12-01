@@ -5,11 +5,6 @@
 %x MULTI1
 %x MULTI2
 %{
-// File:
-// Package:
-// Revision:    @(#) $Id$
-// Description: basic constants associated with generated source code
-//
 // Copyright (c) 2010, Lawrence Livermore National Security, LLC
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the Components Team <components@llnl.gov>
@@ -60,7 +55,6 @@ enum Token {
 #define update_yypos() { yypos += yyleng; }
 #define ID_TOKEN       { update_yypos(); yytype = yytext; return -1; }
 #define TOKEN(TOKEN)   { update_yypos(); yytype = #TOKEN; return t_##TOKEN; }
-//#define UNPUT          { unput(yytext[0]); /*fprintf(stderr, "unputting for '%s'\n", yytext);*/}
 
 static int yypos = 0; // Character count in file
 static const char* yytype = NULL; // The python token type
@@ -247,23 +241,3 @@ static PyMethodDef ScannerMethods[] = {
      "return a new token from the input stream."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
-
-PyMODINIT_FUNC
-initscanner(void)
-{
-    (void) Py_InitModule("scanner", ScannerMethods);
-}
-
-int
-main(int argc, char *argv[])
-{
-     fprintf(stderr, "hello\n");
-    /* Pass argv[0] to the Python interpreter */
-    Py_SetProgramName(argv[0]);
-
-    /* Initialize the Python interpreter.  Required. */
-    Py_Initialize();
-
-    /* Add a static module */
-    initscanner();
-}

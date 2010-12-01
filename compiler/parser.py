@@ -24,33 +24,33 @@
 # http://people.csail.mit.edu/rivest/Sexp.txt
 #
 # Please report bugs to <adrian@llnl.gov>.
-#   
+#
 # \authors
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n 
-# Produced at the Lawrence Livermore National Laboratory.                   \n 
-# Written by the Components Team <components@llnl.gov>                      \n 
-# UCRL-CODE-2002-054                                                        \n 
-# All rights reserved.                                                      \n 
-#                                                                           \n 
-# This file is part of Babel. For more information, see                     \n 
-# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n 
-# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n 
-# License.                                                                  \n 
-#                                                                           \n 
-# This program is free software; you can redistribute it and/or modify it   \n 
-# under the terms of the GNU Lesser General Public License (as published by \n 
-# the Free Software Foundation) version 2.1 dated February 1999.            \n 
-#                                                                           \n 
-# This program is distributed in the hope that it will be useful, but       \n 
-# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n 
-# conditions of the GNU Lesser General Public License for more details.     \n 
-#                                                                           \n 
-# You should have recieved a copy of the GNU Lesser General Public License  \n 
-# along with this program; if not, write to the Free Software Foundation,   \n 
-# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n 
-#                                                                           \n 
-# \mainpage 
+# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n
+# Produced at the Lawrence Livermore National Laboratory.                   \n
+# Written by the Components Team <components@llnl.gov>                      \n
+# UCRL-CODE-2002-054                                                        \n
+# All rights reserved.                                                      \n
+#                                                                           \n
+# This file is part of Babel. For more information, see                     \n
+# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n
+# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n
+# License.                                                                  \n
+#                                                                           \n
+# This program is free software; you can redistribute it and/or modify it   \n
+# under the terms of the GNU Lesser General Public License (as published by \n
+# the Free Software Foundation) version 2.1 dated February 1999.            \n
+#                                                                           \n
+# This program is distributed in the hope that it will be useful, but       \n
+# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n
+# conditions of the GNU Lesser General Public License for more details.     \n
+#                                                                           \n
+# You should have recieved a copy of the GNU Lesser General Public License  \n
+# along with this program; if not, write to the Free Software Foundation,   \n
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n
+#                                                                           \n
+# \mainpage
 # Welcome to Braid/Babel 2!
 
 import logging, sys, re
@@ -81,11 +81,11 @@ tokens = [ 'VOID', 'ARRAY', 'RARRAY', 'BOOL', 'CHAR', 'DCOMPLEX', 'DOUBLE',
             'MODULUS', 'NOT', 'NULL', 'NONBLOCKING', 'ONEWAY', 'LOGICAL_OR',
             'OUT', 'PACKAGE', 'PURE', 'REMAINDER', 'REQUIRE', 'RESULT', 'COMMA_ROW_MAJOR',
             'STATIC', 'THROWS', 'VERSION', 'LOGICAL_XOR',
-            # 'THEN', 'ELSE', 'ORDER', 
+            # 'THEN', 'ELSE', 'ORDER',
 
             'IDENTIFIER', 'EXTENSION', 'VERSION_STRING',
 
-            'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 
+            'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE',
             #'LBRACKET', 'RBRACKET',
             'SEMICOLON', 'COMMA', 'DOT', 'ATTRIB_BEGIN', 'ATTRIB_ID',
             'ATTRIB_STRING', 'ATTRIB_EQ', 'ATTRIB_COMMA', 'ATTRIB_END',
@@ -95,7 +95,7 @@ tokens = [ 'VOID', 'ARRAY', 'RARRAY', 'BOOL', 'CHAR', 'DCOMPLEX', 'DOUBLE',
             'SLASH', 'STAR', 'TILDE', 'LSHIFT', 'RSHIFT',
 
             'BOOLEAN_LITERAL', 'INTEGER_LITERAL',
-            #'HEX_LITERAL', 'OCTAL_LITERAL', 'FALSE', 'TRUE', 
+            #'HEX_LITERAL', 'OCTAL_LITERAL', 'FALSE', 'TRUE',
             'DECIMAL_LITERAL', 'FLOATING_POINT_LITERAL',
             'SIMPLE_FLOATING_POINT_LITERAL', 'CHARACTER_LITERAL', 'STRING_LITERAL'
             ]
@@ -401,7 +401,7 @@ def cons13(p):
 
     Construct a list \c p[1]:p[3] and store result in \c p[0].
     """
-    #for i in range(0, len(p)): 
+    #for i in range(0, len(p)):
     #    print i, p[i]
     #print ""
     if len(p) < 4:
@@ -462,9 +462,9 @@ def p_error(errorToken):
         print 'successfully parsed', sidlFile
         return
 
-    sys.stdout.write('**ERROR: in %s:%d:\n  Syntax error near "%s" (recognized as %s).\n' % 
+    sys.stdout.write('**ERROR: in %s:%d:\n  Syntax error near "%s" (recognized as %s).\n' %
                          (sidlFile, errorToken.lineno, errorToken.value, errorToken.type))
-    
+
     i = 0
     pos = errorToken.lexpos
     for line in open(sidlFile):
@@ -562,7 +562,7 @@ def p_cipse(p):
 def p_cipse_error(p):
     '''cipse : error'''
     error(p, 'Bad user-defined type: Unexpected keyword')
-    
+
 def p_typeCustomAttrs(p): # *
     '''typeCustomAttrs : typeAttrOrCustomAttrList typeCustomAttrs
                        | empty'''
@@ -587,7 +587,7 @@ def p_enum(p):
     p[0] = sidl.AstNode('enum', p[2], sidl.ListNode(p[4]))
 
 def p_enumerators(p): # +
-    '''enumerators : enumerator 
+    '''enumerators : enumerator
                    | enumerator COMMA
                    | enumerator COMMA enumerators'''
     cons13(p)
@@ -625,7 +625,7 @@ def p_class(p):
 
 def p_implementsSomeAllLists(p):
     '''implementsSomeAllLists : empty
-                              | implementsLists 
+                              | implementsLists
                               | implementsAllLists'''
     p[0] = p[1]
 
@@ -660,7 +660,7 @@ def p_scopedIDs(p): # +
     cons13(p)
 
 def p_extendsList(p):
-    '''extendsList : empty 
+    '''extendsList : empty
                    | EXTENDS scopedIDs'''
     try2nd(p)
 
@@ -682,12 +682,12 @@ def p_method(p):
     p[0] = sidl.AstNode('method', p[2], p[3], sidl.ListNode(p[1]), sidl.ListNode(p[5]), p[7], p[8], sidl.ListNode(p[10]), sidl.ListNode(p[11]))
 
 def p_method_error(p):
-    '''method : methodAttrs typeVoid methodName error maybeArgList RPAREN maybeExceptClause maybeFromClause  SEMICOLON requireAssertions ensureAssertions 
+    '''method : methodAttrs typeVoid methodName error maybeArgList RPAREN maybeExceptClause maybeFromClause  SEMICOLON requireAssertions ensureAssertions
               | methodAttrs typeVoid methodName LPAREN maybeArgList error maybeExceptClause maybeFromClause  SEMICOLON requireAssertions ensureAssertions'''
     error(p, 'missing parenthesis?')
 
 def p_typeVoid(p):
-    '''typeVoid : type 
+    '''typeVoid : type
                 | VOID'''
     if p[1] == 'void': return sidl.AstNode('type', 'void')
     else: p[0] = p[1]
@@ -734,7 +734,7 @@ def p_fromClause(p):
 def p_invariant(p):
     '''invariant : INVARIANT assertion'''
     p[0] = 'invariant', p[1]
-    
+
 def p_requireAssertions(p):
     '''requireAssertions : REQUIRE assertions
                          | empty empty'''
@@ -802,27 +802,27 @@ def p_customAttr_2(p):
     p[0] = sidl.AstNode('custom assoc attribute', p[1], p[3])
 
 def p_mode(p):
-    '''mode : IN 
+    '''mode : IN
             | OUT
             | INOUT'''
     p[0] = sidl.AstNode('mode', p[1])
 
 def p_type(p):
-    '''type : primitiveType 
-            | array 
+    '''type : primitiveType
+            | array
             | scopedID'''
     p[0] = p[1]
 
 def p_primitiveType(p):
-    '''primitiveType : BOOL 
+    '''primitiveType : BOOL
                      | CHAR
-                     | INT 
-                     | LONG 
+                     | INT
+                     | LONG
                      | FLOAT
                      | DOUBLE
                      | FCOMPLEX
-                     | DCOMPLEX 
-                     | STRING 
+                     | DCOMPLEX
+                     | STRING
                      | OPAQUE'''
     p[0] = sidl.AstNode('primitiveType', p[1])
 
@@ -831,7 +831,7 @@ def p_array(p):
     p[0] = sidl.AstNode('array', p[3], p[4], p[5])
 
 def p_scalarType(p):
-    '''scalarType : primitiveType 
+    '''scalarType : primitiveType
                   | scopedID
                   | empty'''
     p[0] = p[1]
@@ -857,7 +857,7 @@ def p_maybeExtents(p):
     p[0] = p[1]
 
 def p_extents(p): # +
-    '''extents : simpleIntExpression 
+    '''extents : simpleIntExpression
                | simpleIntExpression COMMA extents'''
     cons13(p)
 
@@ -918,7 +918,7 @@ def p_assertExpr_2(p):
 #    ('left', 'STAR', 'SLASH', 'MODULUS', 'REMAINDER'),
 #    ('left', 'POWER'),
 #    ('right', 'IS', 'NOT', 'TILDE')
-# 
+#
 
 def p_orExpr_1(p):
     '''orExpr : andExpr'''
@@ -1062,7 +1062,7 @@ def p_identifiers(p): # +
     cons13(p)
 
 def p_literal(p):
-    '''literal : number 
+    '''literal : number
                | complex
                | NULL
                | PURE
@@ -1080,12 +1080,12 @@ def p_complex(p):
     p[0] = ('complex', p[2], p[4])
 
 def p_number(p):
-    '''number : empty numliteral 
+    '''number : empty numliteral
               | plusMinus numliteral'''
     plusMinus(p)
-    
+
 def plusMinus(p):
-    if p[1] == '-': 
+    if p[1] == '-':
         p[0] = -int(p[2])
     else:
         p[0] = int(p[2])
@@ -1100,7 +1100,7 @@ def p_numliteral_1(p):
     p[0] = int(p[1])
 
 def p_numliteral_2(p):
-    '''numliteral : SIMPLE_FLOATING_POINT_LITERAL 
+    '''numliteral : SIMPLE_FLOATING_POINT_LITERAL
                   | FLOATING_POINT_LITERAL'''
     p[0] = float(p[1])
 
@@ -1122,7 +1122,7 @@ def pretty(sexpr, n=0, sep=' '):
     This is essentially an unparser for SIDL.
     """
 
-    def tmap(f, l): 
+    def tmap(f, l):
         return tuple(map(f, l))
 
     with match(sexpr):
@@ -1133,17 +1133,17 @@ def pretty(sexpr, n=0, sep=' '):
         elif ('package', ('identifier', Name), Version, Usertypes):
             return 'package %s %s {\n%s\n}\n' \
                 % (Name, pretty(Version), pretty(Usertypes, 2))
-     
+
         elif ('user type', Attrs, Defn):
             return pretty(Attrs, n, '\n') + ' ' + pretty(Defn, n, '\n')
-     
+
         elif ('class', Name, Extends, Implements, Invariants, Methods):
             return 'class %s extends {%s} implements {%s} invariants{%s} {\n' \
                 % tmap(lambda x: pretty(x, 0, ','), \
                            (Name, Extends, Implements, Invariants)) \
                            + pretty(Methods, n+2, ';') \
                            + '\n'+' '*n+'}\n'
-        
+
         elif ('interface', Name, Extends, Invariants, Methods):
             n+=2
             return ' '*(n-2)+'interface %s extends {%s} invariants{%s} {\n' \
@@ -1175,7 +1175,7 @@ def pretty(sexpr, n=0, sep=' '):
         elif (Op, A, B): return ' '.join((pretty(A), Op, pretty(B)))
         elif (Op, A):    return ' '.join(            (Op, pretty(A)))
         elif []: return ''
-        elif A: 
+        elif A:
             if (isinstance(A, list)):
                 if n > 0: # indentation heuristic
                     return '\n'+' '*n+(sep+'\n'+' '*n).join( \
@@ -1201,7 +1201,7 @@ def sidlParse(_sidlFile):
 
     #lex.lex(debug=debug,optimize=optimize)
     #lex.runmain()
-    
+
     logging.basicConfig(filename='parser.log',level=logging.DEBUG,
                         filemode = "w", format = "%(filename)10s:%(lineno)4d:%(message)s")
     log = logging.getLogger()
@@ -1216,7 +1216,7 @@ def sidlParse(_sidlFile):
 
     if debug == 1:
         debug = log
-    
+
     #import pdb; pdb.set_trace()
     result = parser.parse(sidlFile,lexer=scanner,debug=debug)
     #print(repr(result))
@@ -1235,9 +1235,9 @@ if __name__ == '__main__':
         yacc.yacc(debug=_debug, optimize=1-_debug)
 
     else:
-        sidlParse(sys.argv[1])
-        exit(0)
-        
+        #sidlParse(sys.argv[1])
+        #exit(0)
+
         import hotshot, hotshot.stats
         prof = hotshot.Profile('parser.prof')
         prof.runcall(sidlParse, sys.argv[1])
