@@ -1,8 +1,6 @@
-subdirs=Scanner
-
 PYTHONPATH=$(top_srcdir)/contrib
 
-python_PYTHON = parser.py
+python_PYTHON = parser.py patmat.py sidl.py
 
 pyexec_LTLIBRARIES = scanner.la
 scanner_la_SOURCES = scanner.l
@@ -19,7 +17,7 @@ TESTOUT=$(patsubst %.sidl,%.test, $(TESTS))
 
 run2: ../../babel.git/runtime/sidl/sidl.test
 
-%.test: %.sidl braid 
+%.test: %.sidl braid
 	./braid $<
 
 run: $(TESTOUT)
