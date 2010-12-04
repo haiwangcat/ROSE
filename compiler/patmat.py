@@ -91,7 +91,7 @@
 # along with this program; if not, write to the Free Software Foundation,   \n
 # Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n
 #                                                                           \n
-import re, sys
+import re
 
 class Variable:
     '''A logical variable for use with match()'''
@@ -209,22 +209,18 @@ def compile_matcher(f):
         if n == 0: return ""
         else: return chr(n+ord('a'))
 
-    def copy_line():
-        n += 1
-        dest.append(line)
-
-    def parse_globals(src, indent):
-        """find all global symbols in src"""
-        globs = []
-        for line in src:
-            m = re.match('^'+' '*indent+
-                         r'(([a-zA-Z]\w*)\s*=|(def\s+([a-zA-Z]\w*)))',
-                         line)
-            if m <> None:
-                m1, m2 = m.group(2,4)
-                if m1 <> None: globs.append(m1)
-                if m2 <> None: globs.append(m2)
-        return globs
+    # def parse_globals(src, indent):
+    #     """find all global symbols in src"""
+    #     globs = []
+    #     for line in src:
+    #         m = re.match('^'+' '*indent+
+    #                      r'(([a-zA-Z]\w*)\s*=|(def\s+([a-zA-Z]\w*)))',
+    #                      line)
+    #         if m <> None:
+    #             m1, m2 = m.group(2,4)
+    #             if m1 <> None: globs.append(m1)
+    #             if m2 <> None: globs.append(m2)
+    #     return globs
 
 
     fc = f.func_code
@@ -334,7 +330,7 @@ def compile_matcher(f):
                         % (m.group(1), m.group(2), lexpr[-1], rexpr)
                     # allocate registers for variables
                     d = depthstr(len(lexpr)-1)
-                    for i in range(0,len(regalloc[-1])):
+                    for i in range(0, len(regalloc[-1])):
                         line = line.replace(regalloc[-1][i], '_reg%s%d' % (d,i))
 
                     # split off the part behind the ':' as new line
@@ -351,7 +347,7 @@ def compile_matcher(f):
             j = 0
             for alloc in regalloc:
                 d = depthstr(j)
-                for i in range(0,len(alloc)):
+                for i in range(0, len(alloc)):
                     line = line.replace(alloc[i], '_reg%s%d.binding' % (d,i))
                 j += 1
 

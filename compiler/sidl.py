@@ -50,9 +50,9 @@ class AstNode:
         the AST that can be passed to eval() to generate a new Python
         object.
     """
-    def __init__(self, type, *children):
+    def __init__(self, typ, *children):
         #print 'new', type, '(', str(children), ')'
-        self.type = type
+        self.type = typ
         self.children = children
 
     def __repr__(self):
@@ -141,20 +141,21 @@ class ListNode(AstNode):
 
 class File(AstNode):
     def __init__(self, *children):
-        return AstNode.__init__(self, 'file', *children)
-    def requires(): return children[0]
-    def imports():  return children[1]
-    def packages(): return children[2]
+        AstNode.__init__(self, 'file', *children)
+    def requires(self): return children[0]
+    def imports(self):  return children[1]
+    def packages(self): return children[2]
 
 class Expression(AstNode):
-    def __init__(self, *children): return AstNode.__init__(self, 'expression', *children)
-    pass
+    def __init__(self, *children):
+        AstNode.__init__(self, 'expression', *children)
 
 class IfxExpression(Expression):
     """Base class for infix operators"""
-    def __init__(self, *children): return AstNode.__init__(self, 'ifxexpr', *children)
+    def __init__(self, *children):
+        AstNode.__init__(self, 'ifxexpr', *children)
+
     def __str__(self):
         return str(self.children[0]) + ' ' \
             + self.type + ' ' \
             + str(self.children[1])
-    pass
