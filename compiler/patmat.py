@@ -48,7 +48,7 @@
 #     free variables; this is following the conventions of
 #     logic-oriented programming languages.
 #
-# \li \todo The underscore \c _ is treated as an anonymous variable.
+# \li The underscore \c _ is treated as an anonymous variable.
 #
 # \li The first level of \c if and \c elif expressions under the \c
 #     with \c match(expr): line are expanded to call the function \c
@@ -91,7 +91,7 @@
 # along with this program; if not, write to the Free Software Foundation,   \n
 # Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n
 #                                                                           \n
-import re
+import re, string
 
 class Variable:
     '''A logical variable for use with match()'''
@@ -129,8 +129,21 @@ def match(a, b):
     """
     return unify(a, b, [])
 
+def member(a, l):
+    """
+    match a against each member of l
+
+    \fixme is this a good idea? do we want something more general?
+    """
+    for b in l:
+        if match(a, b):
+            yield True
+
+
 def unify(a, b, bindings):
-    """a basic unification algorithm without occurs-check"""
+    """
+    a basic unification algorithm without occurs-check
+    """
 
     def unbind(bindings):
         """remove all variable bindings in case of failure"""
@@ -171,12 +184,27 @@ def unify(a, b, bindings):
                 return False
 
 class matcher(object):
-    """a decorator to perform the pattern matching transformation"""
-    def __init__(self, glob):
+    """
+    A decorator to perform the pattern matching transformation
+
+    Usage: prefix a function definition with \c @matcher(globals())
+    """
+    def __init__(self, glob, debug=False):
+        """
+        \param glob   the globals dictionary to use for global variables
+                      used by the function (just pass \c globals())
+        \param debug  if set to \c True: print the generated code to stdout
+        """
+        self.debug = debug
         self.glob = glob
+
     def __call__(self, f):
         fn = compile_matcher(f)
-        #print fn
+        if self.debug:
+            n = 0
+            for line in fn.split('\n'):
+                n += 1
+                print n, line
         exec(fn, self.glob, locals())
         exec('f = %s' % f.__name__)
         # modname = '%s_matcher' % f.__name__
@@ -185,6 +213,18 @@ class matcher(object):
         # exec('f = %s.%s' % (modname, f.__name__))
         return f
 
+class Counter(object):
+    """
+    A simple counter. Work around the fact that Python functions
+    cannot modify variables in parent scopes.
+    """
+    def __init__(self, value=0):
+        self.n = value
+    def inc(self):
+        self.n += 1
+    def read(self):
+        return self.n
+
 def compile_matcher(f):
     """
     Compile a function f with pattern matching into a regular Python function.
@@ -192,22 +232,47 @@ def compile_matcher(f):
     """
 
     def indentlevel(s):
-        if re.match(r'^ *$', s):
+        if re.match(r'^\w*(#.*)?$', s):
             return -1
         return len(re.match(r'^ *', s).group(0))
 
     def scan_variables(rexpr):
         reserved_words = r'(False)|(True)|(None)|(NotImplemented)|(Ellipsis)'
-        matches = re.findall(r'([A-Z]\w*)($|[^\(])', rexpr)
-
+        matches = re.findall(r'(^|\W*)([_A-Z]\w*)($|[^\(])', rexpr)
+        names = set([])
         for m in matches:
-            if not re.match(reserved_words, m[0]):
-                regalloc[-1].append(m[0])
-        numregs[-1] = max(numregs[-1], len(matches))
+            var = m[1]
+            if re.match(reserved_words, var):
+                # ignore reserved words
+                continue
+            name = var
+            if name[0] == '_':
+                # Generate names for anonymous variables
+                anonymous_vars.inc()
+                name = '_G%d'%anonymous_vars.read()
+                rexpr = string.replace(rexpr, var, name, 1)
+
+            # Check against duplicates
+            if var not in names:
+                regalloc[-1].append(name)
+                names.add(name)
+
+        numregs[-1] = max(numregs[-1], len(names))
+        return rexpr
 
     def depthstr(n):
-        if n == 0: return ""
+        """generate unique register names for each nesting level"""
+        if n == 0:
+            return ""
         else: return chr(n+ord('a'))
+
+    def append_line(line):
+        num_lines.inc()
+        dest.append(line[base_indent:])
+
+    def insert_line(pos, line):
+        num_lines.inc()
+        dest.insert(pos, line[base_indent:])
 
     # def parse_globals(src, indent):
     #     """find all global symbols in src"""
@@ -226,9 +291,15 @@ def compile_matcher(f):
     fc = f.func_code
     # access the original source code
     src = open(fc.co_filename, "r").readlines()
-    f_indent = indentlevel(src[0]) # FIXME: actually we want the first nonempty line
+
+    # get the indentation level of the first nonempty line
+    while True:
+        base_indent = indentlevel(src[fc.co_firstlineno])
+        if base_indent > -1:
+            break
+
     # imports = ', '.join(
-    #     filter(lambda s: s <> f.__name__, parse_globals(src, f_indent)))
+    #     filter(lambda s: s <> f.__name__, parse_globals(src, base_indent)))
 
     dest = []
     # assign a new function name
@@ -242,13 +313,14 @@ def compile_matcher(f):
 # module %s_matcher
 #from patmat import matcher, Variable, match
 """ % f.__name__)
-    n = 2 # number of lines
+    num_lines = Counter(2) # number of lines
+    anonymous_vars = Counter(0) # number of anonymous variables
 #     if (len(imports) > 0):
 #         dest.append("""
 # #from %s import %s
 # """       % (fc.co_filename[0:len(fc.co_filename)-3], imports))
-#         n += 1
-    dest.append(src[fc.co_firstlineno])
+#
+    append_line(src[fc.co_firstlineno])
 
     # stacks
     lexpr = [] # lhs expr of current match block
@@ -258,26 +330,24 @@ def compile_matcher(f):
     withindent = [] # indent level of current with block
     matchindent = [] # indent level of current match block
     for line in src[fc.co_firstlineno+1:]+['<<EOF>>']:
-        # dest.append('# %s:%s\n' % (fc.co_filename, n+fc.co_firstlineno))
+        # append_line('# %s:%s\n' % (fc.co_filename, n+fc.co_firstlineno))
 
         # check for empty line
         il = indentlevel(line)
         if il < 0:
-            n += 1
-            dest.append(line)
+            append_line(line)
             continue
 
         # check for comment-only line (they mess with the indentation)
         if re.match(r'^( *#.*)$', line):
-            n += 1
-            dest.append(line)
+            append_line(line)
             continue
 
         # leaving a with block
         while len(withindent) > 0 and il <= withindent[-1]:
             # insert registers declarations
-            for i in range(numregs[-1], -1, -1):
-                dest.insert(withbegin[-1], ' '*(withindent[-1])
+            for i in range(numregs[-1]-1, -1, -1):
+                insert_line(withbegin[-1], ' '*(withindent[-1])
                             + '_reg%d = Variable()\n' % i)
             matchindent.pop()
             withindent.pop()
@@ -287,11 +357,11 @@ def compile_matcher(f):
             lexpr.pop()
             if len(withindent) <> len(matchindent):
                 raise('**ERROR: %s:$d: missing if statement inside of if block'%
-                    (fc.co_filename. fc.co_firstlineno+2+n))
+                    (fc.co_filename. fc.co_firstlineno+2+num_lines.read()))
             # ... repeat for all closing blocks
 
         # end of function definition
-        if il <= f_indent:
+        if il <= base_indent:
             break
 
         # entering a with block
@@ -301,43 +371,45 @@ def compile_matcher(f):
             numregs.append(0)
             regalloc.append([])
             withindent.append(il)
-            withbegin.append(n-1)
+            withbegin.append(num_lines.read()-1)
             line = ""
 
         # inside a matching rule
         if len(lexpr) > 0:
-            skip = False
+            skip_blanks = False
             # record the current indentation
             if len(withindent) <> len(matchindent):
                 if re.match(r'^ *if', line):
                     matchindent.append(il)
                 else:
-                    skip = True
+                    skip_blanks = True
 
-            if not skip:
+            if not skip_blanks:
                 # remove one layer of indentation
-                newind = matchindent[-1]-withindent[-1]
-                line = line[newind:]
+                leftshift = matchindent[-1]-withindent[-1]
+                line = line[leftshift:]
+                matchind = matchindent[-1]-leftshift
 
                 # match if() / elif()
-                m = re.match(r'^('+' '*newind+r')((el)?if) +(.*):(.*)$', line)
+                m = re.match(r'^('+' '*matchind+r')((el)?if) +(.*):(.*)$', line)
 
                 if m:
                     rexpr = m.group(4)
                     regalloc[-1] = []
-                    scan_variables(rexpr)
                     line = '%s%s match(%s, %s):\n' \
-                        % (m.group(1), m.group(2), lexpr[-1], rexpr)
+                        % (m.group(1), m.group(2), lexpr[-1],
+                           scan_variables(rexpr))
                     # allocate registers for variables
                     d = depthstr(len(lexpr)-1)
                     for i in range(0, len(regalloc[-1])):
-                        line = line.replace(regalloc[-1][i], '_reg%s%d' % (d,i))
+                        line = re.sub(r'(\W|^)'+regalloc[-1][i]+r'(\W|$)',
+                                      r'\1_reg%s%d\2' % (d, i),
+                                      line)
 
                     # split off the part behind the ':' as new line
                     then = m.group(5)
                     if len(then) > 0:
-                        n += 1
-                        dest.append(line)
+                        append_line(line)
                         line = ' '*il+then+'\n'
 
         # every time
@@ -348,12 +420,11 @@ def compile_matcher(f):
             for alloc in regalloc:
                 d = depthstr(j)
                 for i in range(0, len(alloc)):
-                    line = line.replace(alloc[i], '_reg%s%d.binding' % (d,i))
+                    line = line.replace(alloc[i], '_reg%s%d.binding' % (d, i))
                 j += 1
 
         # copy the line to the output
-        n += 1
-        dest.append(line)
+        append_line(line)
 
     #modname = '%s_matcher' % f.__name__
     #f = open(modname+'.py', "w")

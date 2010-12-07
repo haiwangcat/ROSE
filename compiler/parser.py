@@ -1114,7 +1114,7 @@ def p_integer_2(p):
 
 # ----------------------------------------------------------------------
 
-@matcher(globals())
+@matcher(globals(), debug=False)
 def pretty(sexpr, n=0, sep=' '):
     """
     pretty print s-expressions
