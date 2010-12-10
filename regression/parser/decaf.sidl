@@ -1,0 +1,129 @@
+require gov.cca version 0.8.2;
+
+package decaf version 0.8.2 { 
+
+    class Services implements-all gov.cca.Services,  gov.cca.ports.ConnectionEventService, gov.cca.ports.ServiceRegistry {
+	
+	void bindPort( in string portName, in gov.cca.Port port );
+	
+	gov.cca.Port getProvidesPort( in string name );
+	
+	void initialize( in gov.cca.AbstractFramework fwk, 
+			 in gov.cca.ComponentID componentID, 
+			 in gov.cca.TypeMap properties, in bool is_alias);
+	
+	gov.cca.TypeMap getInstanceProperties();
+	
+	void setInstanceProperties( in gov.cca.TypeMap properties );
+	
+	void setPortProperties( in string portName, in gov.cca.TypeMap properties );
+	
+	array<string> getProvidedPortNames();
+	
+	array<string> getUsedPortNames();
+	
+	void notifyConnectionEvent( in string portName, in gov.cca.ports.EventType event );
+    }
+    
+    class ComponentID implements-all gov.cca.ComponentID {
+	void initialize( in string name );
+    }
+    enum Type {
+	NoType, Int, Long, Float, Double, Fcomplex, Dcomplex, String, Bool, 
+	IntArray, LongArray, FloatArray, DoubleArray, FcomplexArray, 
+	DcomplexArray, StringArray, BoolArray, Opaque, OpaqueArray, TypeMapT, TypeMapArrayT
+    } 
+    class TypeMap implements-all gov.cca.TypeMap { 
+	opaque getOpaque( in string key, in opaque dflt) throws gov.cca.TypeMismatchException;
+	array<opaque> getOpaqueArray( in string key, in array<opaque> dflt)  throws gov.cca.TypeMismatchException;
+	void putOpaque( in string key, in opaque value );
+	void putOpaqueArray( in string key, in array<opaque> value );
+
+	TypeMap getTypeMap( in string key, in TypeMap dflt) throws gov.cca.TypeMismatchException;
+	array<TypeMap> getTypeMapArray( in string key, in array<TypeMap> dflt)  throws gov.cca.TypeMismatchException;
+	void putTypeMap( in string key, in TypeMap value );
+	void putTypeMapArray( in string key, in array<TypeMap> value );
+
+    }
+    
+    class TypeMismatchException extends sidl.SIDLException 
+                                implements-all gov.cca.TypeMismatchException 
+    {
+	gov.cca.CCAExceptionType getCCAExceptionType();
+	gov.cca.Type getRequestedType();
+	gov.cca.Type getActualType();        
+	void initialize( in gov.cca.Type requestedType, in gov.cca.Type actualType );
+    } 
+    
+  class Framework implements-all gov.cca.AbstractFramework, gov.cca.ports.BuilderService {
+      /**
+       * Return the named port from the specified component id.
+       */
+      gov.cca.Port lookupPort(in gov.cca.ComponentID componentID, in string portName);
+
+      /**
+       * Check if this type is a framework supported service.
+       */
+      bool
+      isProvidedService(in string portType);
+      
+      /**
+       * Framework creates providing component, registers provides port and connects to
+       * using port for special cases (e.g. BuilderService)
+       * @param type the string name of the port type 
+       * (currently accepts only "gov.cca.ports.BuilderServices" and 
+       * gov.cca.ports.ConnectionEventServices)
+       * @param componentID the ID of the user component
+       * @param portName the userPortName on the user component
+       */
+      void provideRequestedServices( in gov.cca.ComponentID componentID, 
+				     in string portName, in string type );
+
+      void addServiceProvider(in string portType,
+                              in gov.cca.ComponentID componentID,
+                              in gov.cca.ports.ServiceProvider provider);
+
+      void addServicePort(in string portType,
+                          in gov.cca.Port port);
+
+      void removeFromRegistry(in string portType);
+      
+      /**
+       * 
+       */
+      void setInstanceRelease( in gov.cca.ComponentID cid, in gov.cca.ComponentRelease callback );
+      
+  }
+
+  class ConnectionID implements-all gov.cca.ConnectionID { 
+      void initialize(  in gov.cca.ComponentID user    , in string userPortName, 
+			in gov.cca.ComponentID provider, in string providerPortName, 
+		        in gov.cca.TypeMap properties );
+      void setProperties( in gov.cca.TypeMap properties );
+      gov.cca.TypeMap getProperties();
+  } 
+  
+  class CCAException extends sidl.SIDLException 
+                     implements-all gov.cca.CCAException 
+  {
+      gov.cca.CCAExceptionType getCCAExceptionType();
+      void setCCAExceptionType( in gov.cca.CCAExceptionType et );
+  }
+  
+  class ComponentClassDescription implements-all gov.cca.ComponentClassDescription { }
+  
+  package ports { 
+
+     class ParameterPort implements-all gov.cca.ports.ParameterPort, gov.cca.ports.ParameterPortFactory  { } 
+
+      class ConnectionEvent implements-all gov.cca.ports.ConnectionEvent { 
+	  void initialize( in gov.cca.ports.EventType eventType, 
+			   in gov.cca.TypeMap portProperties );
+      } 
+      
+      class ComponentRepository implements-all gov.cca.ports.ComponentRepository { }
+  }
+  
+}
+
+

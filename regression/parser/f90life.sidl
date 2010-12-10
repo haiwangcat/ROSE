@@ -1,0 +1,8 @@
+require conway version 2.0; 
+
+package f90 version 2.0 { 
+    class BoundsException extends sidl.SIDLException implements-all conway.BoundsException {}
+    class Environment implements-all conway.Environment {}
+    class Ruleset implements-all conway.Ruleset {}
+    class TimeStepper implements-all conway.TimeStepper {}
+}

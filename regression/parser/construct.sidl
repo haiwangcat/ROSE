@@ -1,0 +1,18 @@
+package cons version 1.0 {
+  class A {
+    void init();
+    void destruct();
+  }
+  class B extends A {
+    void init();
+    void destruct();
+  }
+  class C extends B {
+    void init();
+    void destruct();
+  }
+  class D extends C {
+    void init();
+    void destruct();
+  }
+}

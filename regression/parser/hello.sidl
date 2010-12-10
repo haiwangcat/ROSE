@@ -1,0 +1,6 @@
+package hello version 1.0 { 
+  class World {
+    void setName( in string name );
+    string getMsg();
+  }
+}

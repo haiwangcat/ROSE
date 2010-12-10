@@ -1,0 +1,229 @@
+// Copyright (c) 2001, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+/*
+ * File:	sort.sidl
+ * Copyright:	(c) 2002 Lawrence Livermore National Security, LLC
+ * Revision:    @(#) $Revision$
+ * Date:        $Date$
+ * Description: A regression test for abstract classes and interfaces
+ */
+
+import sidl;
+
+/**
+ * The sort package provides a regression test for abstract classes
+ * and interfaces as arguments. It is not intended for use in real
+ * applications as it is designed primarily to exercise features
+ * in BABEL.
+ *
+ */
+package sort version 0.1 {
+
+  /**
+   * This is a simple counter interface.  You can read the count and
+   * reset it to zero.
+   */
+  interface Counter {
+    /**
+     * Set the count to zero.
+     */
+    void reset();
+
+    /**
+     * Return the current count.
+     */
+    int getCount();
+
+    /**
+     * Increment the count (i.e. add one).
+     */
+    int inc();
+  };
+
+  /**
+   * A Comparator provides an ordering for a type of objects.
+   */
+  interface Comparator {
+    /**
+     * This method is used to define an ordering of objects.  This method
+     * will return -1 if i1 < i2, 0 if i1 = i2; and 1 if i1 > i2.
+     */
+    int compare(in BaseInterface i1, in BaseInterface i2);
+  };
+  
+  /**
+   * A container for elements of the same type.
+   */
+  interface Container {
+     /**
+      * Return the number of elements in the container.
+      */
+     int getLength();
+
+     /**
+      * Return -1 if element i is less than element j, 0 if element i
+      * is equal to element j, or otherwise 1.
+      */
+     int compare(in int i, in int j, in Comparator comp);
+
+     /**
+      * Swap elements i and j.
+      */
+     void swap(in int i, in int j);
+
+     /**
+      * Print elements s through e-1
+      */
+     void output(in int s, in int e);
+  };
+
+  /**
+   * An abstract sorting algorithm.
+   */
+  abstract class SortingAlgorithm {
+
+    /**
+     * Return the comparison counter.
+     */
+    Counter getCompareCounter();
+
+    /**
+     * Return the swap counter.
+     */
+    Counter getSwapCounter();
+
+    /**
+     * Reset the comparison and swap counter.
+     */
+    void reset();
+
+    /**
+     * Sort elems according to the ordering implied by comp.
+     */
+    abstract void sort(in Container  elems,
+                       in Comparator comp);
+
+    /**
+     * Return the name of the sorting algorithm.
+     */
+    abstract string getName();
+  };
+
+  /**
+   * Quick sort
+   */
+  class QuickSort extends SortingAlgorithm {
+    /**
+     * Sort elements using Quick Sort.
+     */
+    void sort(in Container elems, in Comparator comp);
+
+    /**
+     * Return quick sort.
+     */
+    string getName();
+  }
+
+  /**
+   * Heap sort
+   */
+  class HeapSort extends SortingAlgorithm {
+    /**
+     * Sort elements using Heap Sort.
+     */
+    void sort(in Container elems, in Comparator comp);
+
+    /**
+     * Return heap sort.
+     */
+    string getName();
+  }
+
+  /**
+   * Merge sort
+   */
+  class MergeSort extends SortingAlgorithm {
+    /**
+     * Sort elements using Merge Sort.
+     */
+    void sort(in Container elems, in Comparator comp);
+
+    /**
+     * Return merge sort.
+     */
+    string getName();
+  }
+
+  /**
+   * Run a bunch of sorts through a stress test.
+   */
+  class SortTest {
+    /**
+     * Perform the array stress test.
+     * 
+     * Return true if all the algorithms work okay.
+     */
+    static bool stressTest(in array<SortingAlgorithm> algs);
+  }
+
+  /**
+   * An object to hold a simple integer.
+   */
+  class Integer {
+     int getValue();
+
+     void setValue(in int value);
+  }
+
+  /**
+   * Integer container.
+   */
+  class IntegerContainer implements-all Container {
+
+    /**
+     * This sets the container length and pseudo-randomly orders the
+     * Integer elements contained.
+     */
+    void setLength(in int len);
+  }
+
+  /**
+   * Compare two Integer's.  By default, this will sort in increasing order.
+   */
+  class CompInt implements-all Comparator {
+     
+     /**
+      * If increasing is true, this will cause the comparator to
+      * report a normal definition of less than; otherwise, it will
+      * reverse the normal ordering.
+      */
+     void setSortIncreasing(in bool increasing);
+  }
+
+  /**
+   * Simple counter
+   */
+  class SimpleCounter implements-all Counter {
+  }
+}

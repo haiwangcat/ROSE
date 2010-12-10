@@ -1,0 +1,72 @@
+package s version 1.0  {
+  enum Color { red, blue, green }
+
+  struct Empty {
+    bool d_bool;
+  }
+
+  struct Simple {
+    bool     d_bool;
+    char     d_char;
+    dcomplex d_dcomplex;
+    double   d_double;
+    fcomplex d_fcomplex;
+    float    d_float;
+    int      d_int;
+    long     d_long;
+    opaque   d_opaque;
+    Color    d_enum;
+    string   d_string;
+  }
+
+  struct Hard {
+     sidl.BaseClass        d_object;
+     sidl.BaseInterface    d_interface;
+     array<string>         d_string;
+     array<double>         d_array;
+     array<sidl.BaseClass> d_objectArray;
+  }
+
+  struct Rarrays {
+     int                   d_int;
+     rarray<double,1>      d_rarrayRaw(d_int);
+     rarray<double,1>      d_rarrayFix(3);
+  }
+
+
+  struct Combined {
+    Simple   d_simple;
+    Hard     d_hard;
+  }
+
+  class StructTest {
+    Empty returnEmpty();
+    bool   passinEmpty(in Empty s);
+    bool   passoutEmpty(out Empty s);
+    bool   passinoutEmpty(inout Empty s);
+    Empty passeverywhereEmpty(in Empty s1, out Empty s2, inout Empty s3);
+
+    Simple returnSimple();
+    bool   passinSimple(in Simple s);
+    bool   passoutSimple(out Simple s);
+    bool   passinoutSimple(inout Simple s);
+    Simple passeverywhereSimple(in Simple s1, out Simple s2, inout Simple s3);
+
+    Hard   returnHard();
+    bool   passinHard(in Hard s);
+    bool   passoutHard(out Hard s);
+    bool   passinoutHard(inout Hard s);
+    Hard   passeverywhereHard(in Hard s1, out Hard s2, inout Hard s3);
+
+    Combined   returnCombined();
+    bool       passinCombined(in Combined s);
+    bool       passoutCombined(out Combined s);
+    bool       passinoutCombined(inout Combined s);
+    Combined   passeverywhereCombined(in Combined s1, 
+    	                              out Combined s2, 
+                                      inout Combined s3);
+    bool   passinRarrays(in Rarrays s);
+    bool   passinoutRarrays(inout Rarrays s);
+    bool   passeverywhereRarrays(in Rarrays s1, inout Rarrays s2);
+  }
+}

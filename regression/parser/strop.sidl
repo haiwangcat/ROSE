@@ -1,0 +1,37 @@
+//
+// strop.sidl
+//
+// STRing OPeration components
+//
+//
+
+//
+// This is a simple interface specification to illustrate how
+// one might arrive at a standard interface and implement parts
+// of it in different ways.
+//
+
+package strop version 0.6 { 
+  /**
+   * Produces strings on demand
+   */
+  interface StringProducerPort extends gov.cca.Port { 
+    string get();
+    void send( out array<int,2,column-major> data );
+  }
+
+  /**
+   * Consumes strings
+   */
+  interface StringDisplayPort extends gov.cca.Port { 
+    void display( in string msg );
+  } 
+
+  /**
+   * Takes one string and returns another
+   */
+  interface StringTransformPort extends gov.cca.Port { 
+    string transform( in string msg );
+  }
+
+}

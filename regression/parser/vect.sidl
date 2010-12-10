@@ -1,0 +1,332 @@
+// Copyright (c) 2003-2004, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+//
+//
+////////////////////////////////////////////////////////////////////////
+//
+// In order to test multiple contracts of a given type in a "simple"
+// SIDL file, this set of features is limited to static methods for 
+// 1D double array(s).
+//
+
+package vect version 1.0
+{
+  /**
+   * Implementation "badness" level.  Used to enable inducing postcondition
+   * violations for testing purposes.
+   */
+  enum BadLevel {
+    /** NoVio = No (deliberate) postcondition violation */
+    NoVio,
+    /** NegRes = Always return a negative result */
+    NegRes,
+    /** NullRes = Always return a null result */
+    NullRes,
+    /** PosRes = Always return a positive result not near zero */
+    PosRes,
+    /** TwoDRes = Always return a 2-Dimensional array result */
+    TwoDRes,
+    /** WrongSizeRes = Always return an array of the wrong size */
+    WrongSizeRes,
+    /** ZeroRes = Always return a zero result */
+    ZeroRes
+  }
+
+  /**
+   * Expected Exception (Client-side Helper).  Provided as an aid
+   * for clients when processing exceptions within general exception
+   * handling routines.  MUST include all exceptions defined here.
+   */
+  enum ExpectExcept {
+    /** NoneExp = No exception expected */
+    NoneExp,
+    /** DBZExp = Divide-By-Zero exception expected */
+    DBZExp,
+    /** ExcExp = A basic exception expected */
+    ExcExp,
+    /** NVEExp = Negative Value exception expected */
+    NVEExp,
+    /** PostExp = Postcondition Violation exception expected */
+    PostExp,
+    /** PreExp = Precondition Violation exception expected */
+    PreExp
+  }
+
+  /*
+   * This is the base vector exception.  It is here to facilitate
+   * catching the other types of exceptions.
+   */
+  class vExcept extends sidl.SIDLException {
+  }
+
+  /*
+   * This exception is thrown by the implementation if there is
+   * an attempt to divide by zero.
+   */
+  class vDivByZeroExcept extends vExcept {
+  }
+
+  /*
+   * This exception is thrown by the implementation if a value is 
+   * determined to be negative when it should not be.
+   */
+  class vNegValExcept extends vExcept {
+  }
+
+  class Utils {
+    /**
+     ********************* boolean result operations **********************
+     * Return TRUE if the specified vector is the zero vector, within the
+     * given tolerance level; otherwise, return FALSE.
+     */
+    static bool vuIsZero(in array<double> u, in double tol)
+      throws
+        sidl.PreViolation;
+      require 
+        not_null : u != null; 
+        u_is_1d : dimen(u) == 1;
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure;
+
+    /**
+     * Return TRUE if the specified vector is the unit vector, within the
+     * given tolerance level; otherwise, return FALSE.
+     */
+    static bool vuIsUnit(in array<double> u, in double tol)
+      throws
+        sidl.PreViolation, vNegValExcept;
+      require 
+        not_null : u != null; 
+        u_is_1d : dimen(u) == 1;
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure;
+
+    /**
+     * Return TRUE if the specified vectors are equal, within the given
+     * tolerance level; otherwise, return FALSE.
+     */
+    static bool vuAreEqual(in array<double> u, in array<double> v, 
+                           in double tol)
+      throws
+        sidl.PreViolation;
+      require 
+        not_null_u : u != null; 
+        u_is_1d : dimen(u) == 1;
+        not_null_v : v != null; 
+        v_is_1d : dimen(v) == 1;
+        same_size  : size(u) == size(v);
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure;
+
+    /**
+     * Return TRUE if the specified vectors are orthogonal, within the given
+     * tolerance; otherwise, return FALSE.
+     */
+    static bool vuAreOrth(in array<double> u, in array<double> v, 
+                          in double tol)
+      throws
+        sidl.PreViolation;
+      require 
+        not_null_u : u != null; 
+        u_is_1d : dimen(u) == 1;
+        not_null_v : v != null;
+        v_is_1d : dimen(v) == 1;
+        same_size  : size(u) == size(v);
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure;
+
+    /**
+     * Return TRUE if the Schwarz (or Cauchy-Schwarz) inequality holds, within
+     * the given tolerance; otherwise, return FALSE.
+     */
+    static bool vuSchwarzHolds(in array<double> u, in array<double> v, 
+                               in double tol)
+      throws
+        sidl.PreViolation, vNegValExcept;
+      require 
+        not_null_u : u != null; 
+        u_is_1d : dimen(u) == 1;
+        not_null_v : v != null;
+        v_is_1d : dimen(v) == 1;
+        same_size  : size(u) == size(v);
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure;
+
+    /**
+     * Return TRUE if the Minkowski (or triangle) inequality holds, within the
+     * given tolerance; otherwise, return FALSE.
+     */
+    static bool vuTriIneqHolds(in array<double> u, in array<double> v,
+                               in double tol)
+      throws
+        sidl.PreViolation, vNegValExcept;
+      require 
+        not_null_u : u != null; 
+        u_is_1d : dimen(u) == 1;
+        not_null_v : v != null;
+        v_is_1d : dimen(v) == 1;
+        same_size  : size(u) == size(v);
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure;
+
+    /**
+     ********************* double result operations **********************
+     * Return the norm (or length) of the specified vector.
+     *
+     * Note that the size exception is given here simply because the
+     * implementation is leveraging the vuDot() method.  Also the tolerance
+     * is included to enable the caller to specify the tolerance used in
+     * contract checking.
+     *
+     */
+    static double vuNorm(in array<double> u, in double tol, 
+                         in BadLevel badLevel)
+      throws
+        sidl.PreViolation, sidl.PostViolation, vNegValExcept;
+      require 
+        not_null: u != null; 
+        u_is_1d : dimen(u) == 1;
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure; 
+        non_negative_result : result >= 0.0; 
+        nearEqual(result, 0.0, tol) iff vuIsZero(u, tol);
+  
+    /**
+     * Return the dot (, inner, or scalar) product of the specified vectors.
+     */
+    static double vuDot(in array<double> u, in array<double> v, in double tol,
+                        in BadLevel badLevel)
+      throws
+        sidl.PreViolation, sidl.PostViolation;
+      require 
+        not_null_u: u != null; 
+        u_is_1d : dimen(u) == 1;
+        not_null_v: v != null;
+        v_is_1d : dimen(v) == 1;
+        same_size:  size(u) == size(v);
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure; 
+        vuAreEqual(u, v, tol) implies (result >= 0.0);
+        (vuIsZero(u, tol) and vuIsZero(v, tol)) implies 
+           nearEqual(result, 0.0, tol);
+
+    /**
+     ********************* vector result operations ***********************
+     * Return the (scalar) product of the specified vector.
+     */
+    static array<double> vuProduct(in double a, in array<double> u,
+                                   in BadLevel badLevel)
+      throws
+        sidl.PreViolation, sidl.PostViolation;
+      require 
+        not_null: u != null; 
+        u_is_1d : dimen(u) == 1;
+      ensure 
+        no_side_effects : is pure;
+        result_not_null: result != null; 
+        result_is_1d : dimen(result) == 1;
+        result_correct_size: size(result) == size(u);
+  
+    /**
+     * Return the negation of the specified vector.
+     */
+    static array<double> vuNegate(in array<double> u, in BadLevel badLevel)
+      throws
+        sidl.PreViolation, sidl.PostViolation;
+      require 
+        not_null: u != null; 
+        u_is_1d : dimen(u) == 1;
+      ensure 
+        no_side_effects : is pure;
+        result_not_null: result != null; 
+        result_is_1d : dimen(result) == 1;
+        result_correct_size: size(result) == size(u);
+
+    /**
+     * Return the normalizaton of the specified vector.
+     *
+     * Note the tolerance is included because the implementation invokes 
+     * vuDot().
+     */
+    static array<double> vuNormalize(in array<double> u, in double tol,
+                                     in BadLevel badLevel)
+      throws
+        sidl.PreViolation, sidl.PostViolation, vDivByZeroExcept;
+      require 
+        not_null: u != null; 
+        u_is_1d : dimen(u) == 1;
+        non_negative_tolerance: tol >= 0.0;
+      ensure 
+        no_side_effects : is pure;
+        result_not_null: result != null; 
+        result_is_1d : dimen(result) == 1;
+        result_correct_size: size(result) == size(u);
+
+    /**
+     * Return the sum of the specified vectors.
+     */
+    static array<double> vuSum(in array<double> u, in array<double> v,
+                               in BadLevel badLevel)
+      throws
+        sidl.PreViolation, sidl.PostViolation;
+      require 
+        not_null_u: u != null; 
+        u_is_1d : dimen(u) == 1;
+        not_null_v: v != null;
+        v_is_1d : dimen(v) == 1;
+        same_size: size(u) == size(v);
+      ensure 
+        no_side_effects : is pure;
+        result_not_null: result != null; 
+        result_is_1d : dimen(result) == 1;
+        result_correct_size: size(result) == size(u);
+
+    /**
+     * Return the difference of the specified vectors.
+     */
+    static array<double> vuDiff(in array<double> u, in array<double> v,
+                                in BadLevel badLevel)
+      throws
+        sidl.PreViolation, sidl.PostViolation;
+      require 
+        not_null_u: u != null; 
+        u_is_1d : dimen(u) == 1;
+        not_null_v: v != null;
+        v_is_1d : dimen(v) == 1;
+        same_size: size(u) == size(v);
+      ensure 
+        no_side_effects : is pure;
+        result_not_null: result != null; 
+        result_is_1d : dimen(result) == 1;
+        result_correct_size: size(result) == size(u);
+  }
+}

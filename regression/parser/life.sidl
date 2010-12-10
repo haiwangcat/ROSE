@@ -1,0 +1,88 @@
+
+/**
+ * This package is for Conway's Game of Life
+ * 
+ * The rules are very simple.
+ *    1. Survivals. Every counter with two or three neighboring 
+ *	 counters survives for the next generation.
+ *    2. Deaths. Each counter with four or more neighbors dies 
+ *       (is removed) from overpopulation. Every counter with one 
+ *       neighbor or none dies from isolation.
+ *    3. Births. Each empty cell adjacent to exactly three 
+ *       neighbors--no more, no fewer--is a birth cell. A counter is  
+ *       placed on it at the next move.
+ *
+ */
+package conway version 2.0 { 
+
+    /** 
+     * This can be thrown when someone tries to access
+     * a grid beyond its normal bounds.
+     */
+    interface BoundsException extends sidl.BaseException {
+    }
+
+    /**
+     * Encapsulates an environment
+     */
+    interface Environment { 
+	
+	/**
+	 * Create a grid of a certain height and width
+	 */
+	void init( in int height, in int width );
+
+	/**
+	 * Returns true iff that cell is alive
+	 */
+	bool isAlive( in int x, in int y ) throws BoundsException ;
+
+	/**
+	 * Return the number of living adjacent cells
+	 */
+	int nNeighbors( in int x, in int y ) throws BoundsException ;
+
+	/**
+	 * Return the entire grid of data
+	 */
+	array<int,2> getGrid();
+
+	/**
+	 * Set an entire grid of data (may change height and width)
+	 */
+	void setGrid( in array<int,2,column-major> grid );
+    }
+    
+    /**
+     * Encapsulates the logic for when things live and die
+     */
+    interface Ruleset { 
+	
+	/**
+	 * Birth: an empty cell has 3 living neighbors
+	 * Death: a living cell has 0 or 1 neighbors (loneliness)
+	 *        or a living cell has 4-8 neighbors (overcrowding)
+	 * Life: a living cell has 2 or three neighbors
+	 */
+	bool setAlive( in int x, in int y, in Environment env ) throws BoundsException;
+    }
+
+    /**
+     * Creates a series of environments
+     */
+    interface TimeStepper { 
+	
+	void init( in Environment env, in Ruleset rules );
+
+	/** 
+	 * advance one more timestep 
+	 * returns population count at new timestep
+	 */
+	int step( );
+	
+	/** check the number of steps taken */
+	int nStepsTaken( );
+	
+    }
+
+}

@@ -1,0 +1,437 @@
+
+
+/**
+ * This package contains experimental extensions to sidl
+ * and should not be used unless willing to tolerate its
+ * disappearance in a following release
+ */
+package sidlx version 0.1 { 
+  
+  /** 
+   *
+   */
+  package rmi { 
+    /**
+     * Generic Network Exception
+     */
+    class GenNetworkException extends sidl.rmi.NetworkException {}	
+
+    /**
+     * No Server Exception: No server has been initilizaed in the Server Registry
+     */
+    class NoServerException extends sidl.rmi.NetworkException {}	
+
+    /**
+     * A multi-threaded base class for simple network servers.
+     *
+     * This server takes the following flags:
+     *  1: verbose output (to stdout)
+     */
+    abstract class SimpleServer implements sidl.rmi.ServerInfo { 
+      
+      /**
+       * Set the maximum size of the client thread pool.
+       * (default = 1024)
+       */
+      void setMaxThreadPool( in int max );
+
+      /**
+       * request a specific port number
+       * returns true iff request is satisfied
+       */ 
+      bool requestPort( in int port );
+
+      /**
+       * Request the minimum available port in 
+       * a range.  Returns true iff request is satisfied
+       *
+       */
+      bool requestPort[InRange]( in int minport, in int maxport );
+
+      /**
+       * Request a specific port number.
+       * Accepts only local connections.
+       * Returns true iff request is satisfied.
+       */ 
+      bool requestLocalPort( in int port );
+
+      /**
+       * Request the minimum available port in 
+       * a range.  Returns true iff request is satisfied.
+       * Accepts only local connections.
+       *
+       */
+      bool requestLocalPort[InRange]( in int minport, in int maxport );
+
+      /**
+       * get the port that this Server is bound to
+       */
+      int getPort();
+
+      /**
+       * get the network name of this computer
+       */
+      string getServerName();
+
+      /**
+       * get the full URL for exporting objects
+       */
+      string getServerURL(in string objID);
+
+      /**
+       * run the server (must have port specified first), if a threaded server,
+       * returns the tid of the server thread for joining.
+       */
+      long run();
+
+      /**
+       * Cleanly shutdown the orb.  Method blocks until orb is fully shutdown.
+       */
+      void shutdown();
+
+      /**
+       * Starts the shutodwn process, but does not wait for shutdown to 
+       * complete before returning.
+       */
+      void shutdownNoWait();
+
+      /**
+       * Check if the ORB is running.  NOT REALLY THREAD SAFE.  DON'T TRY TO USE
+       * THIS WHEN THREAD SAFETY IS AN ISSUE.
+       */
+      bool isRunning();        
+      
+      /**
+       * invoked by child processes, takes a connected socket, ready for
+       * communications. 
+       */
+      abstract void serviceRequest( in Socket sock );
+
+      /**
+       * This gets an array of logged exceptions.  If an exception can
+       * not be thrown back to the caller, we log it with the Server.  This 
+       * gets the array of all those exceptions.
+       *  THIS IS SOMETHING OF A TEST! THIS MAY CHANGE!
+       */
+      abstract array<sidl.io.Serializable,1> getExceptions();
+    }
+
+    /**
+     * A simple example orb, using the simhandle protocol (written by Jim)
+     */
+    class SimpleOrb extends SimpleServer { 
+      /**
+       * Set a cookie.  All incoming RMI's without matching cookie are 
+       * discarded.  setCookie must be called before run, if not, the results
+       * are undefined. 
+       */
+      void setCookie(in rarray<char> cookie(len), in int len);
+
+      /**
+       * If a cookie has been set, any RMI that does not authenticate with 
+       * the cookie will be discarded.  setNumSecurityRetries sets a maximum 
+       * number of times the Orb will discard RMIs before shutting down.
+       * In other words, if more than 'retries' unauthenticateable RMIs are 
+       * recieved, the Orb shutsdown on abnormally with an error message.
+       * This call can be called before or after setCookie, but if a cookie
+       * is not set, this call has no functional effect.  
+       * setNumSecurityRetries  must be called before run, if not, the results
+       * are undefined. 
+       */
+      void setNumSecurityRetries(in int retries);
+
+      void serviceRequest( in Socket sock );
+
+      /**
+       * Get the full URL for exporting objects
+       */	
+      string getServerURL(in string objID);
+
+      /**
+       * Needed by Babel to determine if a url points to a local or remote object
+       * users should never need this.  Returns the objectID if is local, Null otherwise. 
+       */	
+      string isLocalObject(in string url);
+
+      /**
+       * Get the short name of the protocol this ORB supports
+       */
+      string getProtocol();
+
+      /**
+       * This gets an array of logged exceptions.  If an exception can
+       * not be thrown back to the caller, we log it with the Server.  This 
+       * gets the array of all those exceptions.
+       *  THIS IS SOMETHING OF A TEST! THIS MAY CHANGE!
+       */
+      array<sidl.io.Serializable,1> getExceptions();
+	
+    }
+      	
+    /**
+     * implementation of InstanceHandle using the Simhandle Protocol (written by Jim)
+     */
+    class SimHandle implements-all sidl.rmi.InstanceHandle{
+      /**
+       * Set a cookie.  All RMI's made by this protocol will use this cookie
+       * after it is set.  This should be called BEFORE any calls are made
+       * by this protocol.  If it is called WHILE calls are being made on
+       * another thread, the results are undefined.
+       */
+      static void setCookie(in rarray<char> cookie(len), in int len);
+
+    }
+	
+    /**
+     * implementation of Invocation using the Simhandle Protocol (written by Jim)
+     */
+    class Simvocation implements-all sidl.rmi.Invocation{
+      void initCreate(in string className, in Socket sock, 
+                      in rarray<char> cookie(cookieLen), in int cookieLen);
+      void initInvocation(in string methodName, in string objectid, in Socket sock, 
+                          in rarray<char> cookie(cookieLen), in int cookieLen);
+      void initUnserialize(in string objectid, in Socket sock, 
+                           in rarray<char> cookie(cookieLen), in int cookieLen);
+      string getMethodName();	
+    }
+
+    /**
+     * implementation of Response using the Simhandle Protocol (written by Jim)
+     */
+    class Simsponse implements-all sidl.rmi.Response{
+      void init(in string methodName, in string objectid, in Socket sock);
+      bool test(in int secs, in int usecs);
+      void pullData();	
+      string getMethodName();	
+      string getObjectID();	
+    }	
+
+    /**
+     * implementation of a Ticket 
+     */
+    class SimpleTicket implements-all sidl.rmi.Ticket { 
+      void setResponse( in sidl.rmi.Response r );
+    }
+
+    class SimpleTicketBook implements-all sidl.rmi.TicketBook {
+    }
+
+    /**
+     * There are 3 basic types of calls on the server side, CREATE, EXEC, and SERIAL.
+     * This enumeration defines them.  
+     */
+    enum CallType {
+      /** Create and register a new instance. */
+      CREATE,
+        /** Call a method. */
+        EXEC,
+        /** Request a serializable object */
+        SERIAL,
+        /** Some error was detected. Call type indeterminate. */
+        ERROR
+        }
+
+    /**
+     * This type is used to pack return (out/inout) arguments on the server
+     * side after a method has been exececuted.
+     */	 
+    class SimReturn implements-all sidl.rmi.Return {
+
+      void init(in string methodName, in string objectid, in Socket sock);
+	  
+      string getMethodName();	
+
+      /** this method is the last call on a return object.*/
+      void SendReturn();
+    }
+
+    /**
+     * This type is created on the server side to get inargs off the network and 
+     * pass them into exec.	
+     */
+    class SimCall implements-all sidl.rmi.Call { 
+      void init(in Socket sock, in rarray<char> cookie(len), in int len) throws sidlx.rmi.UnauthorizedCallException;
+
+      string getMethodName();	  	
+      string getObjectID();
+
+      CallType getCallType();
+    }
+
+    /**
+     * Some basic useful functions
+     */
+    class Common {
+      static int fork();
+      static int getHostIP(in string hostname); 
+      static string getCanonicalName(in string hostname);	
+    }
+
+    /**
+     * Low level settings
+     */ 
+    class Settings { 
+	/** default = getenv(SIDLX_ACCEPT_MAX_RETRIES) else 0 */
+ 	static int getMaxAcceptRetries();
+	/** override default */
+	static void setMaxAcceptRetries( in int retries );
+
+	/** default = getenv(SIDLX_ACCEPT_RETRY_INITIAL_SLEEP_USECS) else 1024 */
+	static long getAcceptRetryInitialSleep();
+	/** overrride default */
+	static void setAcceptRetryInitialSleep( in long usecs );
+
+	/** default = getenv(SIDLX_CONNECT_MAX_RETRIES) else 0 */
+ 	static int getMaxConnectRetries();
+	/** override default */
+	static void setMaxConnectRetries( in int retries );
+
+	/** default = getenv(SIDLX_CONNECT_RETRY_INITIAL_SLEEP_USECS) else 1024 */
+	static long getConnectRetryInitialSleep();
+	/** overrride default */
+	static void setConnectRetryInitialSleep( in long usecs );
+    }
+
+    /** A read-only class of statistics */
+    class Statistics { 
+	/** total number of acceptions that succeed on first try */
+        static long getTotalAcceptsFirstTry();
+
+	/** total number of acceptions requested */
+        static long getTotalAcceptRequests();
+
+	/** total number of acceptions granted (regardless of retries) */
+        static long getTotalAcceptSucceded();
+
+	/** maximum number of retries needed to succeed */
+        static int getMaxAcceptRetries();
+
+        /** total number of retries /#successful accepts retried at least once */
+	static double getAvgAcceptRetries();
+
+	/** total number of connections that succeed on first try */
+        static long getTotalConnectsFirstTry();
+
+	/** total number of connections requested */
+        static long getTotalConnectRequests();
+
+	/** total number of connections granted (regardless of retries) */
+        static long getTotalConnectSucceded();
+
+	/** maximum number of retries needed to succeed */
+        static int getMaxConnectRetries();
+
+        /** total number of retries /#successful connects retried at least once */
+	static double getAvgConnectRetries();
+
+    }
+
+    /** EXCEPTION DEFINITIONS FOR SIMHANDLE BELOW THIS LINE------------------------------*/
+	
+    class RecoverableException extends sidl.rmi.ProtocolException {}
+    class UnrecoverableException extends sidl.rmi.ProtocolException {}
+
+    class NotEnoughMemoryException extends sidlx.rmi.RecoverableException {}
+    class TooManyOpenFilesException extends sidlx.rmi.RecoverableException {}
+    class RetryException extends sidlx.rmi.RecoverableException {}
+    class TimeoutException extends sidlx.rmi.RecoverableException {}
+    class OutOfAddressesException extends sidlx.rmi.RecoverableException {}
+
+    class BadFileDescriptorException extends sidlx.rmi.UnrecoverableException {}
+    class ConnectionRefusedException extends sidlx.rmi.UnrecoverableException {}
+    class NetworkUnreachableException extends sidlx.rmi.UnrecoverableException {}
+    class ConnectionResetException extends sidlx.rmi.UnrecoverableException {}
+    class UnexpectedCloseException extends sidlx.rmi.UnrecoverableException {}
+    class UnrecognizedNetworkException extends sidlx.rmi.UnrecoverableException {}
+
+    /** A call was recieved that cannot be authenticaed. */ 
+    class UnauthorizedCallException extends sidl.SIDLException {}
+
+    /** NOT REALLY BABEL RMI RELATED BELOW THIS LINE-------------------------------------*/ 
+
+    /**
+     *  Basic socket functionality, writeline, readline, etc.  Should be threadsafe
+     *  (As long as you don't have multiple threads on the same socket) 	
+     */
+    interface Socket {
+      int close();
+      int readn(in int nbytes, inout array<char> data); 	
+      int readline( in int nbytes, inout array<char> data); 	
+      int readstring( in int nbytes, inout array<char> data); 
+      int readstring_alloc(inout array<char> data); 
+      int readint(inout int data);
+      int writen(in int nbytes, in array<char> data);
+      int writestring(in int nbytes, in array<char> data); 
+      int writeint(in int data);
+      void setFileDescriptor(in int fd);
+      int  getFileDescriptor();
+      bool test(in int secs, in int usecs);
+    }
+
+ 
+    /** 
+     * Echos strings back to the client using Jim's echo protocol
+     */
+    class JimEchoServer extends SimpleServer { 
+      void serviceRequest( in Socket sock  );
+
+      /**
+       * Get the full URL for exporting objects (Doesn't do anything in this server)
+       */	
+      string getServerURL(in string objID);
+
+      /* Needed by Babel to determine if a url points to a local or remote object
+       * users should never need this.  Returns the objectID if is local, Null otherwise. 
+       * Doesn't do anything in this server.
+       */	
+      string isLocalObject(in string url);
+ 
+      /**
+       * This gets an array of logged exceptions.  If an exception can
+       * not be thrown back to the caller, we log it with the Server.  This 
+       * gets the array of all those exceptions.
+       *  THIS IS SOMETHING OF A TEST! THIS MAY CHANGE!
+       */
+      array<sidl.io.Serializable,1> getExceptions();	
+    }	
+
+    /**
+     *  Basic functionality for an IPv4 Socket.  Implements most of the functions in Socket
+     */ 	
+    class IPv4Socket implements-all Socket {
+      int getsockname(inout int address, inout int port);
+      int getpeername(inout int address, inout int port);
+    }	
+
+    /**
+     * Automatically sets up a port for listening for new connections
+     */	
+    class ServerSocket {
+      /** If successful, returns 0 */
+      int init(in int port);
+      /** If successful, returns 0. If parameter local is true, the
+       *  socket accepts local connections only.
+       */
+      int init[Local](in int port, in bool loopback);
+      Socket accept();
+      /** If successful, returns 0 */
+      int close();
+    }
+
+    /**
+     * Automatically sets up a port for listening for new connections
+     */
+    class ClientSocket extends IPv4Socket {
+      int init(in int IP, in int port);
+    }
+
+    /**
+     * Simple socket passed back by accept
+     */
+    class ChildSocket extends IPv4Socket {
+      void init(in int fileDes);
+    }
+
+  } // end package sidlx.rmi
+
+} // end package sidlx

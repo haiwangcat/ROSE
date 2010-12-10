@@ -1,0 +1,11 @@
+// This file isn't a complete SIDL file
+require conway version 2.0;
+
+/**
+ * Implementation classes for Conway's Game of Life and its extensions.
+ */
+package python version 2.0 {
+  // EDIT HERE:
+  // add the classes you would like to implement here
+  // e.g., class Environment implements-all conway.Environment {}
+}

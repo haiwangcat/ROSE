@@ -1,0 +1,284 @@
+// File:        ArrayTest.idl
+// Revision:    $Revision$
+// Date:        $Date$
+// Description: An IDL design to test sidl array handling
+//
+// Copyright (c) 2001, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Try as many array functions as possible.
+//
+// ONE DIMENSIONAL INCOMING ARRAYS
+// ===============================
+//
+// An incoming character array should be initialized with the
+// characters from the inspired saying:
+//
+//    I'd rather write programs to write programs than write programs.
+//
+// Dick Sites [DEC], quoted by Jon Bentley in More Programming Pearls.
+// If the character array is longer than the test text, it should keep
+// repeating it.
+// 
+// An incoming string array should be initialized such that the i'th
+// element of the array is the i'th element of the sentence above
+// assuming each element is space delimited.
+// 
+// An incoming short, int or long array with n elements should be the
+// list first n prime numbers ordered in increasing order.
+// 
+// The i'th element of an incoming float or double array should be
+// 2^(-i) (i.e. two to the negative i power).
+// 
+// The i'th element of an incoming fcomplex or dcomplex array should
+// have a real part of 2^i and an imaginary part of 2^-i.
+//
+// An incoming boolean array should have even elements <code>true</code>
+// and odd elements <code>false</code>.  Zero is considered even for
+// purposes here.
+//
+// TWO DIMENSIONAL INCOMING ARRAYS
+// ===============================
+//
+// For a two dimensional array of floats or doubles, element i, j of
+// the array should be 2^(i-j).
+// 
+// 
+// For a two dimensional array of fcomplex or dcomplex, element i, j
+// of the array should have a real part of 2^i and an imaginary part
+// of 2^-j.
+//
+// THREE and FOUR DIMENSIONAL INCOMING ARRAYS
+// ==========================================
+//
+// For a three dimensional array of ints, element i, j, k of the array
+// should be (i+1) * (j+2) * (k + 3).
+//
+// For a four dimensional array of ints, element i, j, k, l of the array
+// should be (i+1) * (j+2) * (k + 3) * (l + 4).
+//
+// By that token, five dimensional array element i, j, k, l, m  will be:
+// (i+1) * (j+2) * (k + 3) * (l + 4) * (m +5)
+//
+//
+// NULL ARRAYS
+// ===========
+//
+// For each basic type array, the "inout" array will be checked for
+// null and space allocated accordingly.  The caller is expected to
+// check the result to ensure it is not null and contains non-null/
+// non-zero data.
+//
+
+
+package ArrayTest version 1.3 {
+
+  class ArrayOps {
+
+    // Each of the following will verify that the incoming array
+    // satisfies the constraints stated above.
+
+    /**
+     * Return <code>true</code> iff the even elements are true and
+     * the odd elements are false.
+     */
+    static bool checkBool(in array<bool,1> a);
+    static bool checkChar(in array<char,1> a);
+    static bool checkInt(in array<int,1> a);
+    static bool checkLong(in array<long,1> a);
+    static bool checkString(in array<string,1> a);
+    static bool checkDouble(in array<double,1> a);
+    static bool checkFloat(in array<float,1> a);
+    static bool checkFcomplex(in array<fcomplex,1> a);
+    static bool checkDcomplex(in array<dcomplex,1> a);
+    static bool check2Int(in array<int,2> a);
+    static bool check2Double(in array<double,2> a);
+    static bool check2Float(in array<float,2> a);
+    static bool check2Fcomplex(in array<fcomplex,2> a);
+    static bool check2Dcomplex(in array<dcomplex,2> a);
+    static bool check3Int(in array<int,3> a);
+    static bool check4Int(in array<int,4> a);
+    static bool check5Int(in array<int,5> a);   
+    static bool check6Int(in array<int,6> a);   
+    static bool check7Int(in array<int,7> a);
+    static bool check2String(in array<string,2> a);	
+
+    // Return the number of ArrayOps objects.
+    static int checkObject(in array<ArrayOps,1> a);
+
+    // Each of these methods will reverse the contents
+    // of the incoming array.  The value of the incoming array will
+    // be checked against the requirements stated above.  Iff
+    // everything is correct, TRUE is returned.  Iff newArray is
+    // TRUE, the outgoing array will be a new array object.
+    static bool reverseBool(inout array<bool,1> a, in bool newArray);
+    static bool reverseChar(inout array<char,1> a, in bool newArray);
+    static bool reverseInt(inout array<int,1> a, in bool newArray);
+    static bool reverseLong(inout array<long,1> a, in bool newArray);
+    static bool reverseString(inout array<string,1> a, in bool newArray);
+    static bool reverseDouble(inout array<double,1> a, in bool newArray);
+    static bool reverseFloat(inout array<float,1> a, in bool newArray);
+    static bool reverseFcomplex(inout array<fcomplex,1> a,
+                                    in bool newArray);
+    static bool reverseDcomplex(inout array<dcomplex,1> a,
+                                    in bool newArray);
+
+    // These will create an array satisfying the rules for incoming
+    // arrays.  If len is longer than the test text, it is repeated.
+    // If (len < 0), these will return a Null array object.
+    static array<bool,1>     createBool(in int len);
+    static array<char,1>     createChar(in int len);
+    static array<int,1>      createInt(in int len);
+    static array<long,1>     createLong(in int len);
+    static array<string,1>   createString(in int len);
+    static array<double,1>   createDouble(in int len);
+    static array<float,1>    createFloat(in int len);
+    static array<fcomplex,1> createFcomplex(in int len);
+    static array<dcomplex,1> createDcomplex(in int len);
+    static array<ArrayOps,1> createObject(in int len);
+
+    // if (d1 < 0) || (d2 < 0) a Null array object is returned.
+    static array<int,2>      create2Int(in int d1, in int d2);
+    static array<double,2>   create2Double(in int d1, in int d2);
+    static array<float,2>    create2Float(in int d1, in int d2);
+    static array<dcomplex,2> create2Dcomplex(in int d1, in int d2);
+    static array<fcomplex,2> create2Fcomplex(in int d1, in int d2);
+    static array<string,2>   create2String(in int d1, in int d2);	
+
+    static array<int,3>      create3Int();
+    static array<int,4>      create4Int();
+    static array<int,5>      create5Int();      
+    static array<int,6>      create6Int();
+    static array<int,7>      create7Int();
+        
+    // if (len < 0), the out array will be a Null array object.
+    static void makeBool(in int len, out array<bool,1> a);
+    static void makeChar(in int len, out array<char,1> a);
+    static void makeInt(in int len, out array<int,1> a);
+    static void makeLong(in int len, out array<long, 1> a);
+    static void makeString(in int len, out array<string,1> a);
+    static void makeDouble(in int len, out array<double,1> a);
+    static void makeFloat(in int len, out array<float,1> a);
+    static void makeFcomplex(in int len, out array<fcomplex,1> a);
+    static void makeDcomplex(in int len, out array<dcomplex,1> a);
+
+    //
+    // Basic tests for handling null arrays as inout parameters.  First,
+    // handle 1D arrays for each type, then null 2D arrays for numeric
+    // types, and finally 3D and 4D arrays for int. 
+    // if (len < 0) these will return a Null object
+    //
+    static void makeInOutBool(inout array <bool,1> a, in int len);
+    static void makeInOutChar(inout array <char,1> a, in int len);
+    static void makeInOutInt(inout array <int,1> a, in int len);
+    static void makeInOutLong(inout array <long,1> a, in int len);
+    static void makeInOutString(inout array <string,1> a, in int len);
+    static void makeInOutDouble(inout array <double,1> a, in int len);
+    static void makeInOutFloat(inout array <float,1> a, in int len);
+    static void makeInOutDcomplex(inout array <dcomplex,1> a, in int len);
+    static void makeInOutFcomplex(inout array <fcomplex,1> a, in int len);
+
+    // if (d1 < 0) || (d2 < 0) these will return a Null object
+    static void makeInOut2Int(inout array <int,2> a, in int d1, in int d2);
+    static void makeInOut2Double(inout array <double,2> a, in int d1, 
+                                 in int d2);
+    static void makeInOut2Float(inout array <float,2> a, in int d1, in int d2);
+    static void makeInOut2Dcomplex(inout array <dcomplex,2> a, in int d1, 
+                                in int d2);
+    static void makeInOut2Fcomplex(inout array <fcomplex,2> a, in int d1, 
+                                in int d2);
+    static void makeInOut3Int(inout array <int,3> a);
+    static void makeInOut4Int(inout array <int,4> a);
+    static void makeInOut5Int(inout array <int,5> a);
+    static void makeInOut6Int(inout array <int,6> a);
+    static void makeInOut7Int(inout array <int,7> a);
+
+    /**
+     * Return as out parameters the type and dimension of the 
+     * array passed in. If a is NULL, dimen == type == 0 on exit.
+     * The contents of the array have the default values for a 
+     * newly created array.
+     */
+    static void checkGeneric(in  array<> a,
+                             out int      dmn,
+                             out int      tp);
+
+    /**
+     * Create an array of the type and dimension specified and
+     * return it. A type of 0 causes a NULL array to be returned.
+     */
+    static array<> createGeneric(in int dmn,
+                                 in int tp);
+
+    /**
+     * Testing passing generic arrays using every possible mode.
+     * The returned array is a copy of inArg, so if inArg != NULL,
+     * the return value should != NULL. outArg is also a copy of
+     * inArg.
+     * If inOutArg is NULL on entry, a 2-D array of int that should
+     * pass check2Int is returned.
+     * If inOutArg is not NULL on entry and its dimension is even,
+     * it is returned unchanged; otherwise, NULL is returned.
+     */
+    static array<> passGeneric(in    array<>  inArg,
+                               inout array<>  inOutArg,
+                               out   array<>  outArg);
+
+     //  Rarray test functions
+     
+     static void initRarray1Int(inout rarray<int, 1> a(n), in int n);
+     static void initRarray3Int(inout rarray<int, 3> a(n,m,o), in int n,
+			        in int m, in int o);	
+     static void initRarray7Int(inout rarray<int, 7> a(n,m,o,p,q,r,s), in int n,
+			        in int m, in int o, in int p, in int q, in int r
+                                , in int s);	
+
+     static void initRarray1Double(inout rarray<double, 1> a(n), in int n);
+     static void initRarray1Dcomplex(inout rarray<dcomplex, 1> a(n), in int n);
+
+     static bool checkRarray1Int(in rarray<int, 1> a(n), in int n);
+     static bool checkRarray3Int(in rarray<int, 3> a(n,m,o), in int n,
+			        in int m, in int o);	
+     static bool checkRarray7Int(in rarray<int, 7> a(n,m,o,p,q,r,s), in int n,
+			        in int m, in int o, in int p, in int q, in int r
+                                , in int s);	
+
+     static bool checkRarray1Double(in rarray<double, 1> a(n), in int n);
+     static bool checkRarray1Dcomplex(in rarray<dcomplex, 1> a(n), in int n);	
+
+     static void matrixMultiply(in rarray<int,2> a(n,m), in rarray<int,2> b(m,o),
+			        inout rarray<int,2> res(n,o), in int n, in int m,
+				in int o);
+     static bool checkMatrixMultiply(in rarray<int,2> a(n,m), in rarray<int,2> b(m,o),
+			        in rarray<int,2> res(n,o), in int n, in int m,
+				in int o);
+     void mm(in rarray<int,2> a(n,m), in rarray<int,2> b(m,o),
+			        inout rarray<int,2> res(n,o), in int n, in int m,
+				in int o);
+     bool checkmm(in rarray<int,2> a(n,m), in rarray<int,2> b(m,o),
+			        in rarray<int,2> res(n,o), in int n, in int m,
+				in int o);
+  	
+  };
+};

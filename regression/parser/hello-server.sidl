@@ -1,0 +1,7 @@
+package HelloServer version 0.6 {
+  /**
+   * The component implements a StringProducerPort (which generates "Hello World");
+   */
+  class Component implements-all strop.StringProducerPort, gov.cca.Component {
+  }
+}

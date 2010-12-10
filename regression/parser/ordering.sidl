@@ -1,0 +1,163 @@
+//
+// File:        ordering.sidl
+// Revision:    $Revision$
+// Date:        $Date$
+// Description: A regression test for sidl array ordering, slicing, and copy
+//
+// Copyright (c) 2001, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+
+
+// This is the public API to a set of tests for the sidl array ordering
+// functionality.  It tests the ordering feature of the sidl language.
+// Inside the methods, it tests the slice and smart copy features.
+//
+// This test assumes that if it works for one type it should work for
+// all types.  All these tests involve arrays of <code>int</code> to
+// avoid having to worry about rounding error.
+//
+// The index of an array element is the order set of n integers called
+// x_1, x_2, x_3, ... x_n or collectively as x. An n-dimensional array,
+// A, satisfies condition I if and only: 
+//  1)  A[x] = x_1 + 2*x_2 + 3*x_3 + ... + n*x_n
+
+/**
+ * This package holds regression tests for the array ordering
+ * capabilities.
+ */
+package Ordering version 0.1 {
+
+  /**
+   * This class provides methods to verify that the array ordering
+   * capabilities work for arrays of int.
+   */
+  class IntOrderTest {
+    /**
+     * Create a column-major matrix satisfying condition I.
+     */
+     static array<int,2,column-major>
+     makeColumnIMatrix(in int size, in bool useCreateCol);
+
+    /**
+     * Create a row-major matrix satisfying condition I.
+     */
+     static array<int,2,row-major>
+     makeRowIMatrix(in int size, in bool useCreateRow);
+
+    /**
+     * Create a 4-D matrix satisfying condition I.  Each dimension has
+     * size elements numbers 0 through size-1.
+     */
+     static array<int,4>
+     makeIMatrix(in int size, in bool useCreateColumn);
+
+    /**
+     * Create a column-major matrix satisfying condition I.
+     */
+     static void
+     createColumnIMatrix(in int size, in bool useCreateCol,
+                         out array<int,2,column-major> res);
+
+    /**
+     * Create a row-major matrix satisfying condition I.
+     */
+     static void
+     createRowIMatrix(in int size, in bool useCreateRow,
+                      out array<int,2,row-major> res);
+
+    /**
+     * Make sure an array is column-major.  No changes to the dimension or
+     * values in a are made.
+     */
+     static void ensureColumn(inout array<int,2,column-major> a);
+
+    /**
+     * Make sure an array is row-major.  No changes to the dimension or
+     * values in a are made.
+     */
+     static void ensureRow(inout array<int,2,row-major> a);
+
+    /**
+     *  Return <code>true</code> iff the implementation sees
+     *  an incoming array satisfying condition I.
+     */
+     static bool isIMatrixOne(in array<int> A);
+
+    /**
+     * Return <code>true</code> iff the implementation sees
+     * an incoming column-major array satisfying condition I.
+     */
+     static bool isColumnIMatrixOne(in array<int,column-major> A);
+
+    /**
+     * Return <code>true</code> iff the implementation sees
+     * an incoming row-major array satisfying condition I.
+     */
+     static bool isRowIMatrixOne(in array<int,row-major> A);
+
+
+    /**
+     *  Return <code>true</code> iff the implementation sees
+     *  an incoming array satisfying condition I.
+     */
+     static bool isIMatrixTwo(in array<int,2> A);
+
+    /**
+     * Return <code>true</code> iff the implementation sees
+     * an incoming column-major array satisfying condition I.
+     */
+     static bool isColumnIMatrixTwo(in array<int, 2,column-major> A);
+
+    /**
+     * Return <code>true</code> iff the implementation sees
+     * an incoming row-major array satisfying condition I.
+     */
+     static bool isRowIMatrixTwo(in array<int, 2,row-major> A);
+
+   /**
+     *  Return <code>true</code> iff the implementation sees
+     *  an incoming array satisfying condition I.
+     */
+     static bool isIMatrixFour(in array<int,4> A);
+
+    /**
+     * Return <code>true</code> iff the implementation sees
+     * an incoming column-major array satisfying condition I.
+     */
+     static bool isColumnIMatrixFour(in array<int, 4,column-major> A);
+
+    /**
+     * Return <code>true</code> iff the implementation sees
+     * an incoming row-major array satisfying condition I.
+     */
+     static bool isRowIMatrixFour(in array<int, 4,row-major> A);
+
+    /**
+     * Return <code>true</code> iff the implementation of slice
+     * and smart copy is correct.
+     */
+     static bool isSliceWorking(in bool useCreateCol);
+  };
+};

@@ -1,0 +1,19 @@
+package cxx version 1.0 {
+
+class ShapeFactory {
+    static wave2d.Shape createRectangle( in double x1, in double y1, in double x2, in double y2 );
+    static wave2d.Shape createEllipse( in double center_x, in double center_y, in double x_radius, in double y_radius);
+    static wave2d.Shape createTriangle( in double x1, in double y1,
+	                                in double x2, in double y2, 
+	                                in double x3, in double y3 );
+  }
+
+  class ScalarField implements-all wave2d.ScalarField {
+    void init( in double minX, in double minY, in double maxX, in double maxY,
+               in double spacing, in double value );
+  }
+
+  class WavePropagator implements-all wave2d.WavePropagator {
+    void init( in wave2d.ScalarField density , in array<double,2> pressure );
+  }
+}

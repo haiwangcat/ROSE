@@ -1,0 +1,98 @@
+// Copyright (c) 2001, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// For the purposes of this test, all in parameters must be as close to 
+// the complex number (pi + pi i) as their precision permits.  
+// All out parameters and return values will also be as close to the same
+// number.
+//        bool == true
+//        char == '3'
+//        int == 3
+//        float == 3.1000
+//        double == 3.14000
+//               
+//
+// All inout parameters will be logically negated, negated, or complex conjugated
+// as appropriate.  inout chars are made uppercase if lowercase and vice versa
+// Inout parameters may not be zero, exception of 'inout bool' which can be either.
+// and 'inout char' which has the additional constraint that it must be a letter.
+//
+// If the input constraints are not met. zero is returned as an error message.
+//
+
+package Args version 1.0
+{
+  class Basic {
+    // bool char int float double fcomplex dcomplex 
+    bool returnbackbool  ( );
+    bool passinbool( in bool b );
+    bool passoutbool( out bool b );
+    bool passinoutbool( inout bool b );
+    bool passeverywherebool( in bool b1, out bool b2, inout bool b3 );
+
+    char returnbackchar  ( );
+    bool passinchar( in char c );
+    bool passoutchar( out char c );
+    bool passinoutchar( inout char c );
+    char passeverywherechar( in char c1, out char c2, inout char c3 );
+
+    int returnbackint  ( );
+    bool passinint( in int i );
+    bool passoutint( out int i );
+    bool passinoutint( inout int i );
+    int passeverywhereint( in int i1, out int i2, inout int i3 );
+
+    long returnbacklong  ( );
+    bool passinlong( in long l );
+    bool passoutlong( out long l );
+    bool passinoutlong( inout long l );
+    long passeverywherelong( in long l1, out long l2, inout long l3 );
+
+    float returnbackfloat  ( );
+    bool passinfloat( in float f );
+    bool passoutfloat( out float f );
+    bool passinoutfloat( inout float f );
+    float passeverywherefloat( in float f1, out float f2, inout float f3 );
+
+    double returnbackdouble  ( );
+    bool passindouble( in double d );
+    bool passoutdouble( out double d );
+    bool passinoutdouble( inout double d );
+    double passeverywheredouble( in double d1, out double d2, inout double d3 );
+
+    fcomplex returnbackfcomplex  ( );
+    bool passinfcomplex( in fcomplex c );
+    bool passoutfcomplex( out fcomplex c );
+    bool passinoutfcomplex( inout fcomplex c );
+    fcomplex passeverywherefcomplex( in fcomplex c1, out fcomplex c2, inout fcomplex c3 );
+
+    dcomplex returnbackdcomplex  ( );
+    bool passindcomplex( in dcomplex c );
+    bool passoutdcomplex( out dcomplex c );
+    bool passinoutdcomplex( inout dcomplex c );
+    dcomplex passeverywheredcomplex( in dcomplex c1, out dcomplex c2, inout dcomplex c3 );
+  };
+
+};
+

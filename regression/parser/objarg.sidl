@@ -1,0 +1,163 @@
+//
+// Copyright (c) 2001, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+package objarg version 0.5 { 
+
+  /**
+   * This object type holds the basic information about an employee:
+   * name, age, salary and marital status.  This object exists purely
+   * to serve as a test case for sidl.  It is not intended for serious
+   * use.
+   */
+  class Employee { 
+
+    /**
+     * Provide the data for the employee object to hold.
+     * <code>false</code> is returned when the data was unacceptable.
+     * <code>true</code> means the employee object was successfully
+     * initialized.
+     */
+    bool init( in string name, in int age, in float salary, in char status );
+
+    /**
+     * Change the name of an employee.
+     */
+    void setName( in string name );
+    /**
+     * Return the name of an employee.
+     */
+    string getName();
+
+    /**
+     * Change the age of an employee.
+     */
+    void setAge( in int age );
+    /**
+     * Return the age of an employee.
+     */
+    int getAge();
+
+    /**
+     * Set an employee's salary.
+     */
+    void setSalary( in float salary );
+    /**
+     * Return an employee's salary.
+     */
+    float getSalary();
+
+    /**
+     * Set an employee's marital status.
+     */
+    void setStatus( in char status );
+    /**
+     * Return an employee's marital status.
+     */
+    char getStatus();
+  };
+
+  /**
+   * This class manages a collection of employees.
+   */  
+  class EmployeeArray {     // indexed from 1..(length)
+
+    /**
+     * Return the number of employees in the employee array.
+     */
+    int getLength();       
+
+    /**
+     * Return the employee in position <code>index</code> where
+     * <code>index</code> ranges from 1 to the length of the array.
+     * If <code>index</code> is outside the range of the array (i.e.
+     * less than or equal to zero or greater than the current number
+     * of elements in the array), this method returns a NULL
+     * employee object.
+     */
+    Employee at( in int index );  
+
+    /**
+     * Add an employee onto the end of the array.  It is perfectly
+     * legal to add the same employee multiple times.
+     * <code>true</code> is returned when the append was successful;
+     * otherwise, <code>false</code> is returned to indicate
+     * failure.  This method will not add a NULL employee.
+     */
+    bool appendEmployee( in Employee e );
+
+    /**
+     * Find the first employee in the array that has a name matching
+     * <code>name</code>.  If a match exists, the index is returned,
+     * and the employee is returned in parameter <code>e</code>.
+     *
+     * If no match exists, 0 is returned, and <code>e</code> is NULL.
+     */
+    int findByName( in string name, out Employee e );
+
+    /**
+     * Determine the maximum salary in the array. If the maximum
+     * salary in the array is greater than the current salary of
+     * <code>e</code>, the salary of <code>e</code> will be 
+     * increased to the maximum salary in the array.  If the
+     * array is empty, no change will be made to <code>e</code>.
+     *
+     * This method returns <code>true</code> iff the salary of
+     * <code>e</code> is modified.
+     */
+    bool promoteToMaxSalary( inout Employee e );    
+  };
+
+  class Basic {
+  /**
+   * Return inNotNull == (o != NULL).
+   */
+  bool passIn(in sidl.BaseClass o, in bool inNotNull);
+
+  /**
+   *  Return inNotNull == (o != NULL).  If outNotNull, the outgoing
+   * value of o should not be NULL; otherwise, it will be NULL.
+   * If outNotNull is true, there are two cases, it retSame is true
+   * the incoming value of o will be returned; otherwise, a new
+   * object will be allocated and returned.
+   */
+  bool passInOut(inout sidl.BaseClass o,
+                 in bool inNotNull,
+                 in bool outNotNull,
+                 in bool retSame);
+
+  /**
+   * If passOutNull is true, a NULL value of o will be returned; otherwise,
+   * a newly allocated object will be returned.
+   */
+  void passOut( out sidl.BaseClass o, in bool passOutNull);
+
+  /**
+   * Return a NULL or non-NULL object depending on the value of retNull.
+   */
+  sidl.BaseClass
+  retObject(in bool retNull);
+
+  };
+};

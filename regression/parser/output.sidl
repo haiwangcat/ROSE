@@ -1,0 +1,109 @@
+// Copyright (c) 2003, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+/**
+ * Provide a simple library to write to standard output or standard error.
+ * This can be used to synchronize output from multiple languages.
+ */
+package synch version 0.1 {
+
+  /**
+   * For short cut result method.
+   */
+  enum ResultType {
+    /** pass */
+    PASS=0,
+    /** unexpected fail */
+    FAIL=1,
+    /** expected fail */
+    XFAIL=2,
+    /** unexpected pass */
+    XPASS=3 
+  }
+ 
+  /**
+   * Regression test output class. 
+   */
+  class RegOut {
+
+    /**
+     * In some circumstances, it is necessary to use the
+     * singleton pattern.
+     */
+    static RegOut getInstance();
+
+   /**
+    * Tell this class how many parts to expect.
+    * Calling this method twice or after any of the other
+    * methods in this class causes it to execute
+    * forceFailure.
+    * @param numparts  a negative number indicates the number
+    *                  of parts is unknown
+    */
+    void setExpectations(in int numparts);
+
+
+    /**
+     * Return the current part number.
+     */
+    int  getCurrentPart();
+
+    /**
+     * Print the start part line.
+     */
+    void startPart(in int part);
+
+    /**
+     * Print the end part line.
+     */
+    void endPart(in int part, in ResultType res);
+
+    /**
+     * Print COMMENT: <comment>\n.
+     */
+    void writeComment(in string comment);
+
+
+    /**
+     * Unconditionally fail right now.
+     */
+    void forceFailure();
+
+    /**
+     * Finish the test. This is called by the destructor if you
+     * forget.
+     */
+    void close();
+
+    /**
+     * Based on argv[0] and the value of SIDL_DLL_PATH, replace the
+     * substring "%magic_port%" of the given string with the port
+     * number used in the Babel regression tests for the particular
+     * backend language. Further magic variables might be added later
+     * as needed. 
+     */
+     void replaceMagicVars(inout string orig, in string prog_name);
+  }
+}
+

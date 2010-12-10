@@ -1,0 +1,29 @@
+package wave2d version 1.0 { 
+
+  interface Shape { 
+    Shape translate( in double delta_x, in double delta_y );
+    Shape rotate( in double radians );
+    Shape unify( in Shape other );
+    Shape intersect( in Shape other );
+    Shape subtract( in Shape other );
+    Shape invert( );
+    Shape scale( in double scale_x, in double scale_y );
+    Shape reflectX();
+    Shape reflectY();
+
+    bool inLocus( in double x, in double y );
+    void render( inout array<double, 2> field, in double value );
+  }
+
+  interface ScalarField { 
+    void getBounds(out double minX, out double minY, out double maxX, out double maxY, out double spacing);
+    array<double,2> getData();
+    void render( in Shape shape, in double value );
+    void setData( in array<double,2> data);
+  }
+
+  interface WavePropagator { 
+    void step( in int n );
+    array<double,2> getPressure();
+  }
+}

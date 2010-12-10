@@ -1,0 +1,63 @@
+// Copyright (c) 2001, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+/**
+ * This is a regression test to test the passing of strings as function
+ * arguments and return values.
+ */
+package Strings version 1.1
+{
+  /**
+   * Class to allow testing of string passing using every possible mode.
+   */
+  class Cstring
+  {
+    /**
+     * If <code>nonNull</code> is <code>true</code>, this will
+     * return "Three"; otherwise, it will return a NULL or empty string.
+     */
+    string returnback  (in bool nonNull);
+
+    /**
+     * This will return <code>true</code> iff <code>c</code> equals "Three".
+     */
+    bool passin( in string c );
+
+    /**
+     * If <code>nonNull</code> is <code>true</code>, this will return
+     * "Three" in <code>c</code>; otherwise, it will return a null or
+     * empty string. The return value is <code>false</code> iff 
+     * the outgoing value of <code>c</code> is <code>null</code>.
+     */
+    bool passout(in bool nonNull, out string c );
+
+    bool passinout( inout string c );
+    string passeverywhere( in string c1, out string c2, inout string c3 );
+
+    /* return true iff s1 == s2 and c1 == c2 */
+    bool mixedarguments( in string s1, in char c1, in string s2, in char c2);
+  };
+
+};
+

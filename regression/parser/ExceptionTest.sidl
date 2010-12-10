@@ -1,0 +1,151 @@
+//
+// File:        ExceptionTest.idl
+// Revision:    $Revision$
+// Date:        $Date$
+// Description: An IDL design to test sidl exception handling
+//
+// Copyright (c) 2001-2003, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+/**
+ * <p>
+ * Package <code>ExceptionTest</code> tests the exception capabilites of the
+ * sidl run-time system.  The test case is Fibanocci number generation in which
+ * exceptions may be thrown if the input parameter is negative, the Fibanocci
+ * number exceeds a specified maximum, or if the Fibanocci recursion exceeds
+ * a specified depth.  Three different exceptions may be thrown:
+ * </p>
+ * <ul>
+ * <li>a <code>NegativeValueException</code> if the input is negative</li>
+ * <li>a <code>TooDeepException</code> if the recursion depth is exceeded</li>
+ * <li>a <code>TooBigException</code> if the maximum value is exceeded</li>
+ * </ul>
+ * <p>
+ * Just to make things interesting, the <code>TooDeepException</code> and the
+ * <code>TooBigException</code> extend a common <code>FibException</code>.
+ * This derivation allows us to test the exception casting support in the
+ * run-time.
+ * </p>
+ */
+
+package ExceptionTest version 1.0 {
+
+  /**
+   * This exception is thrown if the value for which the Fibonacci number
+   * is requested is negative.
+   */
+  class NegativeValueException extends sidl.SIDLException {
+  }
+
+  /**
+   * This exception is a base class for the Fibonacci exceptions that are
+   * thrown if the value is too large or the recursion depth is too deep.
+   */
+  class FibException extends sidl.SIDLException {
+  }
+
+  /**
+   * This exception is thrown if the Fibonacci recursion is too deep.
+   */
+  class TooDeepException extends FibException {
+  }
+
+  /**
+   * This exception is thrown if the Fibonacci number is too large.
+   */
+  class TooBigException extends FibException {
+  }
+
+  /**
+   * This class holds the method <code>getFib</code> that generates the
+   * requested Fibonacci numbers.
+   */
+  class Fib {
+    /**
+     * <p>
+     * Generate the requested Fibonacci number or generate exceptions if
+     * the input Fibonacci number is invalid or if any of the maximum depth
+     * or maximum value parameters are exceeded.  The last argument of the
+     * method should be zero.
+     * </p>
+     * <p>
+     * The algorithm should be similar to the <code>Java</code> code below.
+     * </p>
+     * <pre>
+     * public int getFib(int n, int max_depth, int max_value, int depth)
+     *     throws NegativeValueException, FibException {
+     *
+     *   if (n < 0) {
+     *     throw new NegativeValueException("n negative");
+     *
+     *   } else if (depth > max_depth) {
+     *     throw new TooDeepException("too deep");
+     * 
+     *   } else if (n == 0) {
+     *     return 1;
+     * 
+     *   } else if (n == 1) {
+     *     return 1;
+     * 
+     *   } else {
+     *     int a = getFib(n-1, max_depth, max_value, depth+1);
+     *     int b = getFib(n-2, max_depth, max_value, depth+1);
+     *     if (a + b > max_value) {
+     *       throw new TooBigException("too big");
+     *     }
+     *     return a + b;
+     *   }
+     * } 
+     * </pre>
+     */
+    int getFib(in int n, in int max_depth, in int max_value, in int depth)
+      throws NegativeValueException, FibException, sidl.MemAllocException;
+
+    /**
+     * Check for memory/reference leaks in the presence of an exception.
+     * The impl will throw an exception and assign random values to
+     * out parameters to prove that out values are ignored.
+     * The intent is that row-major arrays should be passed to parameters
+     * a1, a2, a3.
+     */
+    array<int,2,column-major>
+    noLeak(in array<int,2,column-major>     a1, 
+           inout array<int,2,column-major>  a2,
+           out array<int,2, column-major>   a3,
+           in rarray<int,2>                 r1(m,n),
+           inout rarray<int,2>              r2(m,n),
+           in int                           m,
+           in int                           n,
+           in array<int>                    c1,
+           inout array<int>                 c2,
+           out array<int>                   c3,
+           in string                        s1,
+           inout string                     s2,
+           out string                       s3,
+           in sidl.BaseClass                o1,
+           inout sidl.BaseClass             o2,
+           out sidl.BaseClass               o3)
+         throws sidl.SIDLException;
+  }
+}

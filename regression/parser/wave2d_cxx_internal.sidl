@@ -1,0 +1,65 @@
+package cxx version 1.0 {
+
+  package internal {
+
+    abstract class Shape implements-all wave2d.Shape {
+      abstract bool inLocus( in double x, in double y );
+    }
+
+    class Ellipse extends Shape {
+      void init( in double center_x, in double center_y, in double x_radius, in double y_radius);
+      bool inLocus( in double x, in double y );
+    }
+
+    class Rectangle extends Shape {
+      void init( in double x1, in double y1, in double x2, in double y2 );
+      bool inLocus( in double x, in double y );
+    }
+
+    class Triangle extends Shape {
+      void init( in double x1, in double y1, in double x2, in double y2, 
+	         in double x3, in double y3 );
+      bool inLocus( in double x, in double y );
+    }
+    class Translation extends Shape {
+      void init( in wave2d.Shape source, in double delta_x, in double delta_y );
+      bool inLocus( in double x, in double y );
+    }
+
+    class Rotation extends Shape {
+      void init( in wave2d.Shape source, in double angle );
+      bool inLocus( in double x, in double y );
+    }
+
+    class Unification extends Shape {
+      void init( in wave2d.Shape first, in wave2d.Shape second );
+      bool inLocus( in double x, in double y );
+    }
+
+    class Intersection extends Shape {
+      void init( in wave2d.Shape first, in wave2d.Shape second );
+      bool inLocus( in double x, in double y );
+    }
+
+    class Subtraction extends Shape {
+      void init( in wave2d.Shape first, in wave2d.Shape second );
+      bool inLocus( in double x, in double y );
+    }
+
+    class Inversion extends Shape {
+      void init( in wave2d.Shape source );
+      bool inLocus( in double x, in double y );
+    }
+
+    class Scaling extends Shape {
+      void init( in wave2d.Shape source, in double scale_x, in double scale_y );
+      bool inLocus( in double x, in double y );
+    }
+
+    class Reflection extends Shape {
+      void init( in wave2d.Shape source, in bool isXReflect );
+      bool inLocus( in double x, in double y );
+    }
+  }
+}
+

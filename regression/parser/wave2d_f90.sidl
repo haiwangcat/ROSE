@@ -1,0 +1,12 @@
+
+package f90 version 1.0 {
+
+  class ScalarField implements-all wave2d.ScalarField { 
+    void init( in double minX, in double minY, in double maxX, in double maxY,
+               in double spacing, in double value );
+  }
+
+  class WavePropagator implements-all wave2d.WavePropagator { 
+    void init( in wave2d.ScalarField density , in array<double,2> pressure );
+  } 
+}

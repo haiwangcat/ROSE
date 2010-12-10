@@ -1,0 +1,102 @@
+// Copyright (c) 2001, The Regents of the University of Calfornia.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+package enums version 1.0 {
+
+  // undefined integer values
+  enum color { 
+    red, orange, yellow, green, blue, violet
+  };
+
+  // in parameters always require blue
+  // out parameters always return purple
+  // inout parameters always return the opposite
+  //       color in the spectrum, red/green, orange/blue, yellow/purple
+  // return value is always green
+  class colorwheel { 
+    color returnback();
+    bool passin( in color c );
+    bool passout( out color c );
+    bool passinout( inout color c );
+    color passeverywhere( in color c1, out color c2, inout color c3);
+  };
+
+  // user defined integer values
+  enum car { 
+    /**
+     * A sports car.
+     */
+    porsche = 911, 
+    /**
+     * A family car.
+     */
+    ford = 150, 
+    /**
+     * A luxury car.
+     */
+    mercedes = 550
+  };
+
+  // in is always mercedes
+  // out is always ford
+  // inout always escalates the price of the car
+  //     (assumption ford < porsche < mercedes)
+  // returnvalue is always porsche
+  class cartest { 
+    car returnback();
+    bool passin( in car c );
+    bool passout( out car c );
+    bool passinout( inout car c );
+    car passeverywhere( in car c1, out car c2, inout car c3);
+    /**
+     * All incoming/outgoing arrays should be [ ford, mercedes, porsche ]
+     * in that order.
+     */
+    array<car> passarray(in array<car> c1, out array<car> c2,
+                         inout array<car> c3);
+  };
+  
+  // partially defined integer value
+  enum number { 
+    notZero,
+    notOne,
+    zero=0,
+    one=1,
+    negOne=-1,
+    notNeg
+  };
+
+  // return values are always 'notOne'
+  // in parameters are always 'notZero'
+  // out parameters are always 'negOne'
+  // inout parameters exchange [notOne,one][notZero,zero][negOne,notNeg]
+  class numbertest { 
+    number returnback();
+    bool passin( in number n );
+    bool passout( out number n );
+    bool passinout( inout number n );
+    number passeverywhere( in number n1, out number n2, inout number n3);
+  };
+};
+

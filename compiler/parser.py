@@ -53,15 +53,16 @@
 # \mainpage
 # Welcome to Braid/Babel 2!
 
-import logging, sys, re
+import logging, operator, sys
+#import re
 #import ply.lex as lex
-import ply.yacc as yacc
 #from ply.lex import TOKEN
+import ply.yacc as yacc
 
 def trace():
     import pdb; pdb.set_trace();
 
-import sidl
+import ir, sidl
 from patmat import matcher, Variable, match
 
 sys.path.append('.libs')
@@ -481,7 +482,7 @@ def p_error(errorToken):
 
 def p_version(p):
     '''version : VERSION version_'''
-    p[0] = sidl.AstNode('version', p[1])
+    p[0] = sidl.AstNode(ir.version, p[1])
 
 def p_version_error(p):
     '''version : VERSION error'''
@@ -501,7 +502,7 @@ def p_requires(p): # *
 
 def p_require(p):
     '''require : REQUIRE scopedID version SEMICOLON'''
-    p[0] = sidl.AstNode('require', p[2], p[3])
+    p[0] = sidl.AstNode(ir.require, p[2], p[3])
 
 def p_require_error(p):
     '''require : REQUIRE error version SEMICOLON'''
@@ -514,11 +515,11 @@ def p_imports(p): # *
 
 def p_import_1(p):
     '''import : IMPORT scopedID SEMICOLON'''
-    p[0] = sidl.AstNode('import', p[2])
+    p[0] = sidl.AstNode(ir.import_, p[2])
 
 def p_import_2(p):
     '''import : IMPORT scopedID version SEMICOLON'''
-    p[0] = sidl.AstNode('import', p[2], p[3])
+    p[0] = sidl.AstNode(ir.import_, p[2], p[3])
 
 def p_import_error(p):
     '''import : IMPORT error SEMICOLON'''
@@ -527,12 +528,12 @@ def p_import_error(p):
 def p_package_1(p):
     '''package : PACKAGE name LBRACE userTypes RBRACE'''
     no_comma(p[5])
-    p[0] = sidl.AstNode('package', p[2], 'no version', sidl.ListNode(p[4]))
+    p[0] = sidl.AstNode(ir.package, p[2], 'no version', sidl.ListNode(p[4]))
 
 def p_package_2(p):
     '''package : PACKAGE name version LBRACE userTypes RBRACE'''
     no_comma(p[6])
-    p[0] = sidl.AstNode('package', p[2], p[3], sidl.ListNode(p[5]))
+    p[0] = sidl.AstNode(ir.package, p[2], p[3], sidl.ListNode(p[5]))
 
 def p_package_error_1(p):
     '''package : PACKAGE error'''
@@ -549,7 +550,7 @@ def p_userTypes(p): # *
 
 def p_userType(p):
     '''userType : typeCustomAttrs cipse maybeSemicolon'''
-    p[0] = sidl.AstNode('user type', sidl.ListNode(p[1]), p[2])
+    p[0] = sidl.AstNode(ir.user_type, sidl.ListNode(p[1]), p[2])
 
 def p_cipse(p):
     '''cipse : class
@@ -576,15 +577,15 @@ def p_typeAttrOrCustomAttrList(p):
 def p_typeAttr(p):
     '''typeAttr : FINAL
                 | ABSTRACT'''
-    p[0] = sidl.AstNode('type attribute', p[1])
+    p[0] = sidl.AstNode(ir.type_attribute, p[1])
 
 def p_name(p):
     '''name : IDENTIFIER'''
-    p[0] = sidl.AstNode('identifier', p[1])
+    p[0] = sidl.AstNode(ir.identifier, p[1])
 
 def p_enum(p):
     '''enum : ENUM name LBRACE enumerators RBRACE'''
-    p[0] = sidl.AstNode('enum', p[2], sidl.ListNode(p[4]))
+    p[0] = sidl.AstNode(ir.enum, p[2], sidl.ListNode(p[4]))
 
 def p_enumerators(p): # +
     '''enumerators : enumerator
@@ -596,14 +597,14 @@ def p_enumerator(p):
     '''enumerator : name
                   | name ASSIGN integer'''
     if len(p) < 4:
-        p[0] = sidl.AstNode('enumerator', p[1])
+        p[0] = sidl.AstNode(ir.enumerator, p[1])
     else:
-        p[0] = sidl.AstNode('enumerator', p[2], p[1], p[3])
+        p[0] = sidl.AstNode(ir.enumerator, p[2], p[1], p[3])
 
 def p_struct(p):
     '''struct : STRUCT name LBRACE structItems RBRACE'''
     no_comma(p[5])
-    p[0] = sidl.AstNode('struct', p[2], sidl.ListNode(p[4]))
+    p[0] = sidl.AstNode(ir.struct, p[2], sidl.ListNode(p[4]))
 
 def p_structItems(p): # *
     '''structItems : empty
@@ -612,7 +613,7 @@ def p_structItems(p): # *
 
 def p_structItem_1(p):
     '''structItem : type name SEMICOLON'''
-    p[0] = sidl.AstNode('struct item', p[1], p[2])
+    p[0] = sidl.AstNode(ir.struct_item, p[1], p[2])
 
 def p_structItem_2(p):
     '''structItem : rarray SEMICOLON'''
@@ -621,7 +622,7 @@ def p_structItem_2(p):
 def p_class(p):
     '''class : CLASS name maybeExtendsOne implementsSomeAllLists LBRACE invariants methods RBRACE'''
     no_comma(p[8])
-    p[0] = sidl.AstNode('class', p[2], p[3], sidl.ListNode(p[4]), sidl.ListNode(p[6]), sidl.ListNode(p[7]))
+    p[0] = sidl.AstNode(ir.class_, p[2], p[3], sidl.ListNode(p[4]), sidl.ListNode(p[6]), sidl.ListNode(p[7]))
 
 def p_implementsSomeAllLists(p):
     '''implementsSomeAllLists : empty
@@ -652,7 +653,7 @@ def p_methods(p): # *
 def p_interface(p):
     '''interface : INTERFACE name extendsList LBRACE invariants methods RBRACE'''
     no_comma(p[7])
-    p[0] = sidl.AstNode('interface', p[2], sidl.ListNode(p[3]), sidl.ListNode(p[5]), sidl.ListNode(p[6]))
+    p[0] = sidl.AstNode(ir.interface, p[2], sidl.ListNode(p[3]), sidl.ListNode(p[5]), sidl.ListNode(p[6]))
 
 def p_scopedIDs(p): # +
     '''scopedIDs : scopedID
@@ -671,15 +672,15 @@ def p_maybeExtendsOne(p):
 
 def p_implementsList(p):
     '''implementsList : IMPLEMENTS scopedIDs'''
-    p[0] = sidl.AstNode('implements', p[2])
+    p[0] = sidl.AstNode(ir.implements, p[2])
 
 def p_implementsAllList(p):
     '''implementsAllList : IMPLEMENTS_ALL scopedIDs'''
-    p[0] = sidl.AstNode('implements-all', p[2])
+    p[0] = sidl.AstNode(ir.implements_all, p[2])
 
 def p_method(p):
     '''method : methodAttrs typeVoid methodName LPAREN maybeArgList RPAREN maybeExceptClause maybeFromClause  SEMICOLON requireAssertions ensureAssertions'''
-    p[0] = sidl.AstNode('method', p[2], p[3], sidl.ListNode(p[1]), sidl.ListNode(p[5]), p[7], p[8], sidl.ListNode(p[10]), sidl.ListNode(p[11]))
+    p[0] = sidl.AstNode(ir.method, p[2], p[3], sidl.ListNode(p[1]), sidl.ListNode(p[5]), p[7], p[8], sidl.ListNode(p[10]), sidl.ListNode(p[11]))
 
 def p_method_error(p):
     '''method : methodAttrs typeVoid methodName error maybeArgList RPAREN maybeExceptClause maybeFromClause  SEMICOLON requireAssertions ensureAssertions
@@ -689,7 +690,8 @@ def p_method_error(p):
 def p_typeVoid(p):
     '''typeVoid : type
                 | VOID'''
-    if p[1] == 'void': return sidl.AstNode('type', 'void')
+    if p[1] == 'void':
+        return sidl.AstNode(ir.type, ir.void)
     else: p[0] = p[1]
 
 def p_methodAttrs(p): # *
@@ -771,11 +773,11 @@ def p_argList(p): # +
 
 def p_arg_1(p):
     '''arg : argAttrs mode type name'''
-    p[0] = sidl.AstNode('arg', sidl.ListNode(p[1]), p[2], p[3], p[4])
+    p[0] = sidl.AstNode(ir.arg, sidl.ListNode(p[1]), p[2], p[3], p[4])
 
 def p_arg_2(p):
     '''arg : argAttrs mode rarray'''
-    p[0] = sidl.AstNode('arg', p[1], p[2], p[3])
+    p[0] = sidl.AstNode(ir.arg, p[1], p[2], p[3])
 
 def p_argAttrs(p):
     '''argAttrs : COPY
@@ -795,17 +797,17 @@ def p_customAttrs(p):
 
 def p_customAttr_1(p):
     '''customAttr : ATTRIB_ID'''
-    p[0] = sidl.AstNode('custom attribute', p[1])
+    p[0] = sidl.AstNode(ir.custom_attribute, p[1])
 
 def p_customAttr_2(p):
     '''customAttr : ATTRIB_ID ATTRIB_EQ ATTRIB_STRING'''
-    p[0] = sidl.AstNode('custom assoc attribute', p[1], p[3])
+    p[0] = sidl.AstNode(ir.custom_attribute_assoc, p[1], p[3])
 
 def p_mode(p):
     '''mode : IN
             | OUT
             | INOUT'''
-    p[0] = sidl.AstNode('mode', p[1])
+    p[0] = sidl.AstNode(ir.mode, p[1])
 
 def p_type(p):
     '''type : primitiveType
@@ -824,11 +826,11 @@ def p_primitiveType(p):
                      | DCOMPLEX
                      | STRING
                      | OPAQUE'''
-    p[0] = sidl.AstNode('primitiveType', p[1])
+    p[0] = sidl.AstNode(ir.primitive_type, p[1])
 
 def p_array(p):
     '''array : ARRAY LT scalarType dimension orientation GT'''
-    p[0] = sidl.AstNode('array', p[3], p[4], p[5])
+    p[0] = sidl.AstNode(ir.array, p[3], p[4], p[5])
 
 def p_scalarType(p):
     '''scalarType : primitiveType
@@ -1018,15 +1020,15 @@ def p_unaryExpr_2(p):
 # TODO funcEval is btw. not a good name...
 def p_funcEval_1(p):
     '''funcEval : IDENTIFIER LPAREN funcArgs RPAREN'''
-    p[0] = sidl.Expression('funcEval', p[1], p[3])
+    p[0] = sidl.Expression(ir.fn_eval, p[1], p[3])
 
 def p_funcEval_2(p):
     '''funcEval : IDENTIFIER LPAREN RPAREN'''
-    p[0] = sidl.Expression('funcEval', p[1], [])
+    p[0] = sidl.Expression(ir.fn_eval, p[1], [])
 
 def p_funcEval_3(p):
     '''funcEval : IDENTIFIER'''
-    p[0] = sidl.Expression('variableReference', p[1])
+    p[0] = sidl.Expression(ir.var_ref, p[1])
 
 def p_funcEval_4(p):
     '''funcEval : literal'''
@@ -1054,7 +1056,7 @@ def p_maybeSemicolon(p):
 def p_scopedID(p):
     '''scopedID : maybeDot identifiers empty
                 | maybeDot identifiers EXTENSION'''
-    p[0] = sidl.Expression('scopedid', sidl.ListNode(p[2]), p[3])
+    p[0] = sidl.Expression(ir.scoped_id, sidl.ListNode(p[2]), p[3])
 
 def p_identifiers(p): # +
     '''identifiers : IDENTIFIER
@@ -1074,10 +1076,10 @@ def p_literal(p):
 
 def p_complex(p):
     '''complex : LBRACE number COMMA number RBRACE'''
-    nocomma(p[5])
-    if indexof(';', p[5]) > -1:
+    no_comma(p[5])
+    if operator.indexof(';', p[5]) > -1:
         error(p, "Unexpected ';'")
-    p[0] = ('complex', p[2], p[4])
+    p[0] = (ir.complex_, p[2], p[4])
 
 def p_number(p):
     '''number : empty numliteral
@@ -1202,10 +1204,10 @@ def sidlParse(_sidlFile):
     #lex.lex(debug=debug,optimize=optimize)
     #lex.runmain()
 
-    logging.basicConfig(filename='parser.log',level=logging.DEBUG,
+    logging.basicConfig(filename='parser.log', level=logging.DEBUG,
                         filemode = "w", format = "%(filename)10s:%(lineno)4d:%(message)s")
     log = logging.getLogger()
-    parser = yacc.yacc(debug=debug,optimize=optimize)
+    parser = yacc.yacc(debug=debug, optimize=optimize)
 
     # try:
     #     f = open(sidlFile)
@@ -1218,7 +1220,7 @@ def sidlParse(_sidlFile):
         debug = log
 
     #import pdb; pdb.set_trace()
-    result = parser.parse(sidlFile,lexer=scanner,debug=debug)
+    result = parser.parse(sidlFile, lexer=scanner, debug=debug)
     #print(repr(result))
     print pretty(result.sexpr())
     return 0
