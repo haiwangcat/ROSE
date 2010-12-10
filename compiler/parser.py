@@ -1237,13 +1237,14 @@ if __name__ == '__main__':
         yacc.yacc(debug=_debug, optimize=1-_debug)
 
     else:
-        #sidlParse(sys.argv[1])
-        #exit(0)
+        sidlParse(sys.argv[1])
+        exit(0)
 
-        import hotshot, hotshot.stats
-        prof = hotshot.Profile('parser.prof')
-        prof.runcall(sidlParse, sys.argv[1])
-        stats = hotshot.stats.load("parser.prof")
-        stats.strip_dirs()
-        stats.sort_stats('time', 'calls')
-        stats.print_stats(20)
+        # # Profiling
+        # import hotshot, hotshot.stats
+        # prof = hotshot.Profile('parser.prof')
+        # prof.runcall(sidlParse, sys.argv[1])
+        # stats = hotshot.stats.load("parser.prof")
+        # stats.strip_dirs()
+        # stats.sort_stats('time', 'calls')
+        # stats.print_stats(20)

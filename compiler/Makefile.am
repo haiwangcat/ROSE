@@ -1,6 +1,8 @@
 PYTHONPATH=$(top_srcdir)/contrib
 
-python_PYTHON = parser.py patmat.py sidl.py codegen.py ir.py
+# list all Python source files that also vontain unit tests
+PYTHON_SOURCES = patmat.py sidl.py codegen.py ir.py sidl_token.py
+python_PYTHON = $(PYTHON_SOURCES) parser.py
 bin_PROGRAMS = braid
 
 pyexec_LTLIBRARIES = scanner.la
@@ -9,31 +11,63 @@ scanner_la_CPPFLAGS = $(PYTHONINC)
 scanner_la_LDFLAGS = -avoid-version -module
 scanner_la_LIBADD = -lfl
 
+SIDL_TESTS= \
+	../regression/parser/args.sidl \
+	../regression/parser/ArrayTest.sidl \
+	../regression/parser/cca-0.6.3.sidl \
+	../regression/parser/cca-0.8.2.sidl \
+	../regression/parser/cca.sidl \
+	../regression/parser/clife.sidl \
+	../regression/parser/construct.sidl \
+	../regression/parser/cxxlife.sidl \
+	../regression/parser/decaf.sidl \
+	../regression/parser/enums.sidl \
+	../regression/parser/ExceptionTest.sidl \
+	../regression/parser/f90life.sidl \
+	../regression/parser/hello-client.sidl \
+	../regression/parser/hello-server.sidl \
+	../regression/parser/hello.sidl \
+	../regression/parser/Hello.sidl \
+	../regression/parser/hooks.sidl \
+	../regression/parser/inherit.sidl \
+	../regression/parser/life.sidl \
+	../regression/parser/objarg.sidl \
+	../regression/parser/ordering.sidl \
+	../regression/parser/output.sidl \
+	../regression/parser/Overload.sidl \
+	../regression/parser/pythonlife.sidl \
+	../regression/parser/sidl.sidl \
+	../regression/parser/sidlx.sidl \
+	../regression/parser/sort.sidl \
+	../regression/parser/strings.sidl \
+	../regression/parser/strop.sidl \
+	../regression/parser/struct.sidl \
+	../regression/parser/vect.sidl \
+	../regression/parser/wave2d_cxx_internal.sidl \
+	../regression/parser/wave2d_cxx.sidl \
+	../regression/parser/wave2d_f90.sidl \
+	../regression/parser/wave2d.sidl \
+	../regression/parser/wrapper.sidl
 
-SIDL_TESTS=args.sidl ArrayTest.sidl cca-0.6.3.sidl cca-0.8.2.sidl \
-           cca.sidl clife.sidl construct.sidl cxxlife.sidl decaf.sidl \
-           enums.sidl ExceptionTest.sidl f90life.sidl hello-client.sidl \
-           hello-server.sidl hello.sidl Hello.sidl hooks.sidl inherit.sidl \
-           life.sidl objarg.sidl ordering.sidl output.sidl Overload.sidl \
-           pythonlife.sidl sidl.sidl sidlx.sidl sort.sidl strings.sidl \
-           strop.sidl struct.sidl vect.sidl wave2d_cxx_internal.sidl \
-           wave2d_cxx.sidl wave2d_f90.sidl wave2d.sidl wrapper.sidl
+## SIDL_TESTS=$(patsubst %.sidl,../regression/parser/%.sidl, $(SIDL_NAMES))
 
-SIDL_TOKENS=$(patsubst %.sidl,$(top_srcdir)/regression/parser/%.success, $(SIDL_TESTS))
-
+#UNIT_TOKENS = $(patsubst %.py,%.unit, $(python_PYTHON))
 # Most of the Python files contain doctest tests
-UNIT_TOKENS = $(patsubst %.py,%.unit, $(python_PYTHON))
+# see
+# http://www.gnu.org/software/automake/manual/automake.html#Simple-Tests-using-parallel_002dtests
+TESTS = $(PYTHON_SOURCES) $(SIDL_TESTS)
+TEST_EXTENSIONS = .py .sidl
+PY_LOG_COMPILER = env PYTHONPATH=$(PYTHONPATH) $(PYTHON)
+AM_PY_LOG_FLAGS = -m doctest
+SIDL_LOG_COMPILER = ./braid
+AM_SIDL_LOG_FLAGS =
 
-TESTS = $(UNIT_TOKENS) \
-	$(SIDL_TOKENS)
 
-%.unit: %.py
-	$(PYTHON) $<
-	touch $@
+$(builddir)/%.unit: $(srcdir)/%.py
+	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) -m doctest $<
 
-%.success: %.sidl braid
+$(builddir)/%.success: $(srcdir)/%.sidl braid
 	./braid $<
-	touch $@
 
 run: $(TESTS)
 
@@ -46,7 +80,7 @@ lint:
 	pylint parser.py
 
 # Generate the parser tables
-braid: parser.py
+braid: parser.py scanner.la
 	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) $< --compile
 	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) $< --compile
 	echo "LD_LIBRARY_PATH=$(PYTHON_SHARED_LIBRARY_DIR):LD_LIBRARY_PATH" >$@

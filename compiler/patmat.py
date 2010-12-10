@@ -158,9 +158,9 @@ def unify(a, b, bindings):
 
     >>> A = Variable(); B = Variable(); unify(A, B, [])
     True
-    >>> A = Variable(); unify(A, 1, []); A.binding
+    >>> A = Variable(); _ = unify(A, 1, []); A.binding
     1
-    >>> A = Variable(); unify((1,A), (1,2), []); A.binding
+    >>> A = Variable(); _ = unify((1,A), (1,2), []); A.binding
     2
     >>> A = Variable(); unify((1,2), (A,A), [])
     False
@@ -455,7 +455,3 @@ def compile_matcher(f):
     #f.write(buf)
     #f.close()
     return buf
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

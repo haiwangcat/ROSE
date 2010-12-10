@@ -1,12 +1,12 @@
 AC_PREREQ(2.64)
-AC_INIT([braid],[0.1],[babel-bugs@cca-forum.org])
+AC_INIT([braid],[0.2.1],[adrian@llnl.gov])
 AC_CONFIG_SRCDIR([COPYRIGHT])
 AC_CONFIG_MACRO_DIR([m4])
 CCA_DIAGNOSE_INIT(toolcheck.log)
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([foreign no-dependencies no-installinfo no-installman no-texinfo.tex 1.11 dist-bzip2])
+AM_INIT_AUTOMAKE([foreign no-dependencies no-installinfo no-installman no-texinfo.tex 1.11 dist-bzip2 parallel-tests color-tests silent-rules])
 dnl To regenerate configure and .in files, configure with --enable-maintainer-mode
 AM_MAINTAINER_MODE
 
@@ -26,7 +26,7 @@ LLNL_AUTO_DISABLE
 LLNL_ENABLE_REGRESSION
 LLNL_ENABLE_DOCUMENTATION
 
-AM_PATH_PYTHON([2.4])
+AM_PATH_PYTHON([2.6])
 
 ############################################################
 #

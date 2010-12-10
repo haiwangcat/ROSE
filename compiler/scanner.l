@@ -5,30 +5,35 @@
 %x MULTI1
 %x MULTI2
 %{
-// Copyright (c) 2010, Lawrence Livermore National Security, LLC
-// Produced at the Lawrence Livermore National Laboratory.
-// Written by the Components Team <components@llnl.gov>
-// UCRL-CODE-2002-054
-// All rights reserved.
-//
-// This file is part of Babel. For more information, see
-// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
-// for Our Notice and the LICENSE file for the GNU Lesser General Public
-// License.
-//
-// This program is free software; you can redistribute it and/or modify it
-// under the terms of the GNU Lesser General Public License (as published by
-// the Free Software Foundation) version 2.1 dated February 1999.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
-// conditions of the GNU Lesser General Public License for more details.
-//
-// You should have recieved a copy of the GNU Lesser General Public License
-// along with this program; if not, write to the Free Software Foundation,
-// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-
+/**
+ * This is a scanner for SIDL files. For performance reasons it is
+ * written in C and 100% replaces the Python scanner in parser.py .
+ * Report bugs to <adrian@llnl.gov>
+ *
+ * Copyright (c) 2010, Lawrence Livermore National Security, LLC
+ * Produced at the Lawrence Livermore National Laboratory.
+ * Written by the Components Team <components@llnl.gov>
+ * UCRL-CODE-2002-054
+ * All rights reserved.
+ *
+ * This file is part of Babel. For more information, see
+ * http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+ * for Our Notice and the LICENSE file for the GNU Lesser General Public
+ * License.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License (as published by
+ * the Free Software Foundation) version 2.1 dated February 1999.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+ * conditions of the GNU Lesser General Public License for more details.
+ *
+ * You should have recieved a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ */
 #include <string.h>
 
 enum Token {
@@ -55,11 +60,12 @@ enum Token {
 #define update_yypos() { yypos += yyleng; }
 #define ID_TOKEN       { update_yypos(); yytype = yytext; return -1; }
 #define TOKEN(TOKEN)   { update_yypos(); yytype = #TOKEN; return t_##TOKEN; }
-static int yypos = 0; // Character count in file
+
+static int yypos = 0;             // Character count in file
 static const char* yytype = NULL; // The python token type
-static char* ident = NULL; // Used by IDENTIFIER_COLON
-static char* ident_end = NULL; // Used by IDENTIFIER_COLON
-static const char *fn; // Input file name
+static char* ident = NULL;        // Used by IDENTIFIER_COLON
+static char* ident_end = NULL;    // Used by IDENTIFIER_COLON
+static const char *fn;            // Input file name
 
 %}
 
@@ -224,7 +230,7 @@ scanner_token(PyObject *self, PyObject *args)
 
   if (token_init == NULL) {
      // Load the Token module
-     token_module = PyImport_Import(PyString_FromString("token"));
+     token_module = PyImport_Import(PyString_FromString("sidl_token"));
      token_dict   = PyModule_GetDict(token_module);
      token_init   = PyDict_GetItemString(token_dict, "Token");
   }
