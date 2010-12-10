@@ -4,6 +4,7 @@ PYTHONPATH=$(top_srcdir)/contrib
 PYTHON_SOURCES = patmat.py sidl.py codegen.py ir.py sidl_token.py
 python_PYTHON = $(PYTHON_SOURCES) parser.py
 bin_PROGRAMS = braid
+braid_SOURCES =
 
 pyexec_LTLIBRARIES = scanner.la
 scanner_la_SOURCES = scanner.l

@@ -6,8 +6,11 @@ SUBDIRS = compiler
 doc:
 	doxygen
 
+distclean-local:
+	rm -f toolcheck.log
 
 EXTRA_DIST= \
+	COPYRIGHT README \
 	contrib/doxypy-0.4.2/PKG-INFO \
 	contrib/doxypy-0.4.2/setup.py \
         contrib/doxypy-0.4.2/doxypy.py \
