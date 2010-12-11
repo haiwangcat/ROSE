@@ -59,11 +59,15 @@ class Scope(object):
         return False
 
     def new_header_def(self, s):
-        """append definition \c s to the header of the scope"""
+        """
+        append definition \c s to the header of the scope
+        """
         self.header.append(s)
 
     def new_def(self, s):
-        """append definition \c s to the scope"""
+        """
+        append definition \c s to the scope
+        """
         self.defs.extend(self.pre_defs)
         self.defs.append(s)
         self.defs.extend(self.post_defs)
@@ -85,7 +89,6 @@ class Scope(object):
         self.post_defs.append(s)
 
     def __str__(self):
-        import pdb; pdb.set_trace()
         prefix = '\n'+' '*self.indent_level
         print prefix.join(self.header), '+', prefix.join(self.defs)
         return prefix.join(self.header) + prefix.join(self.defs)
@@ -121,8 +124,7 @@ class GenericCodeGenerator(object):
         """
         Language-independent generator rules
 
-        \param generator  generator to call recursively
-        \param node         sexpr-based intermediate representation (input)
+        \param node       s-expression-based intermediate representation (input)
         \param scope      the \c Scope object the output will be written to
         \return           a string containing the expression for \c node
         """
@@ -139,12 +141,24 @@ class GenericCodeGenerator(object):
             else: raise Exception("match error: "+node.str())
 
     def get_type(self, node):
-        """\return a string with the type of the IR node \c node."""
+        """
+        \return a string with the type of the IR node \c node.
+        """
         import pdb; pdb.set_trace()
         return "sFIXME "+str(node)
 
+    def get_item_type(self, struct, item):
+        """
+        \return the type of the item named \c item
+        """
+        _, _, items = struct
+        Type = Variable()
+        for _ in member((ir.struct_item, Type, item), items):
+            return Type.binding
+        raise
+
 class Fortran77CodeGenerator(GenericCodeGenerator):
-    @matcher(globals(), debug=True)
+    @matcher(globals(), debug=False)
     def get_type(self, node):
         """\return a string with the type of the IR node \c node."""
         with match(node):
@@ -168,15 +182,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             elif ('symbol'):      return "integer*8"
             else: return super(Fortran77CodeGenerator, self).get_type(node)
 
-    def get_item_type(self, struct, item):
-        _, _, items = struct
-        Type = Variable()
-        for _ in member((ir.struct_item, Type, item), items):
-            return Type.binding
-        raise
-
-
-    @matcher(globals(), debug=True)
+    @matcher(globals(), debug=False)
     def generate(self, node, scope):
         """
         Fortran 77 code generator
@@ -197,13 +203,14 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
         def new_def(s):
             # print "new_def", s
             return scope.new_def(s)
+
         def pre_def(s):
             # print "pre_def", s
             return scope.pre_def(s)
 
         with match(node):
             if ('return', Expr):
-                return new_def("retval = %s" % gen(Expr))
+                return "retval = %s" % gen(Expr)
 
             elif (ir.get_struct_item, Struct, Item):
                 (_, name, _) = Struct
@@ -237,40 +244,79 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             else: raise Exception("match error")
 
 
-@matcher(globals())
-def gen_fortran90(node, scope):
+class Fortran77CodeGenerator(GenericCodeGenerator):
     """
     Fortran 90 code generator
     """
-    # recursion
-    def gen(s):
-        return gen_fortran03(indent_level, s)
+    @matcher(globals(), debug=False)
+    def get_type(self, node):
+        """\return a string with the type of the IR node \c node."""
+        with match(node):
+            if ('struct', Type, _): return Type
+            elif ('void'):        return "void"
+            elif ('bool'):        return "logical"
+            elif ('character'):   return "character"
+            elif ('dcomplex'):    return "double complex"
+            elif ('double'):      return "double precision"
+            elif ('fcomplex'):    return "complex"
+            elif ('float'):       return "real"
+            elif ('int'):         return "integer*4"
+            elif ('long'):        return "integer*8"
+            elif ('opaque'):      return "integer*8"
+            elif ('string'):      return "character*(*)"
+            elif ('enum'):        return "integer*8"
+            elif ('struct'):      return "integer*8"
+            elif ('class'):       return "integer*8"
+            elif ('interface'):   return "integer*8"
+            elif ('package'):     return "void"
+            elif ('symbol'):      return "integer*8"
+            else: return super(Fortran77CodeGenerator, self).get_type(node)
 
-    with match(node):
-        if ('return', Expr):
-            return "retval = %s" % gen(Expr)
+    @matcher(globals(), debug=True)
+    def generate(self, node, scope):
+        # recursion
+        def gen(node):
+            return self.generate(node, scope)
 
-        elif (ir.get_struct_item, Struct, Item):
-            return gen(Struct)+'%'+gen(Item)
+        def declare_var(typ, name):
+            s = scope
+            while not s.has_declaration_section:
+                s = s.get_parent()
+            s.new_header_def(self.get_type(typ)+' '+gen(name))
 
-        elif (ir.function, ir.void, Name, Attrs, Args, Excepts, Froms, Requires, Ensures, Body):
-            return '''
-            subroutine %s
-              %s
-              %s
-            end subroutine %s
-            ''' % (Name, gen(Args), gen(Body), Name)
+        def new_def(s):
+            # print "new_def", s
+            return scope.new_def(s)
 
-        elif (ir.function, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
-            return '''
-            function %s
-              %s
-              %s
-            end function %s
-        ''' % (Typ, Name, gen(Args), gen(Body), Name)
-        elif (Expr): return gen_all(gen_fortran03, indent_level, Expr)
+        def pre_def(s):
+            # print "pre_def", s
+            return scope.pre_def(s)
 
-        else: raise Exception("match error")
+        with match(node):
+            if ('return', Expr):
+                return "retval = %s" % gen(Expr)
+
+            elif (ir.get_struct_item, Struct, Item):
+                return gen(Struct)+'%'+gen(Item)
+
+            elif (ir.function, ir.void, Name, Attrs, Args, Excepts, Froms, Requires, Ensures, Body):
+                return '''
+                subroutine %s
+                  %s
+                  %s
+                end subroutine %s
+                ''' % (Name, gen(Args), gen(Body), Name)
+
+            elif (ir.function, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
+                return '''
+                function %s
+                  %s
+                  %s
+                end function %s
+            ''' % (Typ, Name, gen(Args), gen(Body), Name)
+            elif (Expr): return gen_all(gen_fortran03, indent_level, Expr)
+
+            else: raise Exception("match error")
 
 @matcher(globals())
 def gen_fortran03(node, scope):

@@ -1,0 +1,112 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename braid.info
+@set UPDATED 10 December 2010
+@set UPDATED-MONTH December 2010
+@set EDITION 1.0
+@set VERSION 1.0
+@settitle BRAID @value{VERSION}
+
+@c Define a new index for options.
+@defcodeindex op
+@c Combine everything into one index (arbitrarily chosen to be the
+@c concept index).
+@syncodeindex op cp
+@c %**end of header
+
+@copying
+This manual is for BRAID (version @value{VERSION}, @value{UPDATED}).
+
+Copyright @copyright{} 2010, Lawrence Livermore National Security, LLC
+Produced at the Lawrence Livermore National Laboratory.
+Written by the Components Team @email{components@@llnl.gov}
+UCRL-CODE-2002-054
+All rights reserved.
+@end copying
+
+
+@titlepage
+@title BRAID
+@subtitle for version @value{VERSION}, @value{UPDATED}
+@author Components Team (@email{components@@llnl.gov})
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+
+
+@ifnottex
+@node Top
+@top BRAID
+
+This manual is for BRAID (version @value{VERSION}, @value{UPDATED}).
+
+@insertcopying
+@end ifnottex
+
+@menu
+* Overview::		General purpose and information.
+* Invoking BRAID::	How to run @command{braid}.
+* Reporting bugs::	Sending bug reports and feature suggestions.
+* Concept index::	Index of concepts.
+@end menu
+
+
+@node Overview
+@chapter Overview
+
+@cindex overview
+BRAID needs to have a man page.
+
+@node Invoking BRAID
+@chapter Invoking BRAID
+
+@cindex invoking
+@cindex options
+@cindex usage
+@cindex help
+
+The format for running the @command{braid} program is:
+
+@example
+braid @var{option} @dots{}
+@end example
+
+@command{braid} supports the following options:
+
+@table @option
+
+@item --help
+@itemx -h
+@opindex --help
+@opindex -h
+Print an informative help message on standard output and exit
+successfully.
+
+@item --version
+@itemx -v
+@opindex --version
+@opindex -v
+Print the version number and licensing information of Braid on
+standard output and then exit successfully.
+
+@end table
+
+@node Reporting bugs
+@chapter Reporting bugs
+
+@cindex bug reporting
+@cindex problems
+@cindex reporting bugs
+
+To report bugs or suggest enhancements for Braid, please
+send electronic mail to @email{components@@llnl.gov}.
+
+@node Concept index
+@unnumbered Concept index
+
+@printindex cp
+
+@bye

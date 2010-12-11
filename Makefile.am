@@ -1,13 +1,27 @@
 SUBDIRS = compiler
 
-
+info_TEXINFOS = doc/braid.texi
 .PHONY: doc
-
 doc:
-	doxygen
+	doxygen || echo "Doxygen not found; SKIPPING"
+	$(MAKE) -C doc/latex
+
+all-local: doc
 
 distclean-local:
 	rm -f toolcheck.log
+	rm -rf doc/html
+	rm -rf doc/latex
+
+install-data-local: $(builddir)/doc/latex/*.pdf
+	$(INSTALL_DATA) -d $(pkgdatadir)/html/search
+	$(INSTALL_DATA) -t $(pkgdatadir) $^
+	$(INSTALL_DATA) -t $(pkgdatadir)/html        $(builddir)/doc/html/*.*
+	$(INSTALL_DATA) -t $(pkgdatadir)/html/search $(builddir)/doc/html/search/*
+
+uninstall-local:
+	rm -f $(pkgdatadir)/*.pdf
+	rm -rf $(pkgdatadir)/html
 
 EXTRA_DIST= \
 	COPYRIGHT README \

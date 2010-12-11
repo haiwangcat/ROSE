@@ -66,42 +66,47 @@
 #
 # Please report bugs to <adrian@llnl.gov>.
 #
-# \authors
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n
-# Produced at the Lawrence Livermore National Laboratory.                   \n
-# Written by the Components Team <components@llnl.gov>                      \n
-# UCRL-CODE-2002-054                                                        \n
-# All rights reserved.                                                      \n
-#                                                                           \n
-# This file is part of Babel. For more information, see                     \n
-# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n
-# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n
-# License.                                                                  \n
-#                                                                           \n
-# This program is free software; you can redistribute it and/or modify it   \n
-# under the terms of the GNU Lesser General Public License (as published by \n
-# the Free Software Foundation) version 2.1 dated February 1999.            \n
-#                                                                           \n
-# This program is distributed in the hope that it will be useful, but       \n
-# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n
-# conditions of the GNU Lesser General Public License for more details.     \n
-#                                                                           \n
-# You should have recieved a copy of the GNU Lesser General Public License  \n
-# along with this program; if not, write to the Free Software Foundation,   \n
-# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n
-#                                                                           \n
+# \authors <pre>
+# Copyright (c) 2010, Lawrence Livermore National Security, LLC
+# Produced at the Lawrence Livermore National Laboratory.
+# Written by the Components Team <components@llnl.gov>
+# UCRL-CODE-2002-054
+# All rights reserved.
+#
+# This file is part of Babel. For more information, see
+# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+# for Our Notice and the LICENSE file for the GNU Lesser General Public
+# License.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License (as published by
+# the Free Software Foundation) version 2.1 dated February 1999.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+# conditions of the GNU Lesser General Public License for more details.
+#
+# You should have recieved a copy of the GNU Lesser General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+# </pre>
 import re, string
 
 class Variable:
-    '''A logical variable for use with match()'''
+    """
+    A logical variable for use with \c match and \c unify.
+    """
+
     def __init__(self):
         self.binding = None
 
     def bind(self, value, bindings):
         """
         Bind the variable to a \c value and record the variable onto
-        the trail stack \param bindings the trail stack
+        the trail stack \param bindings the trail stack.
+        \param value     the new value for the variable.
+        \param bindings  a mutable list of bindings
         """
         #print "binding", self, "to", value
         self.binding = value
@@ -136,7 +141,7 @@ def member(a, l):
     This generator will yield subsequent bindings for each element in
     \c l that can be unified with \c a.
 
-    \FIXME is this a good idea? do we want something more general?
+    \todo is this a good idea? do we want something more general?
     """
     bindings = []
     for b in l:
@@ -201,7 +206,7 @@ class matcher(object):
     """
     A decorator to perform the pattern matching transformation
 
-    Usage: prefix a function definition with \c @matcher(globals())
+    Usage: prefix a function definition with \c \@matcher(globals())
     """
     def __init__(self, glob, debug=False):
         """
@@ -245,8 +250,8 @@ def compile_matcher(f):
     \return None.
 
     The function is written to a file <f.__name__>_matcher.py
-    \FIXME: not any more
-    \FIXME: rewrite this using the proper Python AST rewriting mechanisms
+    \bug  not any more
+    \todo rewrite this using the proper Python AST rewriting mechanisms
     """
 
     def indentlevel(s):

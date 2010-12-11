@@ -1,8 +1,10 @@
 PYTHONPATH=$(top_srcdir)/contrib
 
 # list all Python source files that also vontain unit tests
-PYTHON_SOURCES = patmat.py sidl.py codegen.py ir.py sidl_token.py
+PYTHON_SOURCES = patmat.py sidl.py codegen.py ir.py
 python_PYTHON = $(PYTHON_SOURCES) parser.py
+noinst_PYTHON=sidl_token.py
+
 bin_PROGRAMS = braid
 braid_SOURCES =
 

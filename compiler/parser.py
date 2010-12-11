@@ -386,7 +386,7 @@ def p_empty(p):
 
 def cons(p):
     """
-    use this for \i 'token+' patterns
+    use this for \c 'token+' patterns
 
     Construct a list \c p[1]:p[2] and store result in \c p[0].
     """
@@ -398,7 +398,7 @@ def cons(p):
 
 def cons13(p):
     """
-    use this for \i '(token , )+' patterns
+    use this for \c '(token , )+' patterns
 
     Construct a list \c p[1]:p[3] and store result in \c p[0].
     """
@@ -415,7 +415,7 @@ def cons13(p):
 
 def consx(p):
     """
-    use this for \i 'token*' patterns
+    use this for \c 'token*' patterns
 
     Construct a list \c p[1]:p[2] and store result in \c p[0].
 
@@ -430,7 +430,7 @@ def consx13(p):
     """
     use this for '(token , )*' patterns
 
-    Construct a list \c p[1]:p[3] and store result in \cp[0].
+    Construct a list \c p[1]:p[3] and store result in \c p[0].
 
     If there is no \c p[1], return an empty list.
     """
