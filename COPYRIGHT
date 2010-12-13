@@ -1,40 +1,42 @@
 COPYRIGHT NOTICE
 ----------------
 
-Copyright (c) 1998-2007 by Lawrence Livermore National Security, LLC.
+Copyright (c) 2010 by Lawrence Livermore National Security, LLC.
 Produced at the Lawrence Livermore National Laboratory.
-Written by Tammy Dahlgren, Tom Epperly, Scott Kohn, Gary Kumfert and
-           James Leek
+Written by Adrian Prantl, Tamara Dahlgren and Thomas Epperly
            <components@llnl.gov>
-UCRL-CODE-2002-054
+UCRL-CODE-?????????
 All rights reserved.
 
-This file is part of Babel. For more information, see
+This file is part of BRAID. For more information, see
 http://www.llnl.gov/CASC/components/.
 
 OUR NOTICE
 
 Our Preamble Notice
 
-A. This notice is required to be provided under our contract with the U.S.
-Department of Energy (DOE). This work was produced at the University of
-California, Lawrence Livermore National Laboratory under Contract
-No. W-7405-ENG-48 with the DOE.
+A. This notice is required to be provided under our contract with the
+U.S.  Department of Energy (DOE). This work was produced at the
+Lawrence Livermore National Laboratory under Contract
+No. DE-AC52-07NA27344 with the DOE.
 
-B. Neither the United States Government nor the University of California nor
-any of their employees, makes any warranty, express or implied, or assumes any
-liability or responsibility for the accuracy, completeness, or usefulness of
-any information, apparatus, product, or process disclosed, or represents that
-its use would not infringe privately-owned rights.
 
-C. Also, reference herein to any specific commercial products, process, or
-services by trade name, trademark, manufacturer or otherwise does not
-necessarily constitute or imply its endorsement, recommendation, or favoring by
-the United States Government or the University of California. The views and
-opinions of authors expressed herein do not necessarily state or reflect those
-of the United States Government or the University of California, and shall not
-be used for advertising or product endorsement purposes.
+B. Neither the United States Government nor Lawrence Livermore
+National Security, LLC nor any of their employees, makes any warranty,
+express or implied, or assumes any liability or responsibility for the
+accuracy, completeness, or usefulness of any information, apparatus,
+product, or process disclosed, or represents that its use would not
+infringe privately-owned rights.
+
+C. Also, reference herein to any specific commercial products,
+process, or services by trade name, trademark, manufacturer or
+otherwise does not necessarily constitute or imply its endorsement,
+recommendation, or favoring by the United States Government or
+Lawrence Livermore National Security, LLC. The views and opinions of
+authors expressed herein do not necessarily state or reflect those of
+the United States Government or Lawrence Livermore National Security,
+LLC, and shall not be used for advertising or product endorsement
+purposes.
 
 The precise terms and conditions for copying, distribution and modification
 appear in the LICENSE file.
-

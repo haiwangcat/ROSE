@@ -5,31 +5,19 @@
 #
 # Please report bugs to <adrian@llnl.gov>.
 #
-# \authors
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC             \n
-# Produced at the Lawrence Livermore National Laboratory.                   \n
-# Written by the Components Team <components@llnl.gov>                      \n
-# UCRL-CODE-2002-054                                                        \n
-# All rights reserved.                                                      \n
-#                                                                           \n
-# This file is part of Babel. For more information, see                     \n
-# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file      \n
-# for Our Notice and the LICENSE file for the GNU Lesser General Public     \n
-# License.                                                                  \n
-#                                                                           \n
-# This program is free software; you can redistribute it and/or modify it   \n
-# under the terms of the GNU Lesser General Public License (as published by \n
-# the Free Software Foundation) version 2.1 dated February 1999.            \n
-#                                                                           \n
-# This program is distributed in the hope that it will be useful, but       \n
-# WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF                \n
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and    \n
-# conditions of the GNU Lesser General Public License for more details.     \n
-#                                                                           \n
-# You should have recieved a copy of the GNU Lesser General Public License  \n
-# along with this program; if not, write to the Free Software Foundation,   \n
-# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA               \n
-#                                                                           \n
+# \authors <pre>
+# Copyright (c) 2010, Lawrence Livermore National Security, LLC
+# Produced at the Lawrence Livermore National Laboratory.
+# Written by the Components Team <components@llnl.gov>
+# UCRL-CODE-????-???
+# All rights reserved.
+#
+# This file is part of Babel. For more information, see
+# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+# for Our Notice and the LICENSE file for ????
+# License.
+#
+# </pre>    \TODO insert License
 
 # SIDL nodes
 version         = 'version'

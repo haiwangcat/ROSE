@@ -1,0 +1,5 @@
+This directory contains 3rd party libraries that are used by BRAID
+and are packaged for convenience.
+
+They are NOT part of BRAID. Please refer to the README/PKG-INFO in
+each subdirectory for licensing details.

@@ -10,29 +10,27 @@ all-local: doc
 
 distclean-local:
 	rm -f toolcheck.log
+
+clean-local:
 	rm -rf doc/html
 	rm -rf doc/latex
-
-install-data-local: $(builddir)/doc/latex/*.pdf
-	$(INSTALL_DATA) -d $(pkgdatadir)/html/search
-	$(INSTALL_DATA) -t $(pkgdatadir) $^
-	$(INSTALL_DATA) -t $(pkgdatadir)/html        $(builddir)/doc/html/*.*
-	$(INSTALL_DATA) -t $(pkgdatadir)/html/search $(builddir)/doc/html/search/*
-
-uninstall-local:
-	rm -f $(pkgdatadir)/*.pdf
-	rm -rf $(pkgdatadir)/html
+	rm -rf doc/man
 
 EXTRA_DIST= \
 	COPYRIGHT README \
-	contrib/doxypy-0.4.2/PKG-INFO \
-	contrib/doxypy-0.4.2/setup.py \
+	contrib/README \
+	contrib/doxypy-0.4.2/PKG-INFO  \
+	contrib/doxypy-0.4.2/setup.py  \
         contrib/doxypy-0.4.2/doxypy.py \
+	contrib/ply/README             \
 	contrib/ply/__init__.py        \
 	contrib/ply/cpp.py	       \
 	contrib/ply/ctokens.py	       \
 	contrib/ply/lex.py	       \
 	contrib/ply/yacc.py  	       \
+	doc/latex/*.pdf \
+	doc/html/*.* \
+	doc/html/search/*.* \
 	regression/parser/args.sidl                \
 	regression/parser/ArrayTest.sidl	   \
 	regression/parser/cca-0.6.3.sidl	   \
