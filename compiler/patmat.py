@@ -213,7 +213,9 @@ class matcher(object):
             for line in fn.split('\n'):
                 n += 1
                 print n, line
-        exec(fn, self.glob, locals())
+        # by using compile we can supply a filename, which results in
+        # more readable backtraces
+        exec(compile(fn, f.func_code.co_filename, 'exec'), self.glob, locals())
         exec('f = %s' % f.__name__)
         # modname = '%s_matcher' % f.__name__
         # sys.path.append('.')
@@ -286,20 +288,6 @@ def compile_matcher(f):
         num_lines.inc()
         dest.insert(pos, line[base_indent:])
 
-    # def parse_globals(src, indent):
-    #     """find all global symbols in src"""
-    #     globs = []
-    #     for line in src:
-    #         m = re.match('^'+' '*indent+
-    #                      r'(([a-zA-Z]\w*)\s*=|(def\s+([a-zA-Z]\w*)))',
-    #                      line)
-    #         if m <> None:
-    #             m1, m2 = m.group(2,4)
-    #             if m1 <> None: globs.append(m1)
-    #             if m2 <> None: globs.append(m2)
-    #     return globs
-
-
     fc = f.func_code
     # access the original source code
     src = open(fc.co_filename, "r").readlines()
@@ -316,7 +304,6 @@ def compile_matcher(f):
     dest = []
     # assign a new function name
     # m = re.match(r'^def +([a-zA-Z_][a-zA-Z_0-9]*)(\(.*:) *$', dest[0])
-    # print dest
     # funcname = m.group(1)
     # funcparms = m.group(2)
     dest.append("""
@@ -325,13 +312,11 @@ def compile_matcher(f):
 # module %s_matcher
 # from patmat import matcher, Variable, match
 """ % f.__name__)
-    num_lines = Counter(2) # number of lines
+
+    # match line numbers with original source
+    dest.append('\n'*(fc.co_firstlineno-5))
+    num_lines = Counter(3) # number of elements in dest
     anonymous_vars = Counter(0) # number of anonymous variables
-#     if (len(imports) > 0):
-#         dest.append("""
-# #from %s import %s
-# """       % (fc.co_filename[0:len(fc.co_filename)-3], imports))
-#
     append_line(src[fc.co_firstlineno])
 
     # stacks
@@ -345,23 +330,26 @@ def compile_matcher(f):
     for line in src[fc.co_firstlineno+1:]+['<<EOF>>']:
         # append_line('# %s:%s\n' % (fc.co_filename, n+fc.co_firstlineno))
 
-        # check for empty line
         il = indentlevel(line)
-        if il < 0:
-            append_line(line)
-            continue
-
-        # check for comment-only line (they mess with the indentation)
-        if re.match(r'^( *#.*)$', line):
+        # check for empty/comment-only line (they mess with the indentation)
+        if re.match(r'^(\w*#.*)*$', line):
+            # make sure it still is a comment after shifting the line
+            # to the left
+            line = "#"*base_indent+line
             append_line(line)
             continue
 
         # leaving a with block
         while len(withindent) > 0 and il <= withindent[-1]:
             # insert registers declarations
-            for i in range(numregs[-1]-1, -1, -1):
-                insert_line(withbegin[-1], ' '*(withindent[-1])
-                            + '_reg%d = %sVariable()\n' % (i, patmat_prefix))
+            decls = []
+            for i in range(0, numregs[-1]):
+                decls.append('_reg%d = %sVariable()' % (i, patmat_prefix))
+
+            # put all in one line, so we don't mess with the line numbering
+            insert_line(withbegin[-1],
+                        ' '*(withindent[-1]) + '; '.join(decls) + '\n')
+
             matchindent.pop()
             withindent.pop()
             withbegin.pop()
@@ -369,8 +357,8 @@ def compile_matcher(f):
             numregs.pop()
             lexpr.pop()
             if len(withindent) <> len(matchindent):
-                raise('**ERROR: %s:$d: missing if statement inside of if block'%
-                    (fc.co_filename. fc.co_firstlineno+2+num_lines.read()))
+                raise('**ERROR: %s:%d: missing if statement inside of if block'%
+                    (fc.co_filename, fc.co_firstlineno+2+num_lines.read()))
             # ... repeat for all closing blocks
 
         # end of function definition
