@@ -4,7 +4,7 @@ info_TEXINFOS = doc/braid.texi
 .PHONY: doc
 doc:
 	doxygen || echo "Doxygen not found; SKIPPING"
-	$(MAKE) -C doc/latex
+	$(MAKE) -j1 -C doc/latex
 
 all-local: doc
 

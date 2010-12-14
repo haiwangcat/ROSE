@@ -66,21 +66,15 @@ SIDL_LOG_COMPILER = ./braid
 AM_SIDL_LOG_FLAGS =
 
 
-$(builddir)/%.unit: $(srcdir)/%.py
+$(builddir)/%.unit: $(srcdir)/%.py scanner.la
 	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) -m doctest $<
 
 $(builddir)/%.success: $(srcdir)/%.sidl braid
 	./braid $<
 
-run: $(TESTS)
-
 clean-local:
 	rm -rf scanner.c braid *.pyc *.pyo parsetab.py* lextab.py* parser.log parser.out
 	rm -rf $(SIDL_TOKENS) $(UNIT_TOKENS)
-
-lint:
-	pylint sidl.py
-	pylint parser.py
 
 # Generate the parser tables
 braid: parser.py scanner.la
