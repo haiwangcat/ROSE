@@ -208,14 +208,16 @@ class matcher(object):
 
     def __call__(self, f):
         fn = compile_matcher(f)
+        fc = f.func_code
         if self.debug:
-            n = 0
-            for line in fn.split('\n'):
+            print "## "+f.__name__+':'
+            n = fc.co_firstlineno
+            for line in fn.split('\n')[n:]:
                 n += 1
                 print n, line
         # by using compile we can supply a filename, which results in
         # more readable backtraces
-        exec(compile(fn, f.func_code.co_filename, 'exec'), self.glob, locals())
+        exec(compile(fn, fc.co_filename, 'exec'), self.glob, locals())
         exec('f = %s' % f.__name__)
         # modname = '%s_matcher' % f.__name__
         # sys.path.append('.')
@@ -251,25 +253,32 @@ def compile_matcher(f):
         return len(re.match(r'^ *', s).group(0))
 
     def scan_variables(rexpr):
+        """
+        extract variable names from the right-hand side expression
+        and rename anonymous variables to something unique
+        """
         reserved_words = r'(False)|(True)|(None)|(NotImplemented)|(Ellipsis)'
-        matches = re.findall(r'(^|\W)([_A-Z]\w*)($|[^\(])', rexpr)
+        matches = re.findall(r'(^|\W)([_A-Z]\w*)($|[^\(\w])', rexpr)
         names = set([])
         for m in matches:
             var = m[1]
             if re.match(reserved_words, var):
                 # ignore reserved words
                 continue
-            name = var
-            if name[0] == '_':
+
+            if var[0] == '_': # name starts with underscore
                 # Generate names for anonymous variables
                 anonymous_vars.inc()
-                name = '_G%d'%anonymous_vars.read()
-                rexpr = string.replace(rexpr, var, name, 1)
+                var1 = '_G%d'%anonymous_vars.read()
+                rexpr = re.sub(r'(^|\W)%s($|[^\(\w])'%var,
+                               r'\1%s\2'%var1,
+                               rexpr, 1)
+                var = var1
 
-            # Check against duplicates
+            # Remember variable name if it is new
             if var not in names:
-                regalloc[-1].append(name)
-                names.add(name)
+                regalloc[-1].append(var)
+                names.add(var)
 
         numregs[-1] = max(numregs[-1], len(names))
         return rexpr
@@ -399,7 +408,7 @@ def compile_matcher(f):
                 if m:
                     rexpr = m.group(4)
                     regalloc[-1] = []
-                    line = '%s%s %smatch(%s, %s):\n' \
+                    line = '%s%s %smatch(%s, %s):' \
                         % (m.group(1), m.group(2),
                            patmat_prefix,
                            lexpr[-1],
@@ -411,11 +420,12 @@ def compile_matcher(f):
                                       r'\1_reg%s%d\2' % (d, i),
                                       line)
 
-                    # split off the part behind the ':' as new line
+                    # split off the part behind the ':' and append it
                     then = m.group(5)
                     if len(then) > 0:
                         append_line(line)
-                        line = ' '*il+then+'\n'
+                        line = ' '*il+then
+                    line += '\n'
 
         # every time
         if len(withbegin) > 0:
