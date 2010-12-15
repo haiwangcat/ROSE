@@ -381,8 +381,8 @@ class Fortran03CodeGenerator(GenericCodeGenerator):
             if ('return', Expr):
                 return "retval = %s" % gen(Expr)
 
-            elif (ir.get_struct_item, Struct, Item):
-                return 'get_'+gen(Item)+'('+gen(Struct)+')'
+            elif (ir.get_struct_item, (_, StructName, _), Item):
+                return 'get_'+gen(Item)+'('+gen(StructName)+')'
 
             elif (ir.function, ir.void, Name, Attrs, Args, Excepts, Froms, Requires, Ensures, Body):
                 return '''
@@ -473,11 +473,188 @@ class CCodeGenerator(GenericCodeGenerator):
             elif ('return', Expr):
                 return "return(%s)" % gen(Expr)
 
-            elif (ir.get_struct_item, Struct, Item):
-                return gen(Struct)+'.'+gen(Item)
+            elif (ir.get_struct_item, (_, StructName, _), Item):
+                return StructName+'.'+gen(Item)
 
             elif (Expr):
-                return super(Fortran77CodeGenerator, self).generate(Expr, scope)
+                return super(CCodeGenerator, self).generate(Expr, scope)
+            else: raise Exception("match error")
+
+
+# ----------------------------------------------------------------------
+# C++
+# ----------------------------------------------------------------------
+class CXXFile(CFile):
+    """
+    This class represents a C source file
+    """
+    def __init__(self):
+        super(CXXFile, self).__init__()
+    pass
+
+class CXXCodeGenerator(CCodeGenerator):
+    """
+    C++ code generator
+    """
+    @matcher(globals(), debug=False)
+    def get_type(self, node):
+        """\return a string with the type of the IR node \c node."""
+        return super(CXXCodeGenerator, self).get_type(node)
+
+    @matcher(globals(), debug=False)
+    def generate(self, node, scope):
+        # recursion
+        def gen(node):
+            return self.generate(node, scope)
+
+        def declare_var(typ, name):
+            s = scope
+            while not s.has_declaration_section:
+                s = s.get_parent()
+            s.new_header_def(self.get_type(typ)+' '+gen(name))
+
+        def new_def(s):
+            # print "new_def", s
+            return scope.new_def(s)
+
+        def pre_def(s):
+            # print "pre_def", s
+            return scope.pre_def(s)
+
+        with match(node):
+            if (ir.function, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
+                return '''
+                %s %s(%s) {
+                  %s
+                }
+            ''' % (Typ, Name, pretty(Args), gen(Body))
+            elif ('return', Expr):
+                return "return(%s)" % gen(Expr)
+
+            elif (ir.get_struct_item, (_, StructName, _), Item):
+                return StructName+'.'+gen(Item)
+
+            elif (Expr):
+                return super(CXXCodeGenerator, self).generate(Expr, scope)
+            else: raise Exception("match error")
+
+# ----------------------------------------------------------------------
+# Java
+# ----------------------------------------------------------------------
+class JavaFile(SourceFile):
+    """
+    This class represents a Java source file
+    """
+    def __init__(self):
+        super(JavaFile, self).__init__(indent_level=0)
+
+class JavaCodeGenerator(GenericCodeGenerator):
+    """
+    Java code generator
+    """
+    @matcher(globals(), debug=False)
+    def get_type(self, node):
+        """\return a string with the type of the IR node \c node."""
+        with match(node):
+            if ('struct', Type, _): return Type
+            elif ('void'):        return "void"
+            elif ('bool'):        return "boolean"
+            elif ('character'):   return "char"
+            elif ('dcomplex'):    return ""
+            elif ('double'):      return "double"
+            elif ('fcomplex'):    return ""
+            elif ('float'):       return "float"
+            elif ('int'):         return "int"
+            elif ('long'):        return "long"
+            elif ('opaque'):      return ""
+            elif ('string'):      return "String"
+            elif ('enum'):        return "enum"
+            elif ('struct'):      return "struct"
+            elif ('class'):       return ""
+            elif ('interface'):   return ""
+            elif ('package'):     return ""
+            elif ('symbol'):      return ""
+            else: return super(JavaCodeGenerator, self).get_type(node)
+
+    @matcher(globals(), debug=False)
+    def generate(self, node, scope):
+        # recursion
+        def gen(node):
+            return self.generate(node, scope)
+
+        def declare_var(typ, name):
+            s = scope
+            while not s.has_declaration_section:
+                s = s.get_parent()
+            s.new_header_def(self.get_type(typ)+' '+gen(name))
+
+        def new_def(s):
+            # print "new_def", s
+            return scope.new_def(s)
+
+        def pre_def(s):
+            # print "pre_def", s
+            return scope.pre_def(s)
+
+        with match(node):
+            if (ir.function, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
+                return '''
+                %s %s(%s) {
+                  %s
+                }
+            ''' % (Typ, Name, pretty(Args), gen(Body))
+            elif ('return', Expr):
+                return "return(%s)" % gen(Expr)
+
+            elif (ir.get_struct_item, (_, StructName, _), Item):
+                return StructName+'.'+gen(Item)
+
+            elif (Expr):
+                return super(JavaCodeGenerator, self).generate(Expr, scope)
+            else: raise Exception("match error")
+
+# ----------------------------------------------------------------------
+# Python
+# ----------------------------------------------------------------------
+class PythonFile(SourceFile):
+    """
+    This class represents a Python source file
+    """
+    def __init__(self):
+        super(PythonFile, self).__init__(indent_level=0)
+
+class PythonCodeGenerator(GenericCodeGenerator):
+    """
+    Python code generator
+    """
+    @matcher(globals(), debug=False)
+    def generate(self, node, scope):
+        # recursion
+        def gen(node):
+            return self.generate(node, scope)
+
+        def new_def(s):
+            # print "new_def", s
+            return scope.new_def(s)
+
+        def pre_def(s):
+            # print "pre_def", s
+            return scope.pre_def(s)
+
+        with match(node):
+            if (ir.function, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
+                return '''
+                def %s(%s):
+                  %s
+            ''' % (Name, gen(Args), gen(Body))
+            elif ('return', Expr):
+                return "return(%s)" % gen(Expr)
+
+            elif (ir.get_struct_item, (_, StructName, _), Item):
+                return StructName+'.'+gen(Item)
+
+            elif (Expr):
+                return super(PythonCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")
 
 # for babel core functionality ....
