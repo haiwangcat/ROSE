@@ -38,9 +38,6 @@
 # License.
 #
 # </pre>    \TODO insert License
-#
-# \mainpage
-# Welcome to Braid/Babel 2!
 
 import logging, operator, sys
 #import re
@@ -58,7 +55,6 @@ sys.path.append('.libs')
 import scanner
 
 sidlFile = ''
-_debug = 0
 
 tokens = [ 'VOID', 'ARRAY', 'RARRAY', 'BOOL', 'CHAR', 'DCOMPLEX', 'DOUBLE',
             'FCOMPLEX', 'FLOAT', 'INT', 'LONG', 'OPAQUE', 'STRING',
@@ -1183,12 +1179,18 @@ def pretty(sexpr, n=0, sep=' '):
 # ----------------------------------------------------------------------
 
 
-def sidlParse(_sidlFile):
-    global sidlFile
-    sidlFile = _sidlFile
+def parse(sidl_file, debug=False):
+    """
+    Parse the .sidl file and return the object-oriented intermediate
+    representation.
 
-    debug = _debug
-    optimize = 1-_debug
+    \param sidl_file   the name of the input file
+    \param debug       turn on debugging output
+    """
+    global sidlFile
+    sidlFile = sidl_file
+
+    optimize = not debug
 
     #lex.lex(debug=debug,optimize=optimize)
     #lex.runmain()
@@ -1209,31 +1211,23 @@ def sidlParse(_sidlFile):
         debug = log
 
     #import pdb; pdb.set_trace()
-    result = parser.parse(sidlFile, lexer=scanner, debug=debug)
-    #print(repr(result))
-    print pretty(result.sexpr())
-    return 0
+    return parser.parse(sidlFile, lexer=scanner, debug=debug)
 
 if __name__ == '__main__':
-    # TODO: use getopt instead
-    if sys.argv[1] == '--compile':
-        # Run the scanner and parser in non-optimizing mode. This will
-        # generate 'parsetab.py' which contains the
-        # automaton. Subsequent runs can then use python -O $0.
-        # print 'Generating scanner...'
-        # lex.lex(debug=_debug, optimize=1-_debug)
-        print 'Generating parser...'
-        yacc.yacc(debug=_debug, optimize=1-_debug)
+    # Run the scanner and parser in non-optimizing mode. This will
+    # generate 'parsetab.py' which contains the
+    # automaton. Subsequent runs can then use python -O $0.
+    # print 'Generating scanner...'
+    # lex.lex(debug=_debug, optimize=1-_debug)
+    print 'Generating parser...'
+    _debug=0
+    yacc.yacc(debug=_debug, optimize=1-_debug)
 
-    else:
-        sidlParse(sys.argv[1])
-        exit(0)
-
-        # # Profiling
-        # import hotshot, hotshot.stats
-        # prof = hotshot.Profile('parser.prof')
-        # prof.runcall(sidlParse, sys.argv[1])
-        # stats = hotshot.stats.load("parser.prof")
-        # stats.strip_dirs()
-        # stats.sort_stats('time', 'calls')
-        # stats.print_stats(20)
+    # # Profiling
+    # import hotshot, hotshot.stats
+    # prof = hotshot.Profile('parser.prof')
+    # prof.runcall(sidlParse, sys.argv[1])
+    # stats = hotshot.stats.load("parser.prof")
+    # stats.strip_dirs()
+    # stats.sort_stats('time', 'calls')
+    # stats.print_stats(20)
