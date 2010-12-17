@@ -1,9 +1,17 @@
-PYTHONPATH=$(top_srcdir)/contrib
+if PYTHON_VERSION_2_6
+# add Backports
+  PYTHONPATH1=$(top_srcdir)/contrib:$(top_srcdir)/contrib/argparse-1.1
+else
+  PYTHONPATH1=$(top_srcdir)/contrib
+endif
 
-# list all Python source files that also vontain unit tests
-PYTHON_SOURCES = patmat.py sidl.py codegen.py ir.py
-python_PYTHON = $(PYTHON_SOURCES) parser.py
-noinst_PYTHON=sidl_token.py
+PYTHONPATH=$(PYTHONPATH1)
+
+# list all Python source files that also contain unit tests
+PYTHON_SOURCES = patmat.py sidl.py codegen.py ir.py braid.py parsetab.py
+python_PYTHON = $(PYTHON_SOURCES) sidl_parser.py
+noinst_PYTHON = sidl_token.py
+BUILT_SOURCES = parsetab.py
 
 bin_PROGRAMS = braid
 braid_SOURCES =
@@ -63,7 +71,7 @@ TEST_EXTENSIONS = .py .sidl
 PY_LOG_COMPILER = env PYTHONPATH=$(PYTHONPATH) $(PYTHON)
 AM_PY_LOG_FLAGS = -m doctest
 SIDL_LOG_COMPILER = ./braid
-AM_SIDL_LOG_FLAGS =
+AM_SIDL_LOG_FLAGS = --gen-sexp
 
 
 $(builddir)/%.unit: $(srcdir)/%.py scanner.la
@@ -77,9 +85,11 @@ clean-local:
 	rm -rf $(SIDL_TOKENS) $(UNIT_TOKENS)
 
 # Generate the parser tables
-braid: parser.py scanner.la
-	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) $< --compile
-	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) $< --compile
+braid: braid.py parsetab.py
 	echo "LD_LIBRARY_PATH=$(PYTHON_SHARED_LIBRARY_DIR):LD_LIBRARY_PATH" >$@
 	echo "env PYTHONPATH=$(PYTHONPATH) $(PYTHON) -O $< \$$@" >>$@
 	chmod u+x $@
+
+parsetab.py: sidl_parser.py scanner.la
+	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) $< --compile
+	env PYTHONPATH=$(PYTHONPATH) $(PYTHON) $< --compile

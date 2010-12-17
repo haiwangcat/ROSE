@@ -23,10 +23,10 @@
 
 #             import pdb; pdb.set_trace()
 
-def make_sexpr(child):
-    """helper function for sexpr()"""
+def make_sexp(child):
+    """helper function for sexp()"""
     if isinstance(child, AstNode):
-        return child.sexpr()
+        return child.sexp()
     else:
         return child
 
@@ -47,13 +47,13 @@ class AstNode:
     def __repr__(self):
         return self.myrepr()
 
-    def sexpr(self):
+    def sexp(self):
         """return an s-expression representing this node"""
         #print '@', self.type
 
         s = [self.type]
         for child in self.children:
-            s.append(make_sexpr(child))
+            s.append(make_sexp(child))
         return tuple(s)
 
     def myrepr(self):
@@ -87,7 +87,7 @@ class ListNode(AstNode):
         self.type = []
         self.children = children
 
-    def sexpr(self):
+    def sexp(self):
         """return an s-expression representing this node"""
         s = []
         # try:
@@ -96,7 +96,7 @@ class ListNode(AstNode):
         # except:
         #     pass
         for child in self.children:
-            s.append(make_sexpr(child))
+            s.append(make_sexp(child))
         return s
 
     def myrepr(self):

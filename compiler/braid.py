@@ -23,28 +23,28 @@
 # \mainpage
 # Welcome to Braid/Babel 2!
 
-import parser
+import sidl_parser
 import argparse
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='''
+    cmdline = argparse.ArgumentParser(description='''
 Do magically wonderful things with SIDL (scientific interface
 definition language) files.
 ''')
-    parser.add_argument('sidl_files', metavar='file.sidl', type=file, nargs='+',
-                        help='SIDL files to use as input')
-    parser.add_argument('--gen-sexpr', action='store_true',
-                        help='generate an s-expression')
+    cmdline.add_argument('sidl_files', metavar='file.sidl', #type=file,
+                         nargs='+', help='SIDL files to use as input')
+    cmdline.add_argument('--gen-sexp', action='store_true', dest='gen_sexp',
+                         help='generate an s-expression')
 
-    args = parser.parse_args()
+    args = cmdline.parse_args()
     for sidl_file in args.sidl_files:
-        sidlParse(sidl_file
+        result = sidl_parser.parse(sidl_file)
 
-    if args.gen_sexpr:
-      print result.sexpr()
+        if args.gen_sexp:
+            print result.sexp()
 
-    return 0
-)
+    exit(0)
+
 
 

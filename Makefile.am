@@ -19,6 +19,11 @@ clean-local:
 EXTRA_DIST= \
 	COPYRIGHT README \
 	contrib/README \
+	contrib/argparse-1.1/setup.py      \
+	contrib/argparse-1.1/README.txt    \
+	contrib/argparse-1.1/PKG-INFO      \
+	contrib/argparse-1.1/NEWS.txt      \
+	contrib/argparse-1.1/argparse.py   \
 	contrib/doxypy-0.4.2/PKG-INFO  \
 	contrib/doxypy-0.4.2/setup.py  \
         contrib/doxypy-0.4.2/doxypy.py \

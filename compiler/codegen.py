@@ -176,7 +176,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
         """
         Fortran 77 code generator
 
-        \param node         sexpr-based intermediate representation (input)
+        \param node         sexp-based intermediate representation (input)
         \param scope  the Scope object the output will be written to
         """
         # recursion

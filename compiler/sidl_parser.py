@@ -1102,7 +1102,7 @@ def p_integer_2(p):
 # ----------------------------------------------------------------------
 
 @matcher(globals(), debug=False)
-def pretty(sexpr, n=0, sep=' '):
+def pretty(sexp, n=0, sep=' '):
     """
     pretty print s-expressions
 
@@ -1112,7 +1112,7 @@ def pretty(sexpr, n=0, sep=' '):
     def tmap(f, l):
         return tuple(map(f, l))
 
-    with match(sexpr):
+    with match(sexp):
         if ('file', Requires, Imports, Packages):
             return "%s\n%s\n%s\n" % \
                 (pretty(Requires), pretty(Imports), pretty(Packages))

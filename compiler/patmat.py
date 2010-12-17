@@ -15,8 +15,8 @@
 # \subsection example Example
 #
 # \code
-# @matcher(globals()) def demo(sexpr):
-#    with match(sexpr):
+# @matcher(globals()) def demo(sexp):
+#    with match(sexp):
 #        if ('first', Second):
 #            print "found second:", Second
 #        elif None:
@@ -32,14 +32,14 @@
 # translation to the following form:
 #
 # \code
-# @matcher(globals()) def demo(sexpr):
+# @matcher(globals()) def demo(sexp):
 #    Second = Variable()
 #    A = Variable()
-#    if match(sexpr, ('first', Second)):
+#    if match(sexp, ('first', Second)):
 #        print "found second:", Second.binding
-#    elif match(sexpr, None):
+#    elif match(sexp, None):
 #        print "found None"
-#    elif match(sexpr, A):
+#    elif match(sexp, A):
 #        print "found other: ", A.binding
 #    else: raise # never reached
 # \endcode
