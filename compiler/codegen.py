@@ -32,12 +32,26 @@ class Scope(object):
     +--------------------+     +-----------------------------------+
     </pre>
     """
-    def __init__(self, indent_level):
-        self.header = []
-        self.defs = []
-        self.pre_defs = []
-        self.post_defs = []
+    def __init__(self, indent_level=0, separator='\n'):
+        """
+        \param indent_level   This is the level of indentation used by
+                              this \c Scope object. The \c
+                              indent_level is constant for each \c
+                              Scope object. If you want to change the
+                              indentation, the idea is to create a
+                              child \Scope object with a different
+                              indentation.
+
+        \param separator      This string will be inserted between every
+                              two definitions.
+        """
+        self._header = []
+        self._defs = []
+        self._pre_defs = []
+        self._post_defs = []
         self.indent_level = indent_level
+        self._sep = separator+' '*self.indent_level
+
 
     def has_declaration_section(self):
         """
@@ -49,44 +63,75 @@ class Scope(object):
         """
         append definition \c s to the header of the scope
         """
-        self.header.append(s)
+        self._header.append(s)
 
     def new_def(self, s):
         """
-        append definition \c s to the scope
+        Append definition \c s to the scope
+        \return  \c self
         """
-        self.defs.extend(self.pre_defs)
-        self.defs.append(s)
-        self.defs.extend(self.post_defs)
-        self.pre_defs = []
-        self.post_defs = []
+        self._defs.extend(self._pre_defs)
+        self._defs.append(str(s))
+        self._defs.extend(self._post_defs)
+        self._pre_defs = []
+        self._post_defs = []
         return self
 
     def pre_def(self, s):
         """
-        record a definition \c s to be added to \c defs before the
+        Record a definition \c s to be added to \c defs before the
         next call of \c new_def.
         """
-        self.pre_defs.append(s)
+        self._pre_defs.append(s)
+
     def post_def(self, s):
         """
-        record a definition \c s to be added to \c defs after the
+        Record a definition \c s to be added to \c defs after the
         next call of \c new_def.
         """
-        self.post_defs.append(s)
+        self._post_defs.append(s)
 
     def __str__(self):
-        prefix = '\n'+' '*self.indent_level
-        print prefix.join(self.header), '+', prefix.join(self.defs)
-        return prefix.join(self.header) + prefix.join(self.defs)
+        """
+        Perform the actual translation into a readable string,
+        complete with indentation and newlines.
+        """
+        #print self._header, '+', self._defs
+        #import pdb; pdb.set_trace()
+        return (self._sep.join(self._header) +
+                self._sep.join(self._defs))
+
+class CommaSepScope(Scope):
+    """
+    Use this to join definitions with commas.
+    """
+    def __init__(self):
+        super(CommaSepScope, self).__init__(indent_level=1, separator=',')
+
+class WsSepScope(Scope):
+    """
+    Use this to join definitions with commas.
+    """
+    def __init__(self):
+        super(WsSepScope, self).__init__(indent_level=0, separator=' ')
+
+class SemicolonSepScope(Scope):
+    """
+    Use this to join definitions with semicolons, each on one line.
+    """
+    def __init__(self, indent_level=0):
+        super(SemicolonSepScope, self).__init__(indent_level, separator=';\n')
+
 
 class SourceFile(Scope):
     """
     This class represents a generic source file
     """
+    def __init__(self, indent_level=0):
+        super(SourceFile, self).__init__(indent_level, separator='\n')
+
     def has_declaration_section(self):
         return True
-    pass
 
 class Function(Scope):
     """
@@ -98,7 +143,7 @@ class Function(Scope):
 class GenericCodeGenerator(object):
 
     @matcher(globals(), debug=False)
-    def generate(self, node, scope):
+    def generate(self, node, scope=SourceFile()):
         """
         Language-independent generator rules
 
@@ -172,7 +217,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             else: return super(Fortran77CodeGenerator, self).get_type(node)
 
     @matcher(globals(), debug=False)
-    def generate(self, node, scope):
+    def generate(self, node, scope=F77File()):
         """
         Fortran 77 code generator
 
@@ -272,7 +317,7 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
             else: return super(Fortran90CodeGenerator, self).get_type(node)
 
     @matcher(globals(), debug=False)
-    def generate(self, node, scope):
+    def generate(self, node, scope=F90File()):
         # recursion
         def gen(node):
             return self.generate(node, scope)
@@ -321,17 +366,17 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
 # ----------------------------------------------------------------------
 # Fortran 2003
 # ----------------------------------------------------------------------
-class F03File(SourceFile):
+class F03File(F90File):
     """
     This class represents a Fortran 03 source file
     """
     def __init__(self):
-        super(F03File, self).__init__(indent_level=6)
+        super(F03File, self).__init__()
     pass
 
-class Fortran03CodeGenerator(GenericCodeGenerator):
+class Fortran03CodeGenerator(Fortran90CodeGenerator):
     """
-    Fortran 03 code generator
+    Fortran 2003 code generator
     """
     @matcher(globals(), debug=False)
     def get_type(self, node):
@@ -358,7 +403,7 @@ class Fortran03CodeGenerator(GenericCodeGenerator):
             else: return super(Fortran03CodeGenerator, self).get_type(node)
 
     @matcher(globals(), debug=False)
-    def generate(self, node, scope):
+    def generate(self, node, scope=F03File()):
         # recursion
         def gen(node):
             return self.generate(node, scope)
@@ -444,7 +489,7 @@ class CCodeGenerator(GenericCodeGenerator):
             else: return super(CCodeGenerator, self).get_type(node)
 
     @matcher(globals(), debug=False)
-    def generate(self, node, scope):
+    def generate(self, node, scope=CFile()):
         # recursion
         def gen(node):
             return self.generate(node, scope)
@@ -502,7 +547,7 @@ class CXXCodeGenerator(CCodeGenerator):
         return super(CXXCodeGenerator, self).get_type(node)
 
     @matcher(globals(), debug=False)
-    def generate(self, node, scope):
+    def generate(self, node, scope=CXXFile()):
         # recursion
         def gen(node):
             return self.generate(node, scope)
@@ -577,7 +622,7 @@ class JavaCodeGenerator(GenericCodeGenerator):
             else: return super(JavaCodeGenerator, self).get_type(node)
 
     @matcher(globals(), debug=False)
-    def generate(self, node, scope):
+    def generate(self, node, scope=JavaFile()):
         # recursion
         def gen(node):
             return self.generate(node, scope)
@@ -628,7 +673,7 @@ class PythonCodeGenerator(GenericCodeGenerator):
     Python code generator
     """
     @matcher(globals(), debug=False)
-    def generate(self, node, scope):
+    def generate(self, node, scope=PythonFile()):
         # recursion
         def gen(node):
             return self.generate(node, scope)
@@ -657,4 +702,146 @@ class PythonCodeGenerator(GenericCodeGenerator):
                 return super(PythonCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")
 
-# for babel core functionality ....
+
+
+# ----------------------------------------------------------------------
+# SIDL
+# ----------------------------------------------------------------------
+class SIDLFile(SemicolonSepScope):
+    """
+    This class represents a SIDL source file
+    """
+    def __init__(self):
+        super(SIDLFile, self).__init__()
+
+
+class SIDLCodeGenerator(GenericCodeGenerator):
+    """
+    SIDL code generator
+    """
+    @matcher(globals(), debug=False)
+    def generate(self, node, scope=SIDLFile()):
+        # recursion
+        def gen(node):
+            return self.generate(node, scope)
+
+        def gen_(node):
+            "like gen but with trailing ' ', if nonempty"
+            if node == []: return ''
+            return self.generate(node, scope)+' '
+
+        def _gen(node):
+            "like gen but with preceding ' ', if nonempty"
+            if node == []: return ''
+            return ' '+self.generate(node, scope)
+
+        def new_def(s):
+            if s == scope:
+                import pdb; pdb.set_trace()
+                raise Exception("Hey! No cycles, please.")
+            if isinstance(s, list):
+                import pdb; pdb.set_trace()
+                raise Exception("Hey! No lists, neither.")
+            #print "new_def", s
+            if s <> '':
+                scope.new_def(s)
+
+        def pre_def(s):
+            # print "pre_def", s
+            return scope.pre_def(s)
+
+        def gen_scope(pre, defs, post):
+            new_def(pre)
+            child_scope = SemicolonSepScope(indent_level=scope.indent_level+4)
+            r = self.generate(defs, child_scope)
+            if (r <> ''):
+                raise Exception("unexpected retval")
+            new_def(str(child_scope))
+            new_def(post)
+
+        def gen_comma_sep(defs):
+            child_scope = CommaSepScope()
+            r = self.generate(defs, child_scope)
+            if (r <> ''):
+                raise Exception("unexpected retval")
+            return str(child_scope)
+
+        def gen_ws_sep(defs):
+            child_scope = WsSepScope()
+            r = self.generate(defs, child_scope)
+            if (r <> ''):
+                raise Exception("unexpected retval")
+            return str(child_scope)
+
+        def tmap(f, l):
+            return tuple(map(f, l))
+
+        #import pdb; pdb.set_trace()
+
+        with match(node):
+            if (ir.file_, Requires, Imports, Packages):
+                new_def(gen(Requires))
+                new_def(gen(Imports))
+                new_def(gen(Packages))
+                return str(scope)
+
+            elif (ir.package, (ir.identifier, Name), Version, Usertypes):
+                gen_scope('package %s %s {' % (Name, gen(Version)),
+                          Usertypes,
+                          '}')
+
+            elif (ir.user_type, Attrs, Defn): 
+                return gen_(Attrs)+gen(Defn)
+
+            elif (ir.class_, Name, Extends, Implements, Invariants, Methods):
+                head = 'class '+gen(Name)
+                if (Extends) <> []:    head.append('extends '+gen_ws_sep(Extends))
+                if (Implements) <> []: head.append('implements '+gen_ws_sep(Implements))
+                if (Invariants) <> []: head.append('invariants '+gen_ws_sep(Invariants))
+                gen_scope(head+'{', Methods, '}')
+
+            elif (ir.interface, Name, Extends, Invariants, Methods):
+                head = 'interface '+gen(Name)
+                if (Extends) <> []:    head.append('extends '+gen_ws_sep(Extends))
+                if (Invariants) <> []: head.append('invariants '+gen_ws_sep(Invariants))
+                gen_scope(head+'{', Methods, '}')
+
+            elif (ir.method, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
+                return (gen_ws_sep(Attrs)+
+                        gen(Typ)+' '+gen(Name)+'('+gen_comma_sep(Args)+')'+
+                        _gen(Excepts)+
+                        _gen(Froms)+
+                        _gen(Requires)+
+                        _gen(Ensures))
+
+            elif (ir.arg, Attrs, Mode, Typ, Name):
+                return gen_(Attrs) + '%s %s %s' % tmap(gen, (Mode, Typ, Name))
+
+            elif (ir.array, Typ, Dimension, Orientation):
+                return 'array<%s %s %s>' % tmap(gen, (Typ, Dimension, Orientation))
+
+            elif (ir.enum, (ir.identifier, Name), Enumerators):
+                return 'enum %s {%s}' % (Name, gen(Enumerators, n+2,';'))
+
+            elif (ir.expr, ir.scoped_id, A, B):
+                return '.%s%s ' % (gen(A), gen(B))
+
+            elif (ir.attribute,   Name):    return Name
+            elif (ir.identifier,  Name):    return Name
+            elif (ir.version,     Version): return Version
+            elif (ir.mode,        Name):    return Name
+            elif (ir.method_name, Name, []):return Name
+            elif (ir.method_name, Name, Extension): return Name+' '+Extension
+            elif (ir.primitive_type, Name): return Name
+            elif (Op, A, B):                return ' '.join((gen(A), Op, gen(B)))
+            elif (Op, A):                   return ' '.join((Op, gen(A)))
+            elif []: return ''
+            elif A:
+                if (isinstance(A, list)):
+                    for defn in A:
+                        new_def(gen(defn))
+                else:
+                    return str(A)
+            else:
+                raise Exception("match error")
+        return ''

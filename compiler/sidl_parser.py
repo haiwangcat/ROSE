@@ -698,7 +698,7 @@ def p_methodAttr(p):
 def p_methodName(p):
     '''methodName : IDENTIFIER empty
                   | IDENTIFIER EXTENSION'''
-    p[0] = p[1], p[2]
+    p[0] = sidl.AstNode(ir.method_name, p[1], p[2])
 
 def p_maybeExceptClause(p):
     '''maybeExceptClause : exceptClause
@@ -716,11 +716,11 @@ def p_maybeFromClause(p):
 
 def p_fromClause(p):
     '''fromClause : FROM scopedID'''
-    p[0] = 'from', p[2]
+    p[0] = sidl.AstNode(ir.from_, p[2])
 
 def p_invariant(p):
     '''invariant : INVARIANT assertion'''
-    p[0] = 'invariant', p[1]
+    p[0] = sidl.AstNode(ir.invariant, p[1])
 
 def p_requireAssertions(p):
     '''requireAssertions : REQUIRE assertions
@@ -740,11 +740,11 @@ def p_assertions(p): # +
 
 def p_assertion_1(p):
     '''assertion : IDENTIFIER_COLON assertExpr SEMICOLON'''
-    p[0] = 'assertion', p[1], p[2]
+    p[0] = sidl.AstNode(ir.assertion, p[1], p[2])
 
 def p_assertion_2(p):
     '''assertion : assertExpr SEMICOLON'''
-    p[0] = 'assertion', '<anonymous>', p[1]
+    p[0] = sidl.AstNode(ir.assertion, '<anonymous>', p[1])
 
 def p_maybeArgList(p):
     '''maybeArgList : argList
@@ -836,7 +836,7 @@ def p_orientation(p):
 
 def p_rarray(p):
     '''rarray : RARRAY LT primitiveType dimension GT name LPAREN maybeExtents RPAREN'''
-    p[0] = 'rarray', p[3], p[4], p[6], sidl.ListNode(p[8])
+    p[0] = sidl.AstNode(ir.rarray, p[3], p[4], p[6], sidl.ListNode(p[8]))
 
 def p_maybeExtents(p):
     '''maybeExtents : empty
@@ -1064,7 +1064,7 @@ def p_complex(p):
     no_comma(p[5])
     if operator.indexof(';', p[5]) > -1:
         error(p, "Unexpected ';'")
-    p[0] = (ir.complex_, p[2], p[4])
+    p[0] = sidl.AstNode(ir.complex_, p[2], p[4])
 
 def p_number(p):
     '''number : empty numliteral
@@ -1099,84 +1099,10 @@ def p_integer_2(p):
     '''integer : INTEGER_LITERAL'''
     p[0] = int(p[1])
 
-# ----------------------------------------------------------------------
-
-@matcher(globals(), debug=False)
-def pretty(sexp, n=0, sep=' '):
-    """
-    pretty print s-expressions
-
-    This is essentially an unparser for SIDL.
-    """
-
-    def tmap(f, l):
-        return tuple(map(f, l))
-
-    with match(sexp):
-        if ('file', Requires, Imports, Packages):
-            return "%s\n%s\n%s\n" % \
-                (pretty(Requires), pretty(Imports), pretty(Packages))
-
-        elif ('package', ('identifier', Name), Version, Usertypes):
-            return 'package %s %s {\n%s\n}\n' \
-                % (Name, pretty(Version), pretty(Usertypes, 2))
-
-        elif ('user type', Attrs, Defn):
-            return pretty(Attrs, n, '\n') + ' ' + pretty(Defn, n, '\n')
-
-        elif ('class', Name, Extends, Implements, Invariants, Methods):
-            return 'class %s extends {%s} implements {%s} invariants{%s} {\n' \
-                % tmap(lambda x: pretty(x, 0, ','), \
-                           (Name, Extends, Implements, Invariants)) \
-                           + pretty(Methods, n+2, ';') \
-                           + '\n'+' '*n+'}\n'
-
-        elif ('interface', Name, Extends, Invariants, Methods):
-            n+=2
-            return ' '*(n-2)+'interface %s extends {%s} invariants{%s} {\n' \
-                % tmap(lambda x: pretty(x, 0, ','), \
-                           (Name, Extends, Invariants)) \
-                           + pretty(Methods, n+2, ';') \
-                           + '\n'+' '*n+'}\n'
-
-        elif ('method', Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
-            return '%s %s %s(%s) %s %s %s %s ;' \
-                % tmap(pretty, (Attrs, Typ, Name, Args, Excepts, Froms, Requires, Ensures))
-
-        elif ('arg', Attrs, Mode, Typ, Name):
-            return '%s %s %s %s' % tmap(pretty, (Attrs, Mode, Typ, Name))
-
-        elif ('array', Typ, Dimension, Orientation):
-            return 'array<%s %s %s>' % tmap(pretty, (Typ, Dimension, Orientation))
-
-        elif ('enum', ('identifier', Name), Enumerators):
-            return 'enum %s {%s}' % (Name, pretty(Enumerators, n+2,';'))
-
-        elif ('expression', 'scopedid', A, B):
-            return '.%s%s ' % (pretty(A), pretty(B))
-
-        elif ('attribute', Name): return Name
-        elif ('identifier', Name): return Name
-        elif ('version', Version): return Version
-        elif ('mode', Name): return Name
-        elif (Op, A, B): return ' '.join((pretty(A), Op, pretty(B)))
-        elif (Op, A):    return ' '.join(            (Op, pretty(A)))
-        elif []: return ''
-        elif A:
-            if (isinstance(A, list)):
-                if n > 0: # indentation heuristic
-                    return '\n'+' '*n+(sep+'\n'+' '*n).join( \
-                        map(lambda x: pretty(x, n, sep), A))
-                else:
-                    return (sep+' ').join(map(lambda x: pretty(x, n, sep), A))
-            else:
-                return str(A)
-        else:
-            raise "match error"
-    raise "match error"
 
 
 # ----------------------------------------------------------------------
+
 
 
 def parse(sidl_file, debug=False):
@@ -1195,9 +1121,6 @@ def parse(sidl_file, debug=False):
     #lex.lex(debug=debug,optimize=optimize)
     #lex.runmain()
 
-    logging.basicConfig(filename='parser.log', level=logging.DEBUG,
-                        filemode = "w", format = "%(filename)10s:%(lineno)4d:%(message)s")
-    log = logging.getLogger()
     parser = yacc.yacc(debug=debug, optimize=optimize)
 
     # try:
@@ -1208,6 +1131,10 @@ def parse(sidl_file, debug=False):
     #     print "Cannot read file", sidlFile
 
     if debug == 1:
+        logging.basicConfig(filename='parser.log', level=logging.DEBUG,
+                            filemode = "w",
+                            format = "%(filename)10s:%(lineno)4d:%(message)s")
+        log = logging.getLogger()
         debug = log
 
     #import pdb; pdb.set_trace()

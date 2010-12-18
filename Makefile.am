@@ -6,7 +6,7 @@ doc:
 	doxygen || echo "Doxygen not found; SKIPPING"
 	$(MAKE) -j1 -C doc/latex
 
-all-local: doc
+dist-local: doc
 
 distclean-local:
 	rm -f toolcheck.log

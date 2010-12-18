@@ -20,7 +20,7 @@
 #
 # </pre>    \TODO insert License
 
-
+import ir
 #             import pdb; pdb.set_trace()
 
 def make_sexp(child):
@@ -130,19 +130,19 @@ class ListNode(AstNode):
 
 class File(AstNode):
     def __init__(self, *children):
-        AstNode.__init__(self, 'file', *children)
-    def requires(self): return children[0]
-    def imports(self):  return children[1]
-    def packages(self): return children[2]
+        AstNode.__init__(self, ir.file_, *children)
+    def requires(self): return self.hildren[0]
+    def imports(self):  return self.hildren[1]
+    def packages(self): return self.hildren[2]
 
 class Expression(AstNode):
     def __init__(self, *children):
-        AstNode.__init__(self, 'expression', *children)
+        AstNode.__init__(self, ir.expr, *children)
 
 class IfxExpression(Expression):
     """Base class for infix operators"""
     def __init__(self, *children):
-        AstNode.__init__(self, 'ifxexpr', *children)
+        AstNode.__init__(self, ir.expr, *children)
 
     def __str__(self):
         return str(self.children[0]) + ' ' \
