@@ -387,16 +387,17 @@ def cons13(p):
 
     Construct a list \c p[1]:p[3] and store result in \c p[0].
     """
-    #for i in range(0, len(p)):
-    #    print i, p[i]
-    #print ""
+    # for i in range(0, len(p)):
+    #     print i, p[i]
     if len(p) < 4:
         if p[1] == None:
-            p[0] = p[1]
-        else:
             p[0] = []
+        else:
+            p[0] = [p[1]]
     else:
         p[0] = [p[1]] + p[3]
+    # print "->", p[0]
+    # print ""
 
 def consx(p):
     """
@@ -467,7 +468,7 @@ def p_error(errorToken):
 
 def p_version(p):
     '''version : VERSION version_'''
-    p[0] = sidl.AstNode(ir.version, p[1])
+    p[0] = sidl.AstNode(ir.version, p[2])
 
 def p_version_error(p):
     '''version : VERSION error'''
@@ -1041,11 +1042,13 @@ def p_maybeSemicolon(p):
 def p_scopedID(p):
     '''scopedID : maybeDot identifiers empty
                 | maybeDot identifiers EXTENSION'''
-    p[0] = sidl.Expression(ir.scoped_id, sidl.ListNode(p[2]), p[3])
+    print p[1], p[2],p[3]
+    p[0] = sidl.AstNode(ir.scoped_id, sidl.ListNode(p[2]), p[3])
 
 def p_identifiers(p): # +
     '''identifiers : IDENTIFIER
                    | IDENTIFIER DOT identifiers'''
+    print 'X',p[1]
     cons13(p)
 
 def p_literal(p):

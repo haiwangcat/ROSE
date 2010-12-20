@@ -32,8 +32,11 @@ class Scope(object):
     +--------------------+     +-----------------------------------+
     </pre>
     """
-    def __init__(self, indent_level=0, separator='\n'):
+    def __init__(self, relative_indent=0, indent_level=0, separator='\n'):
         """
+        \param relative_indent The amount of indentation relative to
+                              the enclosing scope.
+
         \param indent_level   This is the level of indentation used by
                               this \c Scope object. The \c
                               indent_level is constant for each \c
@@ -42,6 +45,7 @@ class Scope(object):
                               child \Scope object with a different
                               indentation.
 
+
         \param separator      This string will be inserted between every
                               two definitions.
         """
@@ -49,6 +53,7 @@ class Scope(object):
         self._defs = []
         self._pre_defs = []
         self._post_defs = []
+        self.relative_indent = relative_indent
         self.indent_level = indent_level
         self._sep = separator+' '*self.indent_level
 
@@ -98,30 +103,9 @@ class Scope(object):
         """
         #print self._header, '+', self._defs
         #import pdb; pdb.set_trace()
-        return (self._sep.join(self._header) +
+        return (' '*self.relative_indent +
+                self._sep.join(self._header) +
                 self._sep.join(self._defs))
-
-class CommaSepScope(Scope):
-    """
-    Use this to join definitions with commas.
-    """
-    def __init__(self):
-        super(CommaSepScope, self).__init__(indent_level=1, separator=',')
-
-class WsSepScope(Scope):
-    """
-    Use this to join definitions with commas.
-    """
-    def __init__(self):
-        super(WsSepScope, self).__init__(indent_level=0, separator=' ')
-
-class SemicolonSepScope(Scope):
-    """
-    Use this to join definitions with semicolons, each on one line.
-    """
-    def __init__(self, indent_level=0):
-        super(SemicolonSepScope, self).__init__(indent_level, separator=';\n')
-
 
 class SourceFile(Scope):
     """
@@ -707,7 +691,7 @@ class PythonCodeGenerator(GenericCodeGenerator):
 # ----------------------------------------------------------------------
 # SIDL
 # ----------------------------------------------------------------------
-class SIDLFile(SemicolonSepScope):
+class SIDLFile(Scope):
     """
     This class represents a SIDL source file
     """
@@ -735,6 +719,11 @@ class SIDLCodeGenerator(GenericCodeGenerator):
             if node == []: return ''
             return ' '+self.generate(node, scope)
 
+        def _comma_gen(node):
+            "like gen but with preceding ', ', if nonempty"
+            if node == []: return ''
+            return ', '+self.generate(node, scope)
+
         def new_def(s):
             if s == scope:
                 import pdb; pdb.set_trace()
@@ -750,28 +739,28 @@ class SIDLCodeGenerator(GenericCodeGenerator):
             # print "pre_def", s
             return scope.pre_def(s)
 
-        def gen_scope(pre, defs, post):
-            new_def(pre)
-            child_scope = SemicolonSepScope(indent_level=scope.indent_level+4)
+        def gen_in_scope(defs, child_scope):
             r = self.generate(defs, child_scope)
             if (r <> ''):
                 raise Exception("unexpected retval")
-            new_def(str(child_scope))
-            new_def(post)
+            return str(child_scope)
+
+
+        def gen_scope(pre, defs, post):
+            sep = '\n'+' '*scope.indent_level
+            new_def(pre+sep+
+                    gen_in_scope(defs, 
+                                 Scope(4, scope.indent_level+4, separator=';\n'))+
+                    sep+post)
 
         def gen_comma_sep(defs):
-            child_scope = CommaSepScope()
-            r = self.generate(defs, child_scope)
-            if (r <> ''):
-                raise Exception("unexpected retval")
-            return str(child_scope)
+            return gen_in_scope(defs, Scope(indent_level=1, separator=','))
 
         def gen_ws_sep(defs):
-            child_scope = WsSepScope()
-            r = self.generate(defs, child_scope)
-            if (r <> ''):
-                raise Exception("unexpected retval")
-            return str(child_scope)
+            return gen_in_scope(defs, Scope(indent_level=0, separator=' '))
+
+        def gen_dot_sep(defs):
+            return gen_in_scope(defs, Scope(indent_level=0, separator='.'))
 
         def tmap(f, l):
             return tuple(map(f, l))
@@ -795,14 +784,14 @@ class SIDLCodeGenerator(GenericCodeGenerator):
 
             elif (ir.class_, Name, Extends, Implements, Invariants, Methods):
                 head = 'class '+gen(Name)
-                if (Extends) <> []:    head.append('extends '+gen_ws_sep(Extends))
+                if (Extends)    <> []: head.append('extends '+gen_ws_sep(Extends))
                 if (Implements) <> []: head.append('implements '+gen_ws_sep(Implements))
                 if (Invariants) <> []: head.append('invariants '+gen_ws_sep(Invariants))
                 gen_scope(head+'{', Methods, '}')
 
             elif (ir.interface, Name, Extends, Invariants, Methods):
                 head = 'interface '+gen(Name)
-                if (Extends) <> []:    head.append('extends '+gen_ws_sep(Extends))
+                if (Extends)    <> []: head.append('extends '+gen_ws_sep(Extends))
                 if (Invariants) <> []: head.append('invariants '+gen_ws_sep(Invariants))
                 gen_scope(head+'{', Methods, '}')
 
@@ -815,16 +804,24 @@ class SIDLCodeGenerator(GenericCodeGenerator):
                         _gen(Ensures))
 
             elif (ir.arg, Attrs, Mode, Typ, Name):
-                return gen_(Attrs) + '%s %s %s' % tmap(gen, (Mode, Typ, Name))
+                return gen_(Attrs) + '%s %s%s' % tmap(gen, (Mode, Typ, Name))
 
             elif (ir.array, Typ, Dimension, Orientation):
-                return 'array<%s %s %s>' % tmap(gen, (Typ, Dimension, Orientation))
+                return ('array<%s%s%s>' % 
+                        (gen(Typ), _comma_gen(Dimension), _comma_gen(Orientation)))
+
+            elif (ir.rarray, Typ, Dimension, Name, Extents):
+                return ('rarray<%s%s> %s(%s)' %
+                        (gen(Typ), _comma_gen(Dimension), gen(Name), gen_comma_sep(Extents)))
 
             elif (ir.enum, (ir.identifier, Name), Enumerators):
-                return 'enum %s {%s}' % (Name, gen(Enumerators, n+2,';'))
+                gen_scope('enum %s {' % gen(Name), Enumerators, '}')
 
-            elif (ir.expr, ir.scoped_id, A, B):
-                return '.%s%s ' % (gen(A), gen(B))
+            elif (ir.struct, (ir.identifier, Name), Items):
+                gen_scope('struct %s {' % gen(Name), Items, '}')
+
+            elif (ir.scoped_id, A, B):
+                return '%s%s' % (gen_dot_sep(A), gen(B))
 
             elif (ir.attribute,   Name):    return Name
             elif (ir.identifier,  Name):    return Name
@@ -832,7 +829,7 @@ class SIDLCodeGenerator(GenericCodeGenerator):
             elif (ir.mode,        Name):    return Name
             elif (ir.method_name, Name, []):return Name
             elif (ir.method_name, Name, Extension): return Name+' '+Extension
-            elif (ir.primitive_type, Name): return Name
+            elif (ir.primitive_type, Name): return Name.lower()
             elif (Op, A, B):                return ' '.join((gen(A), Op, gen(B)))
             elif (Op, A):                   return ' '.join((Op, gen(A)))
             elif []: return ''
