@@ -26,7 +26,7 @@ def replace(filename, splicer_name, text):
     Replace the contents of a \c splicer_block with \c text.
     \param filename   The name of the file to edit.
     """
-    # print "splicing", splicer_name, "with", text
+    #print "splicing", splicer_name, "with", text
 
     # first make a backup of the old file
     os.rename(filename, filename+'~')

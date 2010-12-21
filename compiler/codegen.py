@@ -198,7 +198,7 @@ class GenericCodeGenerator(object):
         """
         \return the type of the item named \c item
         """
-        _, _, items = struct
+        _, _, _, items = struct
         Type = Variable()
         for _ in member((ir.struct_item, Type, item), items):
             return Type.binding
@@ -231,7 +231,8 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
     def get_type(self, node):
         """\return a string with the type of the IR node \c node."""
         with match(node):
-            if ('struct', Type, _): return Type
+            if ('struct', (ir.identifier, Package), (ir.identifier, Name), _): 
+                return ("%s_%s"%(Package, Name)).lower()
             elif ('void'):        return "void"
             elif ('bool'):        return "logical"
             elif ('character'):   return "character"
@@ -284,7 +285,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             elif (ir.get_struct_item, Struct, Name, Item):
                 tmp = 'tmp_%s_%s'%(gen(Name), gen(Item))
                 declare_var(self.get_item_type(Struct, Item), tmp)
-                pre_def('call %s_get_%s(%s, %s)' % (
+                pre_def('call %s_get_%s_f(%s, %s)' % (
                              gen(self.get_type(Struct)), gen(Item), gen(Name), tmp))
                 return tmp
 
@@ -494,7 +495,26 @@ class CFile(SourceFile):
         super(CFile, self).__init__(indent_level=0)
     pass
 
-class CCodeGenerator(GenericCodeGenerator):
+class ClikeCodeGenerator(GenericCodeGenerator):
+    """
+    C-like code generator
+    """
+    @matcher(globals(), debug=False)
+    def generate(self, node, scope=CFile()):
+        # recursion
+        def gen(node):
+            return self.generate(node, scope)
+
+        with match(node):
+            if (ir.stmt, Expr):
+                return scope.new_def(gen(Expr)+';\n')
+            elif ('return', Expr):
+                return "return %s" % gen(Expr)
+            elif (Expr):
+                return super(ClikeCodeGenerator, self).generate(Expr, scope)
+            else: raise Exception("match error")
+
+class CCodeGenerator(ClikeCodeGenerator):
     """
     C code generator
     """
@@ -553,7 +573,7 @@ class CCodeGenerator(GenericCodeGenerator):
                 return "return(%s)" % gen(Expr)
 
             elif (ir.get_struct_item, _, StructName, Item):
-                return gen(StructName)+'.'+gen(Item)
+                return gen(StructName)+'->'+gen(Item)
 
             elif (Expr):
                 return super(CCodeGenerator, self).generate(Expr, scope)
@@ -607,8 +627,6 @@ class CXXCodeGenerator(CCodeGenerator):
                   %s
                 }
             ''' % (Typ, Name, pretty(Args), gen(Body))
-            elif ('return', Expr):
-                return "return(%s)" % gen(Expr)
 
             elif (ir.get_struct_item, _, StructName, Item):
                 return gen(StructName)+'.'+gen(Item)
@@ -627,7 +645,7 @@ class JavaFile(SourceFile):
     def __init__(self):
         super(JavaFile, self).__init__(indent_level=0)
 
-class JavaCodeGenerator(GenericCodeGenerator):
+class JavaCodeGenerator(ClikeCodeGenerator):
     """
     Java code generator
     """
@@ -682,8 +700,6 @@ class JavaCodeGenerator(GenericCodeGenerator):
                   %s
                 }
             ''' % (Typ, Name, pretty(Args), gen(Body))
-            elif ('return', Expr):
-                return "return(%s)" % gen(Expr)
 
             elif (ir.get_struct_item, _, StructName, Item):
                 return gen(StructName)+'.'+gen(Item)

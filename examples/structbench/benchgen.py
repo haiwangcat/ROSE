@@ -55,8 +55,8 @@ def dotproduct_expr(n):
     def add(a, b):
         return ("+", a, b)
 
-    a = (ir.struct, 'Point%d'%n, [(ir.struct_item, 'float', 'm%d'%i)
-                               for i in range(1, n+1)]) # do we need the package, too?
+    a = (ir.struct, (ir.identifier, "s"), (ir.identifier, 'Vector'), 
+         [(ir.struct_item, 'float', 'm%d'%i) for i in range(1, n+1)])
     b = a
     e = reduce(add, map(lambda i:
                             ("*",
@@ -68,8 +68,7 @@ def dotproduct_expr(n):
 
 
 
-import subprocess, splicer
-import argparse
+import subprocess, splicer, argparse, os, re
 
 if __name__ == '__main__':
     cmdline = argparse.ArgumentParser(description='auto-generate struct benchmarks')
@@ -85,21 +84,22 @@ if __name__ == '__main__':
     f = open('out/struct%d.sidl'%i, "w")
     f.write(codegen.generate("SIDL", sidl_code(i)))
     f.close()
-    for lang in ["C", "CXX", "F77", "F90", "F03", "Python", "Java"]:
+    languages = ["C", "CXX", "F77", "F90", "F03", "Java", "Python"]
+    for lang in languages:
         ext = {"C"      : "c", 
                "CXX"    : "cxx",
                "F77"    : "f",
                "F90"    : "F90",
                "F03"    : "F03",
-               "Python" : "py",
-               "Java"   : "java"}
+               "Java"   : "java",
+               "Python" : "py"}
         prefix = {"C"   : "s_", 
                "CXX"    : "s_",
                "F77"    : "s_",
                "F90"    : "s_",
                "F03"    : "s_",
-               "Python" : "s/",
-               "Java"   : "s/"}
+               "Java"   : "s/",
+               "Python" : "s/"}
 
         print "generating", lang, i, "..."
 
@@ -126,20 +126,80 @@ if __name__ == '__main__':
     #print cmd
     subprocess.check_call(cmd, shell=True)
     f = open('out/client_%d/main.c'%i, "w")
-    f.write("""    
+    f.write(r"""    
+
 #       include <stdio.h>
 #       include "s_Benchmark.h"
+#       include "sidl_BaseInterface.h"
+#       include "sidl_Exception.h"
          
         int main(int argc, char** argv)
         {
-          s_Benchmark h = s_Benchmark__create();
+          int i;
+	  sidl_BaseInterface ex;
+          s_Benchmark h = s_Benchmark__create(&ex); SIDL_CHECK(ex);
           struct s_Vector__data a, b;
-          float result = s_Benchmark_dot(a, b);
-          s_Benchmark_deleteRef(h);
+          for (i=0; i<1000000; ++i) {
+            volatile float result = s_Benchmark_dot(h, &a, &b, &ex); SIDL_CHECK(ex);
+          }
+          s_Benchmark_deleteRef(h, &ex); SIDL_CHECK(ex);
+	  return 0;
+EXIT: /* this is error handling code for any exceptions that were thrown */
+	  {
+	    char* msg;
+	    fprintf(stderr,"%s:%d: Error, exception caught\n",__FILE__,__LINE__);
+	    sidl_BaseInterface ignore = NULL;
+	    sidl_BaseException be = sidl_BaseException__cast(ex,&ignore);
+  
+	    msg = sidl_BaseException_getNote(be, &ignore);
+	    fprintf(stderr,"%s\n",msg);
+	    sidl_String_free(msg);
+  
+	    msg = sidl_BaseException_getTrace(be, &ignore);
+	    fprintf(stderr,"%s\n",msg);
+	    sidl_String_free(msg);
+  
+	    sidl_BaseException_deleteRef(be, &ignore);
+	    SIDL_CLEAR(ex);
+	    return 1;
+	  }
+
         }
            """)
-    f.close()
+    f.close
 
+    filename = 'out/client_%d/GNUmakefile'%i
+    os.rename(filename, filename+'~')
+    dest = open(filename, 'w')
+    src = open(filename+'~', 'r')
+
+    for line in src:
+        m = re.match(r'^(all *:.*)$', line)
+        if m:
+            dest.write(m.group(1)+
+                       'runC2C runC2CXX runC2F77 runC2F90 runC2F03 runC2Java runC2Python\n')
+            dest.write("CXX=`babel-config --query-var=CXX`\n"+
+                       '\n'.join(["""
+runC2{lang}: lib$(LIBNAME).la ../{lang}_{i}/libimpl.la main.lo
+\tbabel-libtool --mode=link $(CC) -static main.lo lib$(LIBNAME).la \
+\t    ../{lang}_{i}/libimpl.la -o runC2{lang}
+""".format(lang=lang, i=i) for lang in languages[:6]]))
+            dest.write("""
+runC2Python: lib$(LIBNAME).la ../Python_{i}/libimpl1.la main.lo
+\tbabel-libtool --mode=link $(CC) -static main.lo lib$(LIBNAME).la \
+\t    ../Python_{i}/libimpl1.la -o runC2Python
+""".format(i=i))
+        else:
+            dest.write(line)
+    dest.close()
+    src.close()
+
+    f = open('out/client_%d/runAll.sh'%i, 'w')
+    for lang in languages:
+        f.write('/usr/bin/time -f %U -o out{lang} ./runC2{lang} || echo "FAIL" >out{lang}\n'
+                .format(lang=lang))
+    f.write("echo %d "%i+' '.join(['`cat out%s`'%lang for lang in languages])+' >times')
+    f.close()
 
 
 exit(0)
