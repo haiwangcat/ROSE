@@ -8,7 +8,7 @@ endif
 PYTHONPATH=$(PYTHONPATH1)
 
 # list all Python source files that also contain unit tests
-PYTHON_SOURCES = patmat.py sidl.py codegen.py ir.py braid.py parsetab.py
+PYTHON_SOURCES = patmat.py sidl.py codegen.py ir.py braid.py parsetab.py splicer.py
 python_PYTHON = $(PYTHON_SOURCES) sidl_parser.py
 noinst_PYTHON = sidl_token.py
 BUILT_SOURCES = parsetab.py

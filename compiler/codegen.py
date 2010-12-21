@@ -22,6 +22,43 @@
 import ir
 from patmat import matcher, Variable, match, member
 
+def generate(language, ir_code):
+    """
+    Call the appropriate generate() function.  
+
+    \param language One of
+    \c ["C", "CXX", "F77", "F90", "F03", "Python", "Java"]
+    
+    \param ir_code  Intermediate representation input.
+    \return         string
+    """
+    if language == "C": 
+        return str(CCodeGenerator().generate(ir_code, CFile()))
+
+    elif language == "CXX": 
+        return str(CXXCodeGenerator().generate(ir_code, CXXFile()))
+
+    elif language == "F77": 
+        return str(Fortran77CodeGenerator().generate(ir_code, F77File()))
+
+    elif language == "F90": 
+        return str(Fortran90CodeGenerator().generate(ir_code, F90File()))
+
+    elif language == "F03": 
+        return str(Fortran03CodeGenerator().generate(ir_code, F03File()))
+
+    elif language == "Python": 
+        return str(PythonCodeGenerator().generate(ir_code, PythonFile()))
+
+    elif language == "Java": 
+        return str(JavaCodeGenerator().generate(ir_code, JavaFile()))
+
+    elif language == "SIDL": 
+        return str(SIDLCodeGenerator().generate(ir_code, SIDLFile()))
+
+    else: raise Exception("unknown language")
+
+
 class Scope(object):
     """
     we need at least stmt, block, function, module
@@ -55,7 +92,7 @@ class Scope(object):
         self._post_defs = []
         self.relative_indent = relative_indent
         self.indent_level = indent_level
-        self._sep = separator+' '*self.indent_level
+        self._sep = separator+' '*indent_level
 
 
     def has_declaration_section(self):
@@ -101,7 +138,7 @@ class Scope(object):
         Perform the actual translation into a readable string,
         complete with indentation and newlines.
         """
-        #print self._header, '+', self._defs
+        #print self._header, '+', self._defs, 'sep="',self._sep,'"'
         #import pdb; pdb.set_trace()
         return (' '*self.relative_indent +
                 self._sep.join(self._header) +
@@ -111,8 +148,10 @@ class SourceFile(Scope):
     """
     This class represents a generic source file
     """
-    def __init__(self, indent_level=0):
-        super(SourceFile, self).__init__(indent_level, separator='\n')
+    def __init__(self, relative_indent=0, indent_level=0):
+        super(SourceFile, self).__init__(relative_indent, 
+                                         indent_level, 
+                                         separator='\n')
 
     def has_declaration_section(self):
         return True
@@ -142,6 +181,7 @@ class GenericCodeGenerator(object):
             if (ir.stmt, Expr):
                 return scope.new_def(gen(Expr))
 
+            elif (ir.identifier, Name): return Name
             elif (Op, A, B): return ' '.join((gen(A), Op, gen(B)))
             elif (Op, A):    return ' '.join(        (Op, gen(A)))
             elif (A):        return A
@@ -172,8 +212,19 @@ class F77File(SourceFile):
     This class represents a Fortran 77 source file
     """
     def __init__(self):
-        super(F77File, self).__init__(indent_level=6)
-    pass
+        super(F77File, self).__init__(relative_indent=8,
+                                      indent_level=8)
+    def __str__(self):
+        """
+        Perform the actual translation into a readable string,
+        complete with indentation and newlines.
+        """
+        #print self._header, '+', self._defs, 'sep="',self._sep,'"'
+        #import pdb; pdb.set_trace()
+        return (' '*self.relative_indent+
+                ('\n'+' '*self.relative_indent).join([
+                    self._sep.join(self._header),
+                    self._sep.join(self._defs)]))
 
 class Fortran77CodeGenerator(GenericCodeGenerator):
     @matcher(globals(), debug=False)
@@ -201,7 +252,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             else: return super(Fortran77CodeGenerator, self).get_type(node)
 
     @matcher(globals(), debug=False)
-    def generate(self, node, scope=F77File()):
+    def generate(self, node, scope):
         """
         Fortran 77 code generator
 
@@ -230,12 +281,11 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             if ('return', Expr):
                 return "retval = %s" % gen(Expr)
 
-            elif (ir.get_struct_item, Struct, Item):
-                (_, name, _) = Struct
-                tmp = 'tmp_'+gen(Item)
+            elif (ir.get_struct_item, Struct, Name, Item):
+                tmp = 'tmp_%s_%s'%(gen(Name), gen(Item))
                 declare_var(self.get_item_type(Struct, Item), tmp)
                 pre_def('call %s_get_%s(%s, %s)' % (
-                             gen(self.get_type(Struct)), gen(Item), name, tmp))
+                             gen(self.get_type(Struct)), gen(Item), gen(Name), tmp))
                 return tmp
 
             elif (ir.function, ir.void, Name, Attrs, Args, Excepts, From, Requires, Ensures, Body):
@@ -324,8 +374,8 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
             if ('return', Expr):
                 return "retval = %s" % gen(Expr)
 
-            elif (ir.get_struct_item, (_, Name, _), Item):
-                return Name+'%'+gen(Item)
+            elif (ir.get_struct_item, _, Name, Item):
+                return gen(Name)+'%'+gen(Item)
 
             elif (ir.function, ir.void, Name, Attrs, Args, Excepts, Froms, Requires, Ensures, Body):
                 return '''
@@ -410,8 +460,8 @@ class Fortran03CodeGenerator(Fortran90CodeGenerator):
             if ('return', Expr):
                 return "retval = %s" % gen(Expr)
 
-            elif (ir.get_struct_item, (_, StructName, _), Item):
-                return 'get_'+gen(Item)+'('+gen(StructName)+')'
+            elif (ir.get_struct_item, _, Name, Item):
+                return 'get_'+gen(Item)+'('+gen(Name)+')'
 
             elif (ir.function, ir.void, Name, Attrs, Args, Excepts, Froms, Requires, Ensures, Body):
                 return '''
@@ -502,8 +552,8 @@ class CCodeGenerator(GenericCodeGenerator):
             elif ('return', Expr):
                 return "return(%s)" % gen(Expr)
 
-            elif (ir.get_struct_item, (_, StructName, _), Item):
-                return StructName+'.'+gen(Item)
+            elif (ir.get_struct_item, _, StructName, Item):
+                return gen(StructName)+'.'+gen(Item)
 
             elif (Expr):
                 return super(CCodeGenerator, self).generate(Expr, scope)
@@ -560,8 +610,8 @@ class CXXCodeGenerator(CCodeGenerator):
             elif ('return', Expr):
                 return "return(%s)" % gen(Expr)
 
-            elif (ir.get_struct_item, (_, StructName, _), Item):
-                return StructName+'.'+gen(Item)
+            elif (ir.get_struct_item, _, StructName, Item):
+                return gen(StructName)+'.'+gen(Item)
 
             elif (Expr):
                 return super(CXXCodeGenerator, self).generate(Expr, scope)
@@ -635,8 +685,8 @@ class JavaCodeGenerator(GenericCodeGenerator):
             elif ('return', Expr):
                 return "return(%s)" % gen(Expr)
 
-            elif (ir.get_struct_item, (_, StructName, _), Item):
-                return StructName+'.'+gen(Item)
+            elif (ir.get_struct_item, _, StructName, Item):
+                return gen(StructName)+'.'+gen(Item)
 
             elif (Expr):
                 return super(JavaCodeGenerator, self).generate(Expr, scope)
@@ -679,8 +729,8 @@ class PythonCodeGenerator(GenericCodeGenerator):
             elif ('return', Expr):
                 return "return(%s)" % gen(Expr)
 
-            elif (ir.get_struct_item, (_, StructName, _), Item):
-                return StructName+'.'+gen(Item)
+            elif (ir.get_struct_item, _, StructName, Item):
+                return gen(StructName)+'.'+gen(Item)
 
             elif (Expr):
                 return super(PythonCodeGenerator, self).generate(Expr, scope)
@@ -750,7 +800,8 @@ class SIDLCodeGenerator(GenericCodeGenerator):
             sep = '\n'+' '*scope.indent_level
             new_def(pre+sep+
                     gen_in_scope(defs, 
-                                 Scope(4, scope.indent_level+4, separator=';\n'))+
+                                 Scope(4, scope.indent_level+4, 
+                                       separator=';\n'))+';'+
                     sep+post)
 
         def gen_comma_sep(defs):
@@ -804,7 +855,7 @@ class SIDLCodeGenerator(GenericCodeGenerator):
                         _gen(Ensures))
 
             elif (ir.arg, Attrs, Mode, Typ, Name):
-                return gen_(Attrs) + '%s %s%s' % tmap(gen, (Mode, Typ, Name))
+                return gen_(Attrs) + '%s %s %s' % tmap(gen, (Mode, Typ, Name))
 
             elif (ir.array, Typ, Dimension, Orientation):
                 return ('array<%s%s%s>' % 
@@ -825,11 +876,12 @@ class SIDLCodeGenerator(GenericCodeGenerator):
 
             elif (ir.attribute,   Name):    return Name
             elif (ir.identifier,  Name):    return Name
-            elif (ir.version,     Version): return Version
+            elif (ir.version,     Version): return 'version %2.1f'%Version
             elif (ir.mode,        Name):    return Name
             elif (ir.method_name, Name, []):return Name
             elif (ir.method_name, Name, Extension): return Name+' '+Extension
             elif (ir.primitive_type, Name): return Name.lower()
+            elif (ir.struct_item, Type, Name): return ' '.join((gen(Type), gen(Name)))
             elif (Op, A, B):                return ' '.join((gen(A), Op, gen(B)))
             elif (Op, A):                   return ' '.join((Op, gen(A)))
             elif []: return ''
