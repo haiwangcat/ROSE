@@ -139,7 +139,7 @@ if __name__ == '__main__':
 	  sidl_BaseInterface ex;
           s_Benchmark h = s_Benchmark__create(&ex); SIDL_CHECK(ex);
           struct s_Vector__data a, b;
-          for (i=0; i<1000000; ++i) {
+          for (i=0; i<"""+str((2**24)/i)+r"""; ++i) {
             volatile float result = s_Benchmark_dot(h, &a, &b, &ex); SIDL_CHECK(ex);
           }
           s_Benchmark_deleteRef(h, &ex); SIDL_CHECK(ex);
@@ -195,10 +195,40 @@ runC2Python: lib$(LIBNAME).la ../Python_{i}/libimpl1.la main.lo
     src.close()
 
     f = open('out/client_%d/runAll.sh'%i, 'w')
+    f.write(r"""#!/usr/bin/bash
+PYTHON_PATH_1=$PYTHON_PATH
+LIBDIR=`babel-config --query-var=libdir`
+SIDL_DLL_PATH_1="${LIBDIR}/libsidlstub_java.scl;${LIBDIR}/libsidl.scl"
+export LD_LIBRARY_PATH="$LIBDIR:$LD_LIBRARY_PATH"
+
+echo "runAll($i)"
+
+function medtime {
+   # measure the median running user time
+   rm -f $2.all
+   MAX=1
+   for I in `seq $MAX`; do
+     echo "measuring $1 [$I/$MAX]"
+     echo SIDL_DLL_PATH=$SIDL_DLL_PATH
+     echo PYTHON_PATH=$PYTHON_PATH
+     /usr/bin/time -f %U -a -o $2.all $1 || (echo "FAIL" >$2; exit 1)
+   done
+   cat $2.all \
+       | sort \
+       | python -c 'import numpy,sys; \
+           print numpy.median(map(lambda x: float(x), sys.stdin.readlines()))' \
+       >>$2
+}
+""")
     for lang in languages:
-        f.write('/usr/bin/time -f %U -o out{lang} ./runC2{lang} || echo "FAIL" >out{lang}\n'
-                .format(lang=lang))
-    f.write("echo %d "%i+' '.join(['`cat out%s`'%lang for lang in languages])+' >times')
+        f.write('''rm -f out{lang}
+                   export SIDL_DLL_PATH="../{lang}_{i}/libimpl.scl;$SIDL_DLL_PATH_1"
+                   export PYTHON_PATH="../Python_{i}:$PYTHON_PATH_1"
+                   export CLASSPATH="../Java_{i}"
+
+                   medtime ./runC2{lang} out{lang}\n'''.format(lang=lang,i=i))
+    f.write("echo %d "%i+' '.join(['`cat out%s`'%lang 
+                                   for lang in languages])+' >times')
     f.close()
 
 
