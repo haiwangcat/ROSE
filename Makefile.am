@@ -72,3 +72,8 @@ EXTRA_DIST= \
 	regression/parser/wave2d_f90.sidl	   \
 	regression/parser/wave2d.sidl		   \
 	regression/parser/wrapper.sidl
+
+if PYTHON_VERSION_2_6
+# add Backports
+  python_PYTHON = contrib/argparse-1.1/argparse.py
+endif

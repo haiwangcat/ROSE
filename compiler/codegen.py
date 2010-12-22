@@ -32,6 +32,9 @@ def generate(language, ir_code):
     \param ir_code  Intermediate representation input.
     \return         string
     """
+    import sys # apparently CPython does not implement proper tail recursion
+    sys.setrecursionlimit(max(sys.getrecursionlimit(), 2**16))
+
     if language == "C": 
         return str(CCodeGenerator().generate(ir_code, CFile()))
 
@@ -112,6 +115,7 @@ class Scope(object):
         Append definition \c s to the scope
         \return  \c self
         """
+        #print 'new_def', s
         self._defs.extend(self._pre_defs)
         self._defs.append(str(s))
         self._defs.extend(self._post_defs)
@@ -155,6 +159,19 @@ class SourceFile(Scope):
 
     def has_declaration_section(self):
         return True
+
+    def __str__(self):
+        """
+        Perform the actual translation into a readable string,
+        complete with indentation and newlines.
+        """
+        #print self._header, '+', self._defs, 'sep="',self._sep,'"'
+        #import pdb; pdb.set_trace()
+        return (' '*self.relative_indent+
+                ('\n'+' '*self.relative_indent).join([
+                    self._sep.join(self._header),
+                    self._sep.join(self._defs)]))
+
 
 class Function(Scope):
     """
@@ -212,19 +229,44 @@ class F77File(SourceFile):
     This class represents a Fortran 77 source file
     """
     def __init__(self):
-        super(F77File, self).__init__(relative_indent=8,
-                                      indent_level=8)
+        super(F77File, self).__init__(relative_indent=0,
+                                      indent_level=0)
+    def new_def(self, s):
+        """
+        Append definition \c s to the scope
+        \return  \c self
+        """
+        # split long lines
+        tokens = s.split()
+        line = ' '*self.relative_indent
+        while len(tokens) > 0: 
+            while (len(tokens) > 0 and 
+                   len(line)+len(tokens[0]) < 62):
+                line += tokens.pop(0)+' '
+            super(F77File, self).new_def(line)
+            line = '&' # continuation character
+        return self
+
+
     def __str__(self):
         """
         Perform the actual translation into a readable string,
         complete with indentation and newlines.
         """
         #print self._header, '+', self._defs, 'sep="',self._sep,'"'
-        #import pdb; pdb.set_trace()
-        return (' '*self.relative_indent+
-                ('\n'+' '*self.relative_indent).join([
-                    self._sep.join(self._header),
-                    self._sep.join(self._defs)]))
+        #import pdb; pdb.set_trace()        
+        def f77line(defn):
+            if defn[0] == '&': return '     &      '+defn[1:]+'\n'
+            else:              return '        '+defn+'\n'
+
+        data = ''
+        for defn in self._header:
+            data += f77line(defn)
+
+        for defn in self._defs:
+            data += f77line(defn)
+
+        return data
 
 class Fortran77CodeGenerator(GenericCodeGenerator):
     @matcher(globals(), debug=False)
@@ -320,8 +362,33 @@ class F90File(SourceFile):
     This class represents a Fortran 90 source file
     """
     def __init__(self):
-        super(F90File, self).__init__(indent_level=6)
-    pass
+        super(F90File, self).__init__(relative_indent=2,indent_level=2)
+
+    def new_def(self, s):
+        """
+        Append definition \c s to the scope
+        \return  \c self
+        """
+        # split long lines
+        tokens = s.split()
+        while len(tokens) > 0: 
+            line = ' '*self.relative_indent
+            while (len(tokens) > 0 and 
+                   len(line)+len(tokens[0]) < 62):
+                line += tokens.pop(0)+' '
+            
+            if len(tokens) > 0:
+                line += '&'
+            super(F90File, self).new_def(line)
+        return self
+
+
+    def __str__(self):
+        """
+        Perform the actual translation into a readable string,
+        complete with indentation and newlines.
+        """
+        return '\n'.join(self._header+self._defs)+'\n'
 
 class Fortran90CodeGenerator(GenericCodeGenerator):
     """
@@ -372,6 +439,9 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
             return scope.pre_def(s)
 
         with match(node):
+            if (ir.stmt, Expr):
+                return scope.new_def(gen(Expr)+'\n')
+
             if ('return', Expr):
                 return "retval = %s" % gen(Expr)
 
