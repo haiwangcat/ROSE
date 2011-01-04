@@ -111,10 +111,10 @@ if __name__ == '__main__':
         subprocess.check_call(cmd, shell=True)
         impl = ("out/{lang}_{i}/{prefix}Benchmark_Impl.{ext}".
                 format(lang=lang, i=i, ext=ext[lang], prefix=prefix[lang]))
-        if lang == "Python": 
+        if lang == "Python":
             splicer_block = "dot"
         else: splicer_block = "s.Benchmark.dot"
-        #print "splicing", impl
+        print "splicing", impl
         splicer.replace(impl, splicer_block, 
                         codegen.generate(lang, dotproduct_expr(i))) 
 
@@ -177,7 +177,7 @@ EXIT: /* this is error handling code for any exceptions that were thrown */
         m = re.match(r'^(all *:.*)$', line)
         if m:
             dest.write(m.group(1)+
-                       'runC2C runC2CXX runC2F77 runC2F90 runC2F03 runC2Java runC2Python\n')
+                       ' runC2C runC2CXX runC2F77 runC2F90 runC2F03 runC2Java runC2Python\n')
             dest.write("CXX=`babel-config --query-var=CXX`\n"+
                        '\n'.join(["""
 runC2{lang}: lib$(LIBNAME).la ../{lang}_{i}/libimpl.la main.lo
@@ -196,9 +196,11 @@ runC2Python: lib$(LIBNAME).la ../Python_{i}/libimpl1.la main.lo
 
     f = open('out/client_%d/runAll.sh'%i, 'w')
     f.write(r"""#!/usr/bin/bash
-PYTHON_PATH_1=$PYTHON_PATH
+PYTHONPATH_1=$LIBDIR/python$PYTHON_VERSION/site-packages:$PYTHONPATH
 LIBDIR=`babel-config --query-var=libdir`
-SIDL_DLL_PATH_1="${LIBDIR}/libsidlstub_java.scl;${LIBDIR}/libsidl.scl"
+PYTHON_VERSION=`babel-config --query-var=PYTHON_VERSION`
+SIDL_VERSION=`babel-config --query-var=VERSION`
+SIDL_DLL_PATH_1="$LIBDIR/libsidlstub_java.scl;$LIBDIR/libsidl.scl;$LIBDIR/libsidlx.scl"
 export LD_LIBRARY_PATH="$LIBDIR:$LD_LIBRARY_PATH"
 
 echo "runAll($i)"
@@ -206,29 +208,32 @@ echo "runAll($i)"
 function medtime {
    # measure the median running user time
    rm -f $2.all
-   MAX=1
+   MAX=10
    for I in `seq $MAX`; do
      echo "measuring $1 [$I/$MAX]"
      echo SIDL_DLL_PATH=$SIDL_DLL_PATH
-     echo PYTHON_PATH=$PYTHON_PATH
+     echo PYTHONPATH=$PYTHONPATH
      /usr/bin/time -f %U -a -o $2.all $1 || (echo "FAIL" >$2; exit 1)
    done
    cat $2.all \
        | sort \
        | python -c 'import numpy,sys; \
-           print numpy.median(map(lambda x: float(x), sys.stdin.readlines()))' \
+           print numpy.mean( \
+             sorted(map(lambda x: float(x), sys.stdin.readlines()))[1:9])' \
        >>$2
 }
 """)
     for lang in languages:
-        f.write('''rm -f out{lang}
-                   export SIDL_DLL_PATH="../{lang}_{i}/libimpl.scl;$SIDL_DLL_PATH_1"
-                   export PYTHON_PATH="../Python_{i}:$PYTHON_PATH_1"
-                   export CLASSPATH="../Java_{i}"
+        f.write('''
+rm -f out{lang}
+export SIDL_DLL_PATH="../{lang}_{i}/libimpl.scl;$SIDL_DLL_PATH_1"
+export PYTHONPATH="../Python_{i}:$PYTHONPATH_1"
+export CLASSPATH="../Java_{i}:$LIBDIR/sidl-$SIDL_VERSION.jar:$LIBDIR/sidlstub_$SIDL_VERSION.jar"
+medtime ./runC2{lang} out{lang}
+'''.format(lang=lang,i=i))
 
-                   medtime ./runC2{lang} out{lang}\n'''.format(lang=lang,i=i))
     f.write("echo %d "%i+' '.join(['`cat out%s`'%lang 
-                                   for lang in languages])+' >times')
+                                   for lang in languages])+' >times\n')
     f.close()
 
 

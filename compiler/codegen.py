@@ -786,7 +786,15 @@ class PythonFile(SourceFile):
     This class represents a Python source file
     """
     def __init__(self):
-        super(PythonFile, self).__init__(indent_level=0)
+        super(PythonFile, self).__init__(4, 4)
+
+    def __str__(self):
+        """
+        Perform the actual translation into a readable string,
+        complete with indentation and newlines.
+        """
+        return ' '*self.relative_indent+(
+            '\n'+' '*self.relative_indent).join(self._header+self._defs)+'\n'
 
 class PythonCodeGenerator(GenericCodeGenerator):
     """
