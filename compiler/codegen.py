@@ -202,7 +202,13 @@ class GenericCodeGenerator(object):
             elif (ir.value, Value):     return str(Value)
             elif (Op, A, B): return ' '.join((gen(A), Op, gen(B)))
             elif (Op, A):    return ' '.join(        (Op, gen(A)))
-            elif (A):        return A
+            elif (A):        
+                if (isinstance(A, list)):
+                    for defn in A:
+                        gen(defn)
+                    return scope
+                else:
+                    return str(A)
             else: raise Exception("match error: "+node.str())
 
     def get_type(self, node):
@@ -335,8 +341,12 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
                 tmp = 'tmp_%s_%s'%(gen(Name), gen(Item))
                 declare_var(self.get_item_type(Struct, Item), tmp)
                 pre_def('call %s_get_%s_f(%s, %s)' % (
-                             gen(self.get_type(Struct)), gen(Item), gen(Name), tmp))
+                        gen(self.get_type(Struct)), gen(Item), gen(Name), tmp))
                 return tmp
+
+            elif (ir.set_struct_item, Struct, Name, Item, Value):
+                return 'call %s_set_%s_f(%s, %s)' % (
+                    gen(self.get_type(Struct)), gen(Item), gen(Name), gen(Value))
 
             elif (ir.function, ir.void, Name, Attrs, Args, Excepts, From, Requires, Ensures, Body):
                 return new_def('''
@@ -368,8 +378,8 @@ class F90File(SourceFile):
     """
     This class represents a Fortran 90 source file
     """
-    def __init__(self):
-        super(F90File, self).__init__(relative_indent=2,indent_level=2)
+    def __init__(self,relative_indent=2, indent_level=2):
+        super(F90File, self).__init__(relative_indent,indent_level)
 
     def new_def(self, s):
         """
@@ -455,6 +465,9 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
             elif (ir.get_struct_item, _, Name, Item):
                 return gen(Name)+'%'+gen(Item)
 
+            elif (ir.set_struct_item, _, Name, Item, Value):
+                return gen(Name)+'%'+gen(Item)+' = '+gen(Value)
+
             elif (ir.function, ir.void, Name, Attrs, Args, Excepts, Froms, Requires, Ensures, Body):
                 return '''
                 subroutine %s
@@ -483,8 +496,7 @@ class F03File(F90File):
     This class represents a Fortran 03 source file
     """
     def __init__(self):
-        super(F03File, self).__init__()
-    pass
+        super(F03File, self).__init__(relative_indent=4,indent_level=2)
 
 class Fortran03CodeGenerator(Fortran90CodeGenerator):
     """
@@ -514,6 +526,12 @@ class Fortran03CodeGenerator(Fortran90CodeGenerator):
             elif ('symbol'):      return ""
             else: return super(Fortran03CodeGenerator, self).get_type(node)
 
+    """
+    Struct members: These types do not need to be accessed via a function call.
+    """
+    struct_direct_access = ['dcomplex', 'double', 'fcomplex', 'float', 
+                            'int', 'long', 'opaque', 'enum']
+
     @matcher(globals(), debug=False)
     def generate(self, node, scope=F03File()):
         # recursion
@@ -538,8 +556,19 @@ class Fortran03CodeGenerator(Fortran90CodeGenerator):
             if ('return', Expr):
                 return "retval = %s" % gen(Expr)
 
-            elif (ir.get_struct_item, _, Name, Item):
-                return 'get_'+gen(Item)+'('+gen(Name)+')'
+            elif (ir.get_struct_item, Struct, Name, Item):
+                t = self.get_item_type(Struct, Item)
+                if t in self.struct_direct_access:
+                    return gen(Name)+'%'+gen(Item)
+                else:
+                    return 'get_'+gen(Item)+'('+gen(Name)+')'
+
+            elif (ir.set_struct_item, Struct, Name, Item, Value):
+                t = self.get_item_type(Struct, Item)
+                if t in self.struct_direct_access:
+                    return gen(Name)+'%'+gen(Item)+" = "+gen(Value)
+                else:
+                    return 'call set_%s(%s, %s)'%(gen(Item), gen(Name), gen(Value))
 
             elif (ir.function, ir.void, Name, Attrs, Args, Excepts, Froms, Requires, Ensures, Body):
                 return '''
@@ -652,6 +681,9 @@ class CCodeGenerator(ClikeCodeGenerator):
             elif (ir.get_struct_item, _, StructName, Item):
                 return gen(StructName)+'->'+gen(Item)
 
+            elif (ir.set_struct_item, _, StructName, Item, Value):
+                return gen(StructName)+'->'+gen(Item)+' = '+gen(Value)
+
             elif (Expr):
                 return super(CCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")
@@ -707,6 +739,9 @@ class CXXCodeGenerator(CCodeGenerator):
 
             elif (ir.get_struct_item, _, StructName, Item):
                 return gen(StructName)+'.'+gen(Item)
+
+            elif (ir.set_struct_item, _, StructName, Item, Value):
+                return gen(StructName)+'.'+gen(Item)+' = '+gen(Value)
 
             elif (Expr):
                 return super(CXXCodeGenerator, self).generate(Expr, scope)
@@ -781,6 +816,9 @@ class JavaCodeGenerator(ClikeCodeGenerator):
             elif (ir.get_struct_item, _, StructName, Item):
                 return gen(StructName)+'.'+gen(Item)
 
+            elif (ir.set_struct_item, _, StructName, Item, Value):
+                return gen(StructName)+'.get().'+gen(Item)+' = '+gen(Value)
+
             elif (Expr):
                 return super(JavaCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")
@@ -832,6 +870,9 @@ class PythonCodeGenerator(GenericCodeGenerator):
 
             elif (ir.get_struct_item, _, StructName, Item):
                 return gen(StructName)+'.'+gen(Item)
+
+            elif (ir.set_struct_item, _, StructName, Item, Value):
+                return gen(StructName)+'.'+gen(Item)+' = '+gen(Value)
 
             elif (Expr):
                 return super(PythonCodeGenerator, self).generate(Expr, scope)
