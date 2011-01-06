@@ -199,6 +199,7 @@ class GenericCodeGenerator(object):
                 return scope.new_def(gen(Expr))
 
             elif (ir.identifier, Name): return Name
+            elif (ir.value, Value):     return str(Value)
             elif (Op, A, B): return ' '.join((gen(A), Op, gen(B)))
             elif (Op, A):    return ' '.join(        (Op, gen(A)))
             elif (A):        return A
@@ -219,7 +220,7 @@ class GenericCodeGenerator(object):
         Type = Variable()
         for _ in member((ir.struct_item, Type, item), items):
             return Type.binding
-        raise
+        raise Exception("Struct has no member "+item)
 
 # ----------------------------------------------------------------------
 # C      FORTRAN 77
@@ -307,10 +308,16 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             return self.generate(node, scope)
 
         def declare_var(typ, name):
+            """
+            add a declaration for a variable to the innermost scope if
+            such a declaration is not already there
+            """
             s = scope
             while not s.has_declaration_section:
                 s = s.get_parent()
-            s.new_header_def(self.get_type(typ)+' '+gen(name))
+            decl = self.get_type(typ)+' '+gen(name)
+            if list(member(decl, s._header)) == []:
+                s.new_header_def(decl)
 
         def new_def(s):
             # print "new_def", s

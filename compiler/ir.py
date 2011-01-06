@@ -50,6 +50,7 @@ primitive_type  = 'primitive type'
 array           = 'array'
 rarray          = 'rarray'
 assertion       = 'assertion'
+invariant       = 'invariant'
 
 # Expressions
 expr            = 'expression'
@@ -57,6 +58,7 @@ fn_eval         = 'fn eval'
 var_ref         = 'var ref'
 scoped_id       = 'scoped id'
 complex_        = 'complex'
+value           = 'value'
 
 # additional Proc. IR nodes
 function        = 'function'

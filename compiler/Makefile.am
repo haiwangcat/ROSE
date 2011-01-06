@@ -41,6 +41,7 @@ SIDL_TESTS= \
 	../regression/parser/Hello.sidl \
 	../regression/parser/hooks.sidl \
 	../regression/parser/inherit.sidl \
+	../regression/parser/knapsack.sidl \
 	../regression/parser/life.sidl \
 	../regression/parser/objarg.sidl \
 	../regression/parser/ordering.sidl \
@@ -59,6 +60,8 @@ SIDL_TESTS= \
 	../regression/parser/wave2d_f90.sidl \
 	../regression/parser/wave2d.sidl \
 	../regression/parser/wrapper.sidl
+
+EXTRA_DIST=$(SIDL_TESTS)
 
 ## SIDL_TESTS=$(patsubst %.sidl,../regression/parser/%.sidl, $(SIDL_NAMES))
 
