@@ -1,0 +1,172 @@
+// Copyright (c) 2010, Lawrence Livermore National Security
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the Components Team <components@llnl.gov>
+// UCRL-CODE-2002-054
+// All rights reserved.
+// 
+// This file is part of Babel. For more information, see
+// http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
+// for Our Notice and the LICENSE file for the GNU Lesser General Public
+// License.
+// 
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License (as published by
+// the Free Software Foundation) version 2.1 dated February 1999.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
+// conditions of the GNU Lesser General Public License for more details.
+// 
+// You should have recieved a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+//
+//
+////////////////////////////////////////////////////////////////////////
+//
+
+package knapsack version 1.0
+{
+  /**
+   * Expected Exception (Client-side Helper).  Provided as an aid
+   * for clients when processing exceptions within general exception
+   * handling routines.  MUST include all exceptions defined here.
+   */
+  enum ExpectExcept {
+    /** NoneExp = No exception expected */
+    NoneExp,
+    /** BWExc = Bad (i.e., non-positive) Weight exception expected */
+    BWExc,
+    /** ExcExp = A basic exception expected */
+    ExcExp,
+    /** InvExp = Invariant Violation exception expected */
+    InvExp,
+    /** PostExp = Postcondition Violation exception expected */
+    PostExp,
+    /** PreExp = Precondition Violation exception expected */
+    PreExp
+  }
+
+  /*
+   * This is the base knapsack exception.  It is here to facilitate
+   * catching the other types of exceptions.
+   */
+  class kExcept extends sidl.SIDLException {
+  }
+
+  /*
+   * This exception is thrown by the implementation if a value is 
+   * determined to be negative when it should not be.
+   */
+  class kBadWeightExcept extends kExcept {
+  }
+
+  /**
+   * iKnapsack:  An interface defining a set of methods in support of
+   * a simplified implementation of the knapsack problem.  The classic 
+   * knapsack problem determines if a subset of provided weights that 
+   * total exactly the target sum.
+   */
+  interface iKnapsack {
+    /**
+     * The knapsack should only hold positive weights.
+     */
+    invariant 
+      all_pos_weights : onlyPosWeights();
+
+    /**
+     * Initialize the knapsack with the specified weights, w.
+     */
+    void initialize(in array<int> w)
+      throws
+        sidl.PreViolation, sidl.PostViolation, sidl.InvViolation;
+      require 
+        is_1d_array : (w != null) implies (dimen(w) == 1); 
+        pos_weights : (w != null) implies all(w > 0);
+      ensure
+        has_new_weights : hasWeights(w);
+
+    /**
+     * Add weight, w, to the knapsack.
+     */
+    void addWeight(in int w)
+      throws
+        sidl.PreViolation, sidl.PostViolation, sidl.InvViolation;
+      require 
+        pos_weight : w > 0;
+      ensure
+        has_new_weight : hasWeight(w);
+
+    /**
+     * Return TRUE if all weights in the knapsack are positive;
+     * otherwise, return FALSE.
+     */
+    bool onlyPosWeights()
+      throws
+        sidl.InvViolation;
+      ensure
+        side_effect_free:  is pure;
+
+    /**
+     * Return TRUE if all of the specified weights, w, are in the knapsack
+     * or there are no specified weights; otherwise, return FALSE.
+     */
+    bool hasWeights(in array<int> w)
+      throws
+        sidl.PreViolation, sidl.InvViolation;
+      require 
+        is_1d_array : (w != null) implies (dimen(w) == 1); 
+        pos_weights : (w != null) implies all(w > 0);
+      ensure
+        side_effect_free:  is pure;
+
+    /**
+     * Return TRUE if the specified weight, w, is in the knapsack; otherwise, 
+     * return FALSE.
+     */
+    bool hasWeight(in int w)
+      throws
+        sidl.PreViolation, sidl.InvViolation;
+      require 
+        pos_weight : w > 0;
+      ensure
+        side_effect_free:  is pure;
+
+    /**
+     * Return TRUE if there is a solution for the specified target
+     * weight; otherwise, return FALSE.  Recall a solution is a
+     * subset of weights that total exactly to the specified target
+     * weight.
+     */
+    bool hasSolution(in int t);
+      throws
+        sidl.PreViolation, sidl.InvViolation;
+      require 
+        pos_target : t > 0;
+      ensure
+        side_effect_free:  is pure;
+  } /* Interface: iKnapsack */
+
+  /**
+   * gKnapsack:  A good implementation of the knapsack interface.
+   */
+  class gKnapsack implements iKnapsack {
+  } /* Class: gKnapsack */
+
+  /**
+   * npKnapsack:  An implementation of knapsack that allows non-positive
+   * weights.
+   */
+  class npKnapsack implements iKnapsack {
+  } /* Class: npKnapsack */
+
+  /**
+   * nwKnapsack:  An implementation of knapsack that randomly drops
+   * input weights.
+   */
+  class nwKnapsack implements iKnapsack {
+  } /* Class: nwKnapsack */
+
+
+} /* knapsack.sidl */
