@@ -139,7 +139,7 @@ package knapsack version 1.0
      * subset of weights that total exactly to the specified target
      * weight.
      */
-    bool hasSolution(in int t);
+    bool hasSolution(in int t)
       throws
         sidl.PreViolation, sidl.InvViolation;
       require 
@@ -151,21 +151,21 @@ package knapsack version 1.0
   /**
    * gKnapsack:  A good implementation of the knapsack interface.
    */
-  class gKnapsack implements iKnapsack {
+  class gKnapsack implements-all iKnapsack {
   } /* Class: gKnapsack */
 
   /**
    * npKnapsack:  An implementation of knapsack that allows non-positive
    * weights.
    */
-  class npKnapsack implements iKnapsack {
+  class npKnapsack implements-all iKnapsack {
   } /* Class: npKnapsack */
 
   /**
    * nwKnapsack:  An implementation of knapsack that randomly drops
    * input weights.
    */
-  class nwKnapsack implements iKnapsack {
+  class nwKnapsack implements-all iKnapsack {
   } /* Class: nwKnapsack */
 
 
