@@ -90,7 +90,7 @@ def reverse_expr(n, datatype):
     a = (ir.struct, (ir.identifier, "s"), (ir.identifier, 'Vector'), 
          [(ir.struct_item, datatype, 'm%d'%i) for i in range(1, n+1)])
     b = a
-    revs = [(ir.stmt, (ir.set_struct_item, b, (ir.identifier, "b"), 'm%d'%(n-i+1),
+    revs = [(ir.stmt, (ir.set_struct_item, b, (ir.identifier, "b"), 'm%d'%i,
                        (ir.get_struct_item, a, (ir.identifier, "a"), 'm%d'%(n-i+1))))
             for i in range(1, n+1)]
     return revs+[(ir.stmt, ('return', retval(n, datatype)))]
@@ -111,11 +111,14 @@ def retval(n, datatype):
 def gen_main_c(n, datatype):
     t = codegen.CCodeGenerator().get_type(datatype)
     if datatype == "bool":
-        init = '\n  '.join(["a.m%d = TRUE;"%i           for i in range(1, n)])
-    elif datatype == "float":
-        init = '\n  '.join(["a.m%d = %f;"%(i, float(i)) for i in range(1, n)])
+        init = '\n  '.join(["a.m%d = TRUE;"%i          	   for i in range(1, n+1)]
+			  +["b.m%d = FALSE;"%i		   for i in range(1, n+1)])
+    elif datatype == "float":				   
+	init = '\n  '.join(["a.m%d = %f;"%(i, float(i))	   for i in range(1, n+1)]
+			  +["b.m%d = %f;"%(i, float(i))	   for i in range(1, n+1)])
     elif datatype == "string":
-        init = '\n  '.join(['a.m%d = "%d";'%(i, i)      for i in range(1, n)])
+        init = '\n  '.join(['a.m%d = strdup("%d");'%(i, i) for i in range(1, n+1)]
+			  +['b.m%d = strdup("%d");'%(i, i) for i in range(1, n+1)])
     else: raise
     return r"""
 #include <stdlib.h>
