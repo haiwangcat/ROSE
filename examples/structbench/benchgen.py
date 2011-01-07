@@ -101,7 +101,7 @@ def nop_expr(n, datatype):
 
 def retval(n, datatype):
     if datatype == "bool":     return (ir.true)
-    elif datatype == "float":  return (ir.value, float(n))
+    elif datatype == "float":  return (ir.value, n)
     elif datatype == "string": return (ir.literal, str(n))
     else: raise
 

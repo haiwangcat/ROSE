@@ -9,7 +9,7 @@ NUMBER_TYPES=$(patsubst %, %_float, $(NUMBERS)) \
 NUMBER_TYPE_EXPRS=$(patsubst %, %_reverse, $(NUMBER_TYPES)) \
                   $(patsubst %, %_nop,  $(NUMBER_TYPES))
 
-NUMBER_TYPE_EXPRS=128_string_reverse 128_bool_nop 128_float_reverse
+#NUMBER_TYPE_EXPRS=128_string_reverse 128_bool_nop 128_float_reverse
 SIDLS=$(patsubst %,out/struct_%.sidl, $(NUMBER_TYPE_EXPRS))
 COMPILES=$(patsubst %,out/client_%/token, $(NUMBER_TYPE_EXPRS))
 TIMINGS=$(patsubst %,out/client_%/times, $(NUMBER_TYPE_EXPRS))
@@ -22,11 +22,11 @@ RESULTS=$(patsubst %, out/result_%_reverse.txt, $(TYPES)) \
 
 all: graph.pdf
 
-graph.pdf: graph.tex timings $(RESULTS)
+graph.pdf: graph.tex timings
+	make $(RESULTS)
 	env TEXINPUTS=~/sw/share/texmf//:$(TEXINPUTS) pdflatex -halt-on-error graph
 
 out/result_%.txt:
-	$(MAKE) timings
 	echo "n" "C" "CXX" "F77" "F90" "F03" "Java" "Python" >$@
 	cat out/client_*_$(patsubst out/result_%.txt,%,$@)/times |sort -g >>$@
 
