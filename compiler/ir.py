@@ -59,6 +59,9 @@ var_ref         = 'var ref'
 scoped_id       = 'scoped id'
 complex_        = 'complex'
 value           = 'value'
+literal         = 'literal'
+true            = 'TRUE'
+false           = 'FALSE'
 
 # additional Proc. IR nodes
 function        = 'function'

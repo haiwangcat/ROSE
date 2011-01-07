@@ -292,7 +292,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             elif ('int'):         return "integer*4"
             elif ('long'):        return "integer*8"
             elif ('opaque'):      return "integer*8"
-            elif ('string'):      return "character*(*)"
+            elif ('string'):      return "integer*8"
             elif ('enum'):        return "integer*8"
             elif ('struct'):      return "integer*8"
             elif ('class'):       return "integer*8"
@@ -366,6 +366,10 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
                 end function %s
             ''' % (Typ, Name, gen(Args),
                    gen(FunctionScope(scope), Body), Name))
+
+            elif (ir.true):           return '.true.'
+            elif (ir.false):          return '.false.'
+            elif ((ir.literal, Lit)): return "'%s'"%Lit
             elif (Expr):
                 return super(Fortran77CodeGenerator, self).generate(Expr, scope)
 
@@ -483,6 +487,9 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
                   %s
                 end function %s
             ''' % (Typ, Name, gen(Args), gen(Body), Name)
+            elif (ir.true):           return '.true.'
+            elif (ir.false):          return '.false.'
+            elif ((ir.literal, Lit)): return "'%s'"%Lit
             elif (Expr):
                 return super(Fortran90CodeGenerator, self).generate(Expr, scope)
 
@@ -585,6 +592,9 @@ class Fortran03CodeGenerator(Fortran90CodeGenerator):
                   %s
                 end function %s
             ''' % (Typ, Name, gen(Args), gen(Body), Name)
+            elif (ir.true):           return '.true.'
+            elif (ir.false):          return '.false.'
+            elif ((ir.literal, Lit)): return "'%s'"%Lit
             elif (Expr):
                 return super(Fortran03CodeGenerator, self).generate(Expr, scope)
 
@@ -616,6 +626,9 @@ class ClikeCodeGenerator(GenericCodeGenerator):
                 return scope.new_def(gen(Expr)+';\n')
             elif ('return', Expr):
                 return "return %s" % gen(Expr)
+            elif (ir.true):           return 'TRUE'
+            elif (ir.false):          return 'FALSE'
+            elif ((ir.literal, Lit)): return '"%s"'%Lit
             elif (Expr):
                 return super(ClikeCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")
@@ -819,6 +832,8 @@ class JavaCodeGenerator(ClikeCodeGenerator):
             elif (ir.set_struct_item, _, StructName, Item, Value):
                 return gen(StructName)+'.get().'+gen(Item)+' = '+gen(Value)
 
+            elif (ir.true):           return 'true'
+            elif (ir.false):          return 'false'
             elif (Expr):
                 return super(JavaCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")
@@ -874,6 +889,9 @@ class PythonCodeGenerator(GenericCodeGenerator):
             elif (ir.set_struct_item, _, StructName, Item, Value):
                 return gen(StructName)+'.'+gen(Item)+' = '+gen(Value)
 
+            elif (ir.true):           return 'True'
+            elif (ir.false):          return 'False'
+            elif ((ir.literal, Lit)): return "'%s'"%Lit
             elif (Expr):
                 return super(PythonCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")

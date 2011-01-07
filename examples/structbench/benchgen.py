@@ -93,18 +93,31 @@ def reverse_expr(n, datatype):
     revs = [(ir.stmt, (ir.set_struct_item, b, (ir.identifier, "b"), 'm%d'%(n-i+1),
                        (ir.get_struct_item, a, (ir.identifier, "a"), 'm%d'%(n-i+1))))
             for i in range(1, n+1)]
-    return revs+[(ir.stmt, ('return', (ir.get_struct_item, a, (ir.identifier, "a"), 'm1')))]
+    return revs+[(ir.stmt, ('return', retval(n, datatype)))]
 
 
-def nop_expr(n):
-    return (ir.stmt, ('return', (ir.value, n)))
+def nop_expr(n, datatype):
+    return (ir.stmt, ('return', retval(n, datatype)))
+
+def retval(n, datatype):
+    if datatype == "bool":     return (ir.true)
+    elif datatype == "float":  return (ir.value, float(n))
+    elif datatype == "string": return (ir.literal, str(n))
+    else: raise
 
 #-----------------------------------------------------------------------
 # return a main.c for the client implementation
 #-----------------------------------------------------------------------
-def gen_main_c(datatype):
+def gen_main_c(n, datatype):
     t = codegen.CCodeGenerator().get_type(datatype)
-    return r"""    
+    if datatype == "bool":
+        init = '\n  '.join(["a.m%d = TRUE;"%i           for i in range(1, n)])
+    elif datatype == "float":
+        init = '\n  '.join(["a.m%d = %f;"%(i, float(i)) for i in range(1, n)])
+    elif datatype == "string":
+        init = '\n  '.join(['a.m%d = "%d";'%(i, i)      for i in range(1, n)])
+    else: raise
+    return r"""
 #include <stdlib.h>
 #include <stdio.h>
 #include "s_Benchmark.h"
@@ -125,6 +138,9 @@ def gen_main_c(datatype):
    num_runs = strtol(argv[1], (char **) NULL, 10);
    fprintf(stderr, "running %ld times\n", num_runs);
 
+   /* Initialization */
+   """+init+r"""
+   /* Benchmarks */
    for (i=0; i<num_runs; ++i) {
      volatile """+t+r""" result = s_Benchmark_dot(h, &a, &b, &ex); SIDL_CHECK(ex);
    }
@@ -163,18 +179,26 @@ if __name__ == '__main__':
 			 help='number of elements in the Vector struct')
     cmdline.add_argument('datatype', metavar='t', 
 			 help='data type for the Vector struct')
+    cmdline.add_argument('expr', metavar='expr', choices=['reverse', 'nop'],
+			 help='benchmark expression to generate')
     # cmdline.add_argument('babel', metavar='babel',
     #			 help='the Babel executable')
     args = cmdline.parse_args()
     i = args.i
     datatype = args.datatype
     babel = 'babel' #args.babel
+    expr = args.expr
+    if expr == 'reverse':
+        benchmark_expr = reverse_expr
+    elif expr == 'nop':
+        benchmark_expr = nop_expr
+    else: raise
 
     print "-------------------------------------------------------------"
     print "generating servers"
     print "-------------------------------------------------------------"
     subprocess.check_call("mkdir -p out", shell=True)
-    f = open('out/struct_%d_%s.sidl'%(i,datatype), "w")
+    f = open('out/struct_%d_%s_%s.sidl'%(i,datatype,expr), "w")
     f.write(codegen.generate("SIDL", sidl_code(i, datatype)))
     f.close()
     languages = ["C", "CXX", "F77", "F90", "F03", "Java", "Python"]
@@ -194,43 +218,44 @@ if __name__ == '__main__':
                "Java"   : "s/",
                "Python" : "s/"}
 
-        print "generating", lang, i, datatype, "..."
+        print "generating", lang, i, datatype, expr, "..."
 
         cmd = """
-          mkdir -p out/{lang}_{i}_{t} && cd out/{lang}_{i}_{t} &&
-          {babel} -s{lang} --makefile ../struct_{i}_{t}.sidl
-          """.format(lang=lang,i=i,babel=babel,t=datatype)
+          mkdir -p out/{lang}_{i}_{t}_{e} && cd out/{lang}_{i}_{t}_{e} &&
+          {babel} -s{lang} --makefile ../struct_{i}_{t}_{e}.sidl
+          """.format(lang=lang,i=i,babel=babel,t=datatype,e=expr)
         #print cmd
         subprocess.check_call(cmd, shell=True)
-        impl = ("out/{lang}_{i}_{t}/{prefix}Benchmark_Impl.{ext}".
-                format(lang=lang, i=i, t=datatype, ext=ext[lang], prefix=prefix[lang]))
+        impl = ("out/{lang}_{i}_{t}_{e}/{prefix}Benchmark_Impl.{ext}".
+                format(lang=lang, i=i, t=datatype, e=expr,
+                       ext=ext[lang], prefix=prefix[lang]))
         if lang == "Python":
             splicer_block = "dot"
         else: splicer_block = "s.Benchmark.dot"
-        code = codegen.generate(lang, reverse_expr(i,datatype))
+        code = codegen.generate(lang, benchmark_expr(i,datatype))
         if code == None:
             raise Exception('Code generation failed')
         print "splicing", impl
         splicer.replace(impl, splicer_block, code) 
 
     print "-------------------------------------------------------------"
-    print "generating client", i, datatype, "..."
+    print "generating client", i, datatype, expr, "..."
     print "-------------------------------------------------------------"
     cmd = """
-      mkdir -p out/client_{i}_{t} && cd out/client_{i}_{t} &&
-      {babel} -cC --makefile ../struct_{i}_{t}.sidl
-      """.format(i=i,babel=babel,t=datatype)
+      mkdir -p out/client_{i}_{t}_{e} && cd out/client_{i}_{t}_{e} &&
+      {babel} -cC --makefile ../struct_{i}_{t}_{e}.sidl
+      """.format(i=i,babel=babel,t=datatype,e=expr)
     #print cmd
     subprocess.check_call(cmd, shell=True)
-    f = open('out/client_%d_%s/main.c'%(i,datatype), "w")
-    f.write(gen_main_c(datatype))
+    f = open('out/client_%d_%s_%s/main.c'%(i,datatype,expr), "w")
+    f.write(gen_main_c(i,datatype))
     f.close
 
 
     print "-------------------------------------------------------------"
     print "adapting client Makefile..."
     print "-------------------------------------------------------------"
-    filename = 'out/client_%d_%s/GNUmakefile'%(i,datatype)
+    filename = 'out/client_%d_%s_%s/GNUmakefile'%(i,datatype,expr)
     os.rename(filename, filename+'~')
     dest = open(filename, 'w')
     src = open(filename+'~', 'r')
@@ -243,15 +268,15 @@ if __name__ == '__main__':
             dest.write("CXX=`babel-config --query-var=CXX`\n"+
                        '\n'.join([
 """
-runC2{lang}: lib$(LIBNAME).la ../{lang}_{i}_{t}/libimpl.la main.lo
+runC2{lang}: lib$(LIBNAME).la ../{lang}_{i}_{t}_{e}/libimpl.la main.lo
 \tbabel-libtool --mode=link $(CC) -static main.lo lib$(LIBNAME).la \
-\t    ../{lang}_{i}_{t}/libimpl.la -o runC2{lang}
-""".format(lang=lang, i=i, t=datatype) for lang in languages[:6]]))
+\t    ../{lang}_{i}_{t}_{e}/libimpl.la -o runC2{lang}
+""".format(lang=lang, i=i, t=datatype, e=expr) for lang in languages[:6]]))
             dest.write("""
-runC2Python: lib$(LIBNAME).la ../Python_{i}_{t}/libimpl1.la main.lo
+runC2Python: lib$(LIBNAME).la ../Python_{i}_{t}_{e}/libimpl1.la main.lo
 \tbabel-libtool --mode=link $(CC) -static main.lo lib$(LIBNAME).la \
-\t    ../Python_{i}_{t}/libimpl1.la -o runC2Python
-""".format(i=i, t=datatype))
+\t    ../Python_{i}_{t}_{e}/libimpl1.la -o runC2Python
+""".format(i=i,t=datatype,e=expr))
         else:
             dest.write(line)
     dest.close()
@@ -260,7 +285,7 @@ runC2Python: lib$(LIBNAME).la ../Python_{i}_{t}/libimpl1.la main.lo
     print "-------------------------------------------------------------"
     print "generating benchmark script..."
     print "-------------------------------------------------------------"
-    f = open('out/client_%d_%s/runAll.sh'%(i,datatype), 'w')
+    f = open('out/client_%d_%s_%s/runAll.sh'%(i,datatype,expr), 'w')
     f.write(r"""#!/usr/bin/bash
 PYTHONPATH_1=$LIBDIR/python$PYTHON_VERSION/site-packages:$PYTHONPATH
 LIBDIR=`babel-config --query-var=libdir`
@@ -286,7 +311,7 @@ function medtime {
    rm -f $2.all
    MAX=10
    for I in `seq $MAX`; do
-     echo "measuring $1 ($3@$4) [$I/$MAX]"
+     echo "measuring $1 ($3@$4,$5) [$I/$MAX]"
      # echo SIDL_DLL_PATH=$SIDL_DLL_PATH
      # echo PYTHONPATH=$PYTHONPATH
      # /usr/bin/time -f %U -a -o $2.all $1 || (echo "FAIL" >$2; exit 1)
@@ -303,11 +328,11 @@ function medtime {
     for lang in languages:
         f.write('''
 rm -f out{lang}
-export SIDL_DLL_PATH="../{lang}_{i}_{t}/libimpl.scl;$SIDL_DLL_PATH_1"
-export PYTHONPATH="../Python_{i}_{t}:$PYTHONPATH_1"
-export CLASSPATH="../Java_{i}_{t}:$LIBDIR/sidl-$SIDL_VERSION.jar:$LIBDIR/sidlstub_$SIDL_VERSION.jar"
-medtime ./runC2{lang} out{lang} {i} {t}
-'''.format(lang=lang,i=i,t=datatype))
+export SIDL_DLL_PATH="../{lang}_{i}_{t}_{e}/libimpl.scl;$SIDL_DLL_PATH_1"
+export PYTHONPATH="../Python_{i}_{t}_{e}:$PYTHONPATH_1"
+export CLASSPATH="../Java_{i}_{t}_{e}:$LIBDIR/sidl-$SIDL_VERSION.jar:$LIBDIR/sidlstub_$SIDL_VERSION.jar"
+medtime ./runC2{lang} out{lang} {i} {t} {e}
+'''.format(lang=lang,i=i,t=datatype,e=expr))
 
     f.write("echo %d "%i+' '.join(['`cat out%s`'%lang 
                                    for lang in languages])+' >times\n')
