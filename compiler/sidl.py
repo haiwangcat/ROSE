@@ -131,9 +131,9 @@ class ListNode(AstNode):
 class File(AstNode):
     def __init__(self, *children):
         AstNode.__init__(self, ir.file_, *children)
-    def requires(self): return self.hildren[0]
-    def imports(self):  return self.hildren[1]
-    def packages(self): return self.hildren[2]
+    def requires(self): return self.children[0]
+    def imports(self):  return self.children[1]
+    def packages(self): return self.children[2]
 
 class Expression(AstNode):
     def __init__(self, *children):

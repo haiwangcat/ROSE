@@ -32,34 +32,42 @@ def generate(language, ir_code):
     \param ir_code  Intermediate representation input.
     \return         string
     """
-    import sys # apparently CPython does not implement proper tail recursion
+    # apparently CPython does not implement proper tail recursion
+    import sys
     sys.setrecursionlimit(max(sys.getrecursionlimit(), 2**16))
 
-    if language == "C": 
-        return str(CCodeGenerator().generate(ir_code, CFile()))
+    try:
+        if language == "C": 
+            return str(CCodeGenerator().generate(ir_code, CFile()))
 
-    elif language == "CXX": 
-        return str(CXXCodeGenerator().generate(ir_code, CXXFile()))
+        elif language == "CXX": 
+            return str(CXXCodeGenerator().generate(ir_code, CXXFile()))
 
-    elif language == "F77": 
-        return str(Fortran77CodeGenerator().generate(ir_code, F77File()))
+        elif language == "F77": 
+            return str(Fortran77CodeGenerator().generate(ir_code, F77File()))
 
-    elif language == "F90": 
-        return str(Fortran90CodeGenerator().generate(ir_code, F90File()))
+        elif language == "F90": 
+            return str(Fortran90CodeGenerator().generate(ir_code, F90File()))
 
-    elif language == "F03": 
-        return str(Fortran03CodeGenerator().generate(ir_code, F03File()))
+        elif language == "F03": 
+            return str(Fortran03CodeGenerator().generate(ir_code, F03File()))
 
-    elif language == "Python": 
-        return str(PythonCodeGenerator().generate(ir_code, PythonFile()))
+        elif language == "Python": 
+            return str(PythonCodeGenerator().generate(ir_code, PythonFile()))
 
-    elif language == "Java": 
-        return str(JavaCodeGenerator().generate(ir_code, JavaFile()))
+        elif language == "Java": 
+            return str(JavaCodeGenerator().generate(ir_code, JavaFile()))
 
-    elif language == "SIDL": 
-        return str(SIDLCodeGenerator().generate(ir_code, SIDLFile()))
+        elif language == "SIDL": 
+            return str(SIDLCodeGenerator().generate(ir_code, SIDLFile()))
 
-    else: raise Exception("unknown language")
+        else: raise Exception("unknown language")
+    except:
+        # Invoke the post-mortem debugger
+        import pdb, sys
+        print sys.exc_info()
+        pdb.post_mortem()
+
 
 
 class Scope(object):
@@ -72,8 +80,10 @@ class Scope(object):
     +--------------------+     +-----------------------------------+
     </pre>
     """
-    def __init__(self, relative_indent=0, indent_level=0, separator='\n'):
+    def __init__(self, parent=None, 
+                 relative_indent=0, indent_level=0, separator='\n'):
         """
+        \param parent         The enclosing scope.
         \param relative_indent The amount of indentation relative to
                               the enclosing scope.
 
@@ -89,6 +99,7 @@ class Scope(object):
         \param separator      This string will be inserted between every
                               two definitions.
         """
+        self.parent = parent
         self._header = []
         self._defs = []
         self._pre_defs = []
@@ -96,7 +107,6 @@ class Scope(object):
         self.relative_indent = relative_indent
         self.indent_level = indent_level
         self._sep = separator+' '*indent_level
-
 
     def has_declaration_section(self):
         """
@@ -112,8 +122,9 @@ class Scope(object):
 
     def new_def(self, s):
         """
-        Append definition \c s to the scope
-        \return  \c self
+        Append definition \c s to the scope. Also adds anything
+        previously recorded by \c pre_def or \c post_def.
+        \return \c self
         """
         #print 'new_def', s
         self._defs.extend(self._pre_defs)
@@ -137,6 +148,12 @@ class Scope(object):
         """
         self._post_defs.append(s)
 
+    def get_defs(self):
+        """
+        return a list of all definitions in the scope
+        """
+        return self._header+self._defs
+
     def __str__(self):
         """
         Perform the actual translation into a readable string,
@@ -152,10 +169,9 @@ class SourceFile(Scope):
     """
     This class represents a generic source file
     """
-    def __init__(self, relative_indent=0, indent_level=0):
-        super(SourceFile, self).__init__(relative_indent, 
-                                         indent_level, 
-                                         separator='\n')
+    def __init__(self, parent=None, relative_indent=0, indent_level=0):
+        super(SourceFile, self).__init__(
+            parent, relative_indent, indent_level, separator='\n')
 
     def has_declaration_section(self):
         return True
@@ -199,9 +215,9 @@ class GenericCodeGenerator(object):
                 return scope.new_def(gen(Expr))
 
             elif (ir.identifier, Name): return Name
-            elif (ir.value, Value):     return str(Value)
-            elif (Op, A, B): return ' '.join((gen(A), Op, gen(B)))
-            elif (Op, A):    return ' '.join(        (Op, gen(A)))
+            elif (ir.value, Value):     return gen(Value)
+            elif (Op, A, B): return ' '.join((gen(A), gen(Op), gen(B)))
+            elif (Op, A):    return ' '.join(        (gen(Op), gen(A)))
             elif (A):        
                 if (isinstance(A, list)):
                     for defn in A:
@@ -235,17 +251,21 @@ class F77File(SourceFile):
     """
     This class represents a Fortran 77 source file
     """
-    def __init__(self):
-        super(F77File, self).__init__(relative_indent=0,
-                                      indent_level=0)
-    def new_def(self, s):
+    def __init__(self, parent=None, relative_indent=0):
+        super(F77File, self).__init__(
+            parent=parent,
+            relative_indent=relative_indent,
+            indent_level=0)
+        self.label = 0
+
+    def new_def(self, s, indent=0):
         """
         Append definition \c s to the scope
         \return  \c self
         """
         # split long lines
         tokens = s.split()
-        line = ' '*self.relative_indent
+        line = ' '*(self.relative_indent+indent)
         while len(tokens) > 0: 
             while (len(tokens) > 0 and 
                    len(line)+len(tokens[0]) < 62):
@@ -254,6 +274,14 @@ class F77File(SourceFile):
             line = '&' # continuation character
         return self
 
+    def new_label(self):
+        """
+        Create a new label before the current definition.
+        """
+        self.label += 10
+        l = self.label
+        self.pre_def('@%3d'%l)
+        return l
 
     def __str__(self):
         """
@@ -262,18 +290,30 @@ class F77File(SourceFile):
         """
         #print self._header, '+', self._defs, 'sep="',self._sep,'"'
         #import pdb; pdb.set_trace()        
-        def f77line(defn):
-            if defn[0] == '&': return '     &      '+defn[1:]+'\n'
-            else:              return '        '+defn+'\n'
-
         data = ''
-        for defn in self._header:
-            data += f77line(defn)
+        label = False
+        for defn in self.get_defs():
+            if label: 
+                label = False
+                data += defn+'\n'            
 
-        for defn in self._defs:
-            data += f77line(defn)
+            if   defn[0] == '&': data += '     &      '+defn[1:]+'\n'
+            elif defn[0] == '@':       
+                   label = True; data += ' %s    '% defn[1:]
+            else:                data += '        '+defn+'\n'
 
         return data
+
+class F77Scope(F77File):
+    """Represents a list of statements in an indented block"""
+    def __init__(self, parent):
+        super(F77Scope, self).__init__(
+            parent,
+            relative_indent=parent.relative_indent+2)
+        self._defs = [''] # start on a new line
+    
+    def has_declaration_section(self):
+        return False
 
 class Fortran77CodeGenerator(GenericCodeGenerator):
     @matcher(globals(), debug=False)
@@ -292,7 +332,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             elif ('int'):         return "integer*4"
             elif ('long'):        return "integer*8"
             elif ('opaque'):      return "integer*8"
-            elif ('string'):      return "integer*8"
+            elif ('string'):      return "character*256"
             elif ('enum'):        return "integer*8"
             elif ('struct'):      return "integer*8"
             elif ('class'):       return "integer*8"
@@ -319,8 +359,8 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             such a declaration is not already there
             """
             s = scope
-            while not s.has_declaration_section:
-                s = s.get_parent()
+            while not s.has_declaration_section():
+                s = s.parent
             decl = self.get_type(typ)+' '+gen(name)
             if list(member(decl, s._header)) == []:
                 s.new_header_def(decl)
@@ -332,6 +372,18 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
         def pre_def(s):
             # print "pre_def", s
             return scope.pre_def(s)
+
+        def new_scope(prefix, body, suffix=''):
+            '''used for things like if, for, ...'''
+            s = F77Scope(parent=scope)
+            new_def(prefix)
+            self.generate(body, s)
+            # copy all defs into the F77File which takes care of the
+            # F77's weird indentation rules
+            for defn in s.get_defs():
+                scope.new_def(defn, s.relative_indent)
+            new_def(suffix)
+            return scope
 
         with match(node):
             if ('return', Expr):
@@ -367,6 +419,20 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             ''' % (Typ, Name, gen(Args),
                    gen(FunctionScope(scope), Body), Name))
 
+            elif (ir.do_while, Condition, Body):
+                label = scope.new_label()
+                gen(Body)
+                return new_scope('if (.not.%s) then'%gen(Condition), 
+                                      (ir.stmt, (ir.goto, str(label))), 
+                                      'end if')
+
+            elif (ir.if_, Condition, Body):
+                return new_scope('if (%s) then'%gen(Condition), Body, 'end if')
+
+            elif (ir.decl, (ir.type_, Type), Name): declare_var(Type, gen(Name))
+            elif (ir.goto, Label):    return 'goto '+Label
+            elif (ir.assignment):     return '='
+            elif (ir.eq):             return '.eq.'
             elif (ir.true):           return '.true.'
             elif (ir.false):          return '.false.'
             elif ((ir.literal, Lit)): return "'%s'"%Lit
@@ -382,8 +448,8 @@ class F90File(SourceFile):
     """
     This class represents a Fortran 90 source file
     """
-    def __init__(self,relative_indent=2, indent_level=2):
-        super(F90File, self).__init__(relative_indent,indent_level)
+    def __init__(self,parent=None,relative_indent=2, indent_level=2):
+        super(F90File, self).__init__(parent,relative_indent,indent_level)
 
     def new_def(self, s):
         """
@@ -410,6 +476,17 @@ class F90File(SourceFile):
         complete with indentation and newlines.
         """
         return '\n'.join(self._header+self._defs)+'\n'
+
+class F90Scope(F90File):
+    """Represents a list of statements in an indented block"""
+    def __init__(self, parent):
+        super(F90Scope, self).__init__(
+            parent,
+            relative_indent=parent.relative_indent+2)
+        self._defs = [''] # start on a new line
+    
+    def has_declaration_section(self):
+        return False
 
 class Fortran90CodeGenerator(GenericCodeGenerator):
     """
@@ -447,9 +524,14 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
 
         def declare_var(typ, name):
             s = scope
-            while not s.has_declaration_section:
-                s = s.get_parent()
+            while not s.has_declaration_section():
+                s = s.parent
             s.new_header_def(self.get_type(typ)+' '+gen(name))
+
+        def new_scope(prefix, body, suffix=''):
+            '''used for things like if, while, ...'''
+            s = F90Scope(scope)
+            return new_def(prefix+str(self.generate(body, s))+suffix)
 
         def new_def(s):
             # print "new_def", s
@@ -487,6 +569,13 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
                   %s
                 end function %s
             ''' % (Typ, Name, gen(Args), gen(Body), Name)
+            elif (ir.do_while, Condition, Body):
+                return new_scope('do', Body, 'while '+gen(Condition))
+            elif (ir.if_, Condition, Body):
+                return new_scope('if (%s) then'%gen(Condition), Body, 'end if')
+            elif (ir.decl, (ir.type_, Type), Name): declare_var(Type, gen(Name))
+            elif (ir.assignment):     return '='
+            elif (ir.eq):             return '.eq.'
             elif (ir.true):           return '.true.'
             elif (ir.false):          return '.false.'
             elif ((ir.literal, Lit)): return "'%s'"%Lit
@@ -537,7 +626,7 @@ class Fortran03CodeGenerator(Fortran90CodeGenerator):
     Struct members: These types do not need to be accessed via a function call.
     """
     struct_direct_access = ['dcomplex', 'double', 'fcomplex', 'float', 
-                            'int', 'long', 'opaque', 'enum']
+                            'int', 'long', 'enum']
 
     @matcher(globals(), debug=False)
     def generate(self, node, scope=F03File()):
@@ -547,8 +636,8 @@ class Fortran03CodeGenerator(Fortran90CodeGenerator):
 
         def declare_var(typ, name):
             s = scope
-            while not s.has_declaration_section:
-                s = s.get_parent()
+            while not s.has_declaration_section():
+                s = s.parent
             s.new_header_def(self.get_type(typ)+' '+gen(name))
 
         def new_def(s):
@@ -592,6 +681,7 @@ class Fortran03CodeGenerator(Fortran90CodeGenerator):
                   %s
                 end function %s
             ''' % (Typ, Name, gen(Args), gen(Body), Name)
+            elif (ir.decl, (ir.type_, Type), Name): declare_var(Type, gen(Name))
             elif (ir.true):           return '.true.'
             elif (ir.false):          return '.false.'
             elif ((ir.literal, Lit)): return "'%s'"%Lit
@@ -609,23 +699,58 @@ class CFile(SourceFile):
     """
     def __init__(self):
         super(CFile, self).__init__(indent_level=0)
-    pass
-
+    
+class CCompoundStmt(Scope):
+    """Represents a list of statements enclosed in braces {}"""
+    def __init__(self, parent_scope):
+        super(CCompoundStmt, self).__init__(
+            parent_scope,
+            indent_level=parent_scope.indent_level+2, 
+            separator='\n')
+    def __str__(self):
+        return (' {\n'
+                + ' '*self.indent_level 
+                + super(CCompoundStmt, self).__str__() +'\n'
+                + ' '*(self.indent_level-2) + '}\n')
+    
 class ClikeCodeGenerator(GenericCodeGenerator):
     """
     C-like code generator
     """
+
     @matcher(globals(), debug=False)
     def generate(self, node, scope=CFile()):
         # recursion
         def gen(node):
             return self.generate(node, scope)
 
+        def new_def(s):
+            #print 'new_def:', str(s)
+            #import pdb; pdb.set_trace()
+            return scope.new_def(s)
+
+        def new_scope(prefix, body, suffix=''):
+            '''used for things like if, while, ...'''
+            comp_stmt = CCompoundStmt(scope)
+            return new_def(prefix+str(self.generate(body, comp_stmt))+suffix)
+
+        def declare_var(typ, name):
+            '''unless, of course, var were declared'''
+            s = scope
+            while not s.has_declaration_section():
+                s = s.parent
+            s.new_header_def(self.get_type(typ)+' '+gen(name)+';')
+
         with match(node):
             if (ir.stmt, Expr):
-                return scope.new_def(gen(Expr)+';\n')
+                return new_def(gen(Expr)+';')
             elif ('return', Expr):
                 return "return %s" % gen(Expr)
+            elif (ir.do_while, Condition, Body):
+                return new_scope('do', Body, 'while (%s);'%gen(Condition))
+            elif (ir.if_, Condition, Body):
+                return new_scope('if (%s)'%gen(Condition), Body)
+            elif (ir.decl, (ir.type_, Type), Name): declare_var(Type, gen(Name))
             elif (ir.true):           return 'TRUE'
             elif (ir.false):          return 'FALSE'
             elif ((ir.literal, Lit)): return '"%s"'%Lit
@@ -667,12 +792,6 @@ class CCodeGenerator(ClikeCodeGenerator):
         def gen(node):
             return self.generate(node, scope)
 
-        def declare_var(typ, name):
-            s = scope
-            while not s.has_declaration_section:
-                s = s.get_parent()
-            s.new_header_def(self.get_type(typ)+' '+gen(name))
-
         def new_def(s):
             # print "new_def", s
             return scope.new_def(s)
@@ -696,7 +815,8 @@ class CCodeGenerator(ClikeCodeGenerator):
 
             elif (ir.set_struct_item, _, StructName, Item, Value):
                 return gen(StructName)+'->'+gen(Item)+' = '+gen(Value)
-
+            elif (ir.assignment): return '='
+            elif (ir.eq):         return '=='
             elif (Expr):
                 return super(CCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")
@@ -727,12 +847,6 @@ class CXXCodeGenerator(CCodeGenerator):
         # recursion
         def gen(node):
             return self.generate(node, scope)
-
-        def declare_var(typ, name):
-            s = scope
-            while not s.has_declaration_section:
-                s = s.get_parent()
-            s.new_header_def(self.get_type(typ)+' '+gen(name))
 
         def new_def(s):
             # print "new_def", s
@@ -803,12 +917,6 @@ class JavaCodeGenerator(ClikeCodeGenerator):
         # recursion
         def gen(node):
             return self.generate(node, scope)
-
-        def declare_var(typ, name):
-            s = scope
-            while not s.has_declaration_section:
-                s = s.get_parent()
-            s.new_header_def(self.get_type(typ)+' '+gen(name))
 
         def new_def(s):
             # print "new_def", s
@@ -889,6 +997,17 @@ class PythonCodeGenerator(GenericCodeGenerator):
             elif (ir.set_struct_item, _, StructName, Item, Value):
                 return gen(StructName)+'.'+gen(Item)+' = '+gen(Value)
 
+            elif (ir.do_while, Condition, Body):
+                return new_def('while True:\n%s\n'%gen(Body)+
+                               ' '*(scope.relative_indent+4)+
+                               'if %s: break\n'%gen(Condition))
+
+            elif (ir.if_, Condition, Body):
+                return new_def('if %s:\n%s'%(gen(Condition), gen(Body)))
+
+            elif (ir.decl, Type, Name): return ''
+            elif (ir.assignment):     return '='
+            elif (ir.eq):             return '=='
             elif (ir.true):           return 'True'
             elif (ir.false):          return 'False'
             elif ((ir.literal, Lit)): return "'%s'"%Lit

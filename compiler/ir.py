@@ -63,9 +63,26 @@ literal         = 'literal'
 true            = 'TRUE'
 false           = 'FALSE'
 
+
 # additional Proc. IR nodes
 function        = 'function'
 void            = 'void'
 stmt            = 'stmt'
+decl            = 'decl'
 get_struct_item = 'get_struct_item'
 set_struct_item = 'set_struct_item'
+assignment      = ':='
+eq              = '=='
+do_while        = 'do while'
+if_             = 'if'
+goto            = 'goto'
+
+#class grammar:
+#    def stmt(expr):
+#        expect(expression) ...
+"""
+FIXME ... func(x) = (ir.function, x)
+
+maybe we can have two versions: the debug version also checks for the
+correct "type" of all the parameters
+"""
