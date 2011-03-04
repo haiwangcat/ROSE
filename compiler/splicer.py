@@ -27,6 +27,7 @@ def replace(filename, splicer_name, text):
     \param filename   The name of the file to edit.
     """
     #print "splicing", splicer_name, "with '"+text+"'"
+    if text == None: raise Exception("Empty splicer text")
 
     # first make a backup of the old file
     os.rename(filename, filename+'~')

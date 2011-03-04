@@ -123,7 +123,10 @@ class Scope(object):
     def new_def(self, s):
         """
         Append definition \c s to the scope. Also adds anything
-        previously recorded by \c pre_def or \c post_def.
+        previously recorded by \c pre_def or \c post_def.  For
+        convenience reasons it returns \c self, see the code
+        generators on examples why this is useful
+
         \return \c self
         """
         #print 'new_def', s
@@ -380,6 +383,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             self.generate(body, s)
             # copy all defs into the F77File which takes care of the
             # F77's weird indentation rules
+            # FIXME get rid of these side effects.. this is just asking for trouble
             for defn in s.get_defs():
                 scope.new_def(defn, s.relative_indent)
             new_def(suffix)
@@ -451,7 +455,7 @@ class F90File(SourceFile):
     def __init__(self,parent=None,relative_indent=2, indent_level=2):
         super(F90File, self).__init__(parent,relative_indent,indent_level)
 
-    def new_def(self, s):
+    def new_def(self, s, indent=0):
         """
         Append definition \c s to the scope
         \return  \c self
@@ -459,7 +463,7 @@ class F90File(SourceFile):
         # split long lines
         tokens = s.split()
         while len(tokens) > 0: 
-            line = ' '*self.relative_indent
+            line = ' '*(self.relative_indent+indent)
             while (len(tokens) > 0 and 
                    len(line)+len(tokens[0]) < 62):
                 line += tokens.pop(0)+' '
@@ -529,9 +533,18 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
             s.new_header_def(self.get_type(typ)+' '+gen(name))
 
         def new_scope(prefix, body, suffix=''):
-            '''used for things like if, while, ...'''
-            s = F90Scope(scope)
-            return new_def(prefix+str(self.generate(body, s))+suffix)
+            '''used for things like if, for, ...'''
+            s = F90Scope(parent=scope)
+            new_def(prefix)
+            self.generate(body, s)
+            # copy all defs into the F90File which takes care of the
+            # F90's weird indentation rules
+            # FIXME! should really be the file! not scope (messes with
+            # indentation otherwise)
+            for defn in s.get_defs():
+                scope.new_def(defn, s.relative_indent)
+            new_def(suffix)
+            return scope
 
         def new_def(s):
             # print "new_def", s
@@ -570,7 +583,9 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
                 end function %s
             ''' % (Typ, Name, gen(Args), gen(Body), Name)
             elif (ir.do_while, Condition, Body):
-                return new_scope('do', Body, 'while '+gen(Condition))
+                new_scope('do', Body, '  if (%s) exit'%gen(Condition))
+                new_def('end do')
+                return scope
             elif (ir.if_, Condition, Body):
                 return new_scope('if (%s) then'%gen(Condition), Body, 'end if')
             elif (ir.decl, (ir.type_, Type), Name): declare_var(Type, gen(Name))
@@ -711,7 +726,7 @@ class CCompoundStmt(Scope):
         return (' {\n'
                 + ' '*self.indent_level 
                 + super(CCompoundStmt, self).__str__() +'\n'
-                + ' '*(self.indent_level-2) + '}\n')
+                + ' '*(self.indent_level-2) + '}')
     
 class ClikeCodeGenerator(GenericCodeGenerator):
     """
@@ -729,7 +744,7 @@ class ClikeCodeGenerator(GenericCodeGenerator):
             #import pdb; pdb.set_trace()
             return scope.new_def(s)
 
-        def new_scope(prefix, body, suffix=''):
+        def new_scope(prefix, body, suffix='\n'):
             '''used for things like if, while, ...'''
             comp_stmt = CCompoundStmt(scope)
             return new_def(prefix+str(self.generate(body, comp_stmt))+suffix)
@@ -747,10 +762,12 @@ class ClikeCodeGenerator(GenericCodeGenerator):
             elif ('return', Expr):
                 return "return %s" % gen(Expr)
             elif (ir.do_while, Condition, Body):
-                return new_scope('do', Body, 'while (%s);'%gen(Condition))
+                return new_scope('do', Body, ' while (%s);'%gen(Condition))
             elif (ir.if_, Condition, Body):
                 return new_scope('if (%s)'%gen(Condition), Body)
             elif (ir.decl, (ir.type_, Type), Name): declare_var(Type, gen(Name))
+            elif (ir.assignment):     return '='
+            elif (ir.eq):             return '=='
             elif (ir.true):           return 'TRUE'
             elif (ir.false):          return 'FALSE'
             elif ((ir.literal, Lit)): return '"%s"'%Lit
@@ -815,8 +832,6 @@ class CCodeGenerator(ClikeCodeGenerator):
 
             elif (ir.set_struct_item, _, StructName, Item, Value):
                 return gen(StructName)+'->'+gen(Item)+' = '+gen(Value)
-            elif (ir.assignment): return '='
-            elif (ir.eq):         return '=='
             elif (Expr):
                 return super(CCodeGenerator, self).generate(Expr, scope)
             else: raise Exception("match error")
