@@ -343,7 +343,7 @@ def compile_matcher(f):
 
 	il = indentlevel(line)
 	# check for empty/comment-only line (they mess with the indentation)
-	if re.match(r'^(\w*#.*)*$', line):
+	if re.match(r'^\w*(#.*)*$', line):
 	    # make sure it still is a comment after shifting the line
 	    # to the left
 	    line = "#"*base_indent+line
