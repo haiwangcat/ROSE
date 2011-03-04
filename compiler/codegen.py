@@ -189,7 +189,7 @@ class SourceFile(Scope):
         return (' '*self.relative_indent+
                 ('\n'+' '*self.relative_indent).join([
                     self._sep.join(self._header),
-                    self._sep.join(self._defs)]))
+                    self._sep.join(self._defs)])+self._sep)
 
 
 class Function(Scope):
@@ -241,7 +241,7 @@ class GenericCodeGenerator(object):
         """
         \return the type of the item named \c item
         """
-        _, _, _, items = struct
+        _, (_, _, _, items), _ = struct
         Type = Variable()
         for _ in member((ir.struct_item, Type, item), items):
             return Type.binding
@@ -396,11 +396,12 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             elif (ir.get_struct_item, Struct, Name, Item):
                 tmp = 'tmp_%s_%s'%(gen(Name), gen(Item))
                 declare_var(self.get_item_type(Struct, Item), tmp)
+                _, type_, _ = Struct
                 pre_def('call %s_get_%s_f(%s, %s)' % (
-                        gen(self.get_type(Struct)), gen(Item), gen(Name), tmp))
+                        gen(self.get_type(type_)), gen(Item), gen(Name), tmp))
                 return tmp
 
-            elif (ir.set_struct_item, Struct, Name, Item, Value):
+            elif (ir.set_struct_item, (_, Struct, _), Name, Item, Value):
                 return 'call %s_set_%s_f(%s, %s)' % (
                     gen(self.get_type(Struct)), gen(Item), gen(Name), gen(Value))
 
@@ -713,7 +714,8 @@ class CFile(SourceFile):
     This class represents a C source file
     """
     def __init__(self):
-        super(CFile, self).__init__(indent_level=0)
+        #FIXME should be 0 see java comment
+        super(CFile, self).__init__(indent_level=2)
     
 class CCompoundStmt(Scope):
     """Represents a list of statements enclosed in braces {}"""
@@ -824,9 +826,6 @@ class CCodeGenerator(ClikeCodeGenerator):
                   %s
                 }
             ''' % (Typ, Name, pretty(Args), gen(Body))
-            elif ('return', Expr):
-                return "return(%s)" % gen(Expr)
-
             elif (ir.get_struct_item, _, StructName, Item):
                 return gen(StructName)+'->'+gen(Item)
 
@@ -897,7 +896,8 @@ class JavaFile(SourceFile):
     This class represents a Java source file
     """
     def __init__(self):
-        super(JavaFile, self).__init__(indent_level=0)
+        #FIXME: file sould be 0 and there should be a class and package scope
+        super(JavaFile, self).__init__(indent_level=4) 
 
 class JavaCodeGenerator(ClikeCodeGenerator):
     """
@@ -941,6 +941,11 @@ class JavaCodeGenerator(ClikeCodeGenerator):
             # print "pre_def", s
             return scope.pre_def(s)
 
+        def deref((_arg, _struct, mode)):
+            'dereference the holder object for inout and out arguments'
+            if mode == ir.in_: return ''
+            else: return '.get()'
+
         with match(node):
             if (ir.function, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
                 return '''
@@ -949,11 +954,11 @@ class JavaCodeGenerator(ClikeCodeGenerator):
                 }
             ''' % (Typ, Name, pretty(Args), gen(Body))
 
-            elif (ir.get_struct_item, _, StructName, Item):
-                return gen(StructName)+'.'+gen(Item)
+            elif (ir.get_struct_item, Type, StructName, Item):
+                return gen(StructName)+deref(Type)+'.'+gen(Item)
 
-            elif (ir.set_struct_item, _, StructName, Item, Value):
-                return gen(StructName)+'.get().'+gen(Item)+' = '+gen(Value)
+            elif (ir.set_struct_item, Type, StructName, Item, Value):
+                return gen(StructName)+deref(Type)+'.'+gen(Item)+' = '+gen(Value)
 
             elif (ir.true):           return 'true'
             elif (ir.false):          return 'false'

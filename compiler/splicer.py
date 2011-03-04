@@ -25,6 +25,8 @@ def replace(filename, splicer_name, text):
     """
     Replace the contents of a \c splicer_block with \c text.
     \param filename   The name of the file to edit.
+
+    expect(string, string, string)
     """
     #print "splicing", splicer_name, "with '"+text+"'"
     if text == None: raise Exception("Empty splicer text")

@@ -51,6 +51,9 @@ array           = 'array'
 rarray          = 'rarray'
 assertion       = 'assertion'
 invariant       = 'invariant'
+in_             = 'in'
+out             = 'out'
+inout           = 'inout'
 
 # Expressions
 expr            = 'expression'
