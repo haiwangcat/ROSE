@@ -3,6 +3,11 @@
 ## @package codegen
 # Several code generators.
 #
+# General design principles (a.k.a. lessons learned from Babel code generators
+#
+# * It is ok to duplicate code if it increases locality and thus
+#   improves readability
+#
 # Please report bugs to <adrian@llnl.gov>.
 #
 # \authors <pre>
@@ -973,16 +978,27 @@ class PythonFile(SourceFile):
     """
     This class represents a Python source file
     """
-    def __init__(self):
-        super(PythonFile, self).__init__(4, 4)
+    def __init__(self, parent=None, indent_level=4):
+        super(PythonFile, self).__init__(parent, indent_level=indent_level)
 
     def __str__(self):
         """
         Perform the actual translation into a readable string,
         complete with indentation and newlines.
         """
-        return ' '*self.relative_indent+(
-            '\n'+' '*self.relative_indent).join(self._header+self._defs)+'\n'
+        return ' '*self.indent_level+(
+            '\n'+' '*self.indent_level).join(self._header+self._defs)+'\n'
+
+class PythonIndentedBlock(PythonFile):
+    """Represents an indented block of statements"""
+    def __init__(self, parent_scope):
+        super(PythonIndentedBlock, self).__init__(
+            parent_scope,
+            indent_level=parent_scope.indent_level+4)
+    def __str__(self):
+        return (':\n'+
+                super(PythonIndentedBlock, self).__str__())
+
 
 class PythonCodeGenerator(GenericCodeGenerator):
     """
@@ -1002,6 +1018,13 @@ class PythonCodeGenerator(GenericCodeGenerator):
             # print "pre_def", s
             return scope.pre_def(s)
 
+        def new_block(prefix, body, suffix='\n'):
+            '''used for things like if, while, ...'''
+            block = PythonIndentedBlock(scope)
+            return new_def(prefix+
+                           str(self.generate(body, block))+
+                           suffix)
+
         with match(node):
             if (ir.function, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
                 return '''
@@ -1018,12 +1041,11 @@ class PythonCodeGenerator(GenericCodeGenerator):
                 return gen(StructName)+'.'+gen(Item)+' = '+gen(Value)
 
             elif (ir.do_while, Condition, Body):
-                return new_def('while True:\n%s\n'%gen(Body)+
-                               ' '*(scope.relative_indent+4)+
-                               'if %s: break\n'%gen(Condition))
+                return new_block('while True', Body
+                                 +[(ir.if_, Condition, (ir.stmt, ir.break_))])
 
             elif (ir.if_, Condition, Body):
-                return new_def('if %s:\n%s'%(gen(Condition), gen(Body)))
+                return new_block('if %s'%gen(Condition), Body)
 
             elif (ir.decl, Type, Name): return ''
             elif (ir.assignment):     return '='

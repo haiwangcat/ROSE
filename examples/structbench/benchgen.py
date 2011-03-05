@@ -26,7 +26,7 @@ package s version 1.0  {
   }
 
   class Benchmark {
-    float dot1(Point1 a, Point1 b);
+    float run1(in Point1 a, out Point1 b);
   }
 
 }
@@ -46,7 +46,7 @@ def sidl_code(n, datatype):
                (ir.class_, (ir.identifier, "Benchmark"), [], [], [],
                 [(ir.method, 
                   (ir.primitive_type, datatype), 
-                  (ir.identifier, "dot"), [],
+                  (ir.identifier, "run"), [],
                   [(ir.arg, [], (ir.mode, "in"), 
                     (ir.scoped_id, ["Vector"], []), (ir.identifier, "a")),
                    (ir.arg, [], (ir.mode, "inout"), 
@@ -75,9 +75,10 @@ def const_access_expr(n, datatype):
     def add(a, b):
         return ("+", a, b)
 
-    a = (ir.struct, (ir.identifier, "s"), (ir.identifier, 'Vector'), 
+    t = (ir.struct, (ir.identifier, "s"), (ir.identifier, 'Vector'), 
          [(ir.struct_item, datatype, 'm%d'%i) for i in range(1, n+1)])
-    b = a
+    a = (ir.arg, t, ir.in_)
+    b = (ir.arg, t, ir.inout)
     e = reduce(add, map(lambda i:
                             ("*",
                              (ir.get_struct_item, a, (ir.identifier, "a"), 'm%d'%(i%n+1)),
@@ -87,9 +88,10 @@ def const_access_expr(n, datatype):
 
 def reverse_expr(n, datatype):
     'b_i = a_{n-i}'
-    a = (ir.struct, (ir.identifier, "s"), (ir.identifier, 'Vector'), 
+    t = (ir.struct, (ir.identifier, "s"), (ir.identifier, 'Vector'), 
          [(ir.struct_item, datatype, 'm%d'%i) for i in range(1, n+1)])
-    b = a
+    a = (ir.arg, t, ir.in_)
+    b = (ir.arg, t, ir.inout)
     revs = [(ir.stmt, (ir.set_struct_item, b, (ir.identifier, "b"), 'm%d'%i,
                        (ir.get_struct_item, a, (ir.identifier, "a"), 'm%d'%(n-i+1))))
             for i in range(1, n+1)]
@@ -99,8 +101,39 @@ def reverse_expr(n, datatype):
 def nop_expr(n, datatype):
     return (ir.stmt, ('return', retval(n, datatype)))
 
+def bsort_expr(n, datatype):
+    def assign(var, val):
+        return (ir.stmt, (ir.assignment, var, val))
+
+    t = (ir.struct, (ir.identifier, "s"), (ir.identifier, 'Vector'), 
+         [(ir.struct_item, datatype, 'm%d'%i) for i in range(1, n+1)])
+    a = (ir.arg, t, ir.in_)
+    b = (ir.arg, t, ir.inout)
+    copy = [(ir.stmt, (ir.set_struct_item, b, (ir.identifier, "b"), 'm%d'%i,
+                      (ir.get_struct_item, a, (ir.identifier, "a"), 'm%d'%i)))
+            for i in range(1, n+1)]
+    sort = [(ir.decl, (ir.type_, "bool"), (ir.identifier, "swapped")),
+            (ir.decl, (ir.type_, "double"), (ir.identifier, "tmp")),
+            (ir.do_while, (ir.identifier, "swapped"),
+             # if A[i-1] > A[i]
+             [assign((ir.identifier, "swapped"), ir.false)]+
+             [[(ir.if_, ('>', (ir.get_struct_item, b, (ir.identifier, "b"), 'm%d'%(i-1)),
+                              (ir.get_struct_item, b, (ir.identifier, "b"), 'm%d'%i)),
+                # swap( A[i-1], A[i] )
+                # swapped = true
+                [assign((ir.identifier, "tmp"), 
+                        (ir.get_struct_item, b, (ir.identifier, "b"), 'm%d'%i)),
+                 (ir.stmt, (ir.set_struct_item, b, (ir.identifier, "b"), 'm%d'%i,
+                           (ir.get_struct_item, b, (ir.identifier, "b"), 'm%d'%(i-1)))),
+                 (ir.stmt, (ir.set_struct_item, b, (ir.identifier, "b"), 'm%d'%(i-1),
+                           (ir.identifier, "tmp"))),
+                 assign((ir.identifier, "swapped"), ir.true)])]
+              for i in range(2, n+1)])]
+    return copy+sort+[(ir.stmt, ('return', retval(n, datatype)))]
+
 def retval(n, datatype):
     if datatype == "bool":     return (ir.true)
+    elif datatype == "double":  return (ir.value, n)
     elif datatype == "float":  return (ir.value, n)
     elif datatype == "string": return (ir.literal, str(n))
     else: raise
@@ -116,9 +149,12 @@ def gen_main_c(n, datatype):
     elif datatype == "float":				   
 	init = '\n  '.join(["a.m%d = %f;"%(i, float(i))	   for i in range(1, n+1)]
 			  +["b.m%d = %f;"%(i, float(i))	   for i in range(1, n+1)])
+    elif datatype == "double":				   
+	init = '\n  '.join(["a.m%d = %d;"%(i, float(n-i))  for i in range(1, n+1)]
+			  +["b.m%d = %d;"%(i, float(n-i))  for i in range(1, n+1)])
     elif datatype == "string":
-        init = '\n  '.join(['a.m%d = strdup("%d");'%(i, i) for i in range(1, n+1)]
-			  +['b.m%d = strdup("%d");'%(i, i) for i in range(1, n+1)])
+        init = '\n  '.join(['a.m%d = strdup("             %3d");'%(i, i) for i in range(1, n+1)]
+			  +['b.m%d = strdup("             %3d");'%(i, i) for i in range(1, n+1)])
     else: raise
     return r"""
 #include <stdlib.h>
@@ -134,7 +170,7 @@ def gen_main_c(n, datatype):
    s_Benchmark h = s_Benchmark__create(&ex); SIDL_CHECK(ex);
    struct s_Vector__data a, b;
    if (argc != 2) {
-     fprintf(stderr,"Usage: %s <number of runs>", argv[0]);
+     fprintf(stderr,"Usage: %s <number of runs>\n", argv[0]);
      return 1;
    }
    
@@ -145,7 +181,7 @@ def gen_main_c(n, datatype):
    """+init+r"""
    /* Benchmarks */
    for (i=0; i<num_runs; ++i) {
-     volatile """+t+r""" result = s_Benchmark_dot(h, &a, &b, &ex); SIDL_CHECK(ex);
+     volatile """+t+r""" result = s_Benchmark_run(h, &a, &b, &ex); SIDL_CHECK(ex);
    }
    s_Benchmark_deleteRef(h, &ex); SIDL_CHECK(ex);
 	  return 0;
@@ -182,7 +218,7 @@ if __name__ == '__main__':
 			 help='number of elements in the Vector struct')
     cmdline.add_argument('datatype', metavar='t', 
 			 help='data type for the Vector struct')
-    cmdline.add_argument('expr', metavar='expr', choices=['reverse', 'nop'],
+    cmdline.add_argument('expr', metavar='expr', choices=['reverse', 'nop', 'bsort'],
 			 help='benchmark expression to generate')
     # cmdline.add_argument('babel', metavar='babel',
     #			 help='the Babel executable')
@@ -195,6 +231,8 @@ if __name__ == '__main__':
         benchmark_expr = reverse_expr
     elif expr == 'nop':
         benchmark_expr = nop_expr
+    elif expr == 'bsort':
+        benchmark_expr = bsort_expr
     else: raise
 
     print "-------------------------------------------------------------"
@@ -233,8 +271,8 @@ if __name__ == '__main__':
                 format(lang=lang, i=i, t=datatype, e=expr,
                        ext=ext[lang], prefix=prefix[lang]))
         if lang == "Python":
-            splicer_block = "dot"
-        else: splicer_block = "s.Benchmark.dot"
+            splicer_block = "run"
+        else: splicer_block = "s.Benchmark.run"
         code = codegen.generate(lang, benchmark_expr(i,datatype))
         if code == None:
             raise Exception('Code generation failed')
@@ -288,6 +326,11 @@ runC2Python: lib$(LIBNAME).la ../Python_{i}_{t}_{e}/libimpl1.la main.lo
     print "-------------------------------------------------------------"
     print "generating benchmark script..."
     print "-------------------------------------------------------------"
+    def numruns(t):
+        if t == 'string': 
+            return str(100001)
+        return str(1000001)
+
     f = open('out/client_%d_%s_%s/runAll.sh'%(i,datatype,expr), 'w')
     f.write(r"""#!/usr/bin/bash
 PYTHONPATH_1=$LIBDIR/python$PYTHON_VERSION/site-packages:$PYTHONPATH
@@ -305,7 +348,7 @@ function count_insns {
    # to eliminate startup time
    perf stat -- $1 1 2>$2.base || (echo "FAIL" >$2; exit 1)
    base=`grep instructions $2.base | awk '{print $1}'`
-   perf stat -- $1 1000001 2>$2.perf || (echo "FAIL" >$2; exit 1)
+   perf stat -- $1 """+numruns(datatype)+r""" 2>$2.perf || (echo "FAIL" >$2; exit 1)
    grep instructions $2.perf | awk "{print \$1-$base}" >> $2.all
 }
 

@@ -79,6 +79,8 @@ eq              = '=='
 do_while        = 'do while'
 if_             = 'if'
 goto            = 'goto'
+return_         = 'return'
+break_          = 'break'
 
 #class grammar:
 #    def stmt(expr):
