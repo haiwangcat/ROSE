@@ -113,7 +113,7 @@ def bsort_expr(n, datatype):
                       (ir.get_struct_item, a, (ir.identifier, "a"), 'm%d'%i)))
             for i in range(1, n+1)]
     sort = [(ir.decl, (ir.type_, "bool"), (ir.identifier, "swapped")),
-            (ir.decl, (ir.type_, "double"), (ir.identifier, "tmp")),
+            (ir.decl, (ir.type_, "int"), (ir.identifier, "tmp")),
             (ir.do_while, (ir.identifier, "swapped"),
              # if A[i-1] > A[i]
              [assign((ir.identifier, "swapped"), ir.false)]+
@@ -133,7 +133,7 @@ def bsort_expr(n, datatype):
 
 def retval(n, datatype):
     if datatype == "bool":     return (ir.true)
-    elif datatype == "double":  return (ir.value, n)
+    elif datatype == "int":  return (ir.value, n)
     elif datatype == "float":  return (ir.value, n)
     elif datatype == "string": return (ir.literal, str(n))
     else: raise
@@ -149,7 +149,7 @@ def gen_main_c(n, datatype):
     elif datatype == "float":				   
 	init = '\n  '.join(["a.m%d = %f;"%(i, float(i))	   for i in range(1, n+1)]
 			  +["b.m%d = %f;"%(i, float(i))	   for i in range(1, n+1)])
-    elif datatype == "double":				   
+    elif datatype == "int":				   
 	init = '\n  '.join(["a.m%d = %d;"%(i, float(n-i))  for i in range(1, n+1)]
 			  +["b.m%d = %d;"%(i, float(n-i))  for i in range(1, n+1)])
     elif datatype == "string":
@@ -355,7 +355,7 @@ function count_insns {
 function medtime {
    # measure the median running user time
    rm -f $2.all
-   MAX=10
+   MAX=2
    for I in `seq $MAX`; do
      echo "measuring $1 ($3@$4,$5) [$I/$MAX]"
      # echo SIDL_DLL_PATH=$SIDL_DLL_PATH

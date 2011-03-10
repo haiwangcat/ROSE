@@ -7,9 +7,10 @@ NUMBER_TYPES=$(patsubst %, %_float, $(NUMBERS)) \
              $(patsubst %, %_bool, $(NUMBERS)) \
              $(patsubst %, %_string, $(NUMBERS))
 NUMBER_TYPE_EXPRS=$(patsubst %, %_reverse, $(NUMBER_TYPES)) \
-                  $(patsubst %, %_nop,  $(NUMBER_TYPES))
+                  $(patsubst %, %_nop,  $(NUMBER_TYPES)) \
+                  $(patsubst %, %_int_bsort, $(NUMBERS))
 
-#NUMBER_TYPE_EXPRS=128_string_reverse 128_bool_nop 128_float_reverse
+#NUMBER_TYPE_EXPRS=2_int_bsort 128_int_bsort #128_string_reverse 128_bool_nop 128_float_reverse
 SIDLS=$(patsubst %,out/struct_%.sidl, $(NUMBER_TYPE_EXPRS))
 COMPILES=$(patsubst %,out/client_%/token, $(NUMBER_TYPE_EXPRS))
 TIMINGS=$(patsubst %,out/client_%/times, $(NUMBER_TYPE_EXPRS))
