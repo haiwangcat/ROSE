@@ -65,6 +65,7 @@ value           = 'value'
 literal         = 'literal'
 true            = 'TRUE'
 false           = 'FALSE'
+not_            = 'not'
 
 
 # additional Proc. IR nodes

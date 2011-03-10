@@ -304,8 +304,7 @@ class F77File(SourceFile):
             if label: 
                 label = False
                 data += defn+'\n'            
-
-            if   defn[0] == '&': data += '     &      '+defn[1:]+'\n'
+            elif defn[0] == '&': data += '     &      '+defn[1:]+'\n'
             elif defn[0] == '@':       
                    label = True; data += ' %s    '% defn[1:]
             else:                data += '        '+defn+'\n'
@@ -432,7 +431,7 @@ class Fortran77CodeGenerator(GenericCodeGenerator):
             elif (ir.do_while, Condition, Body):
                 label = scope.new_label()
                 gen(Body)
-                return new_scope('if (.not.%s) then'%gen(Condition), 
+                return new_scope('if (%s) then'%gen(Condition), 
                                       (ir.stmt, (ir.goto, str(label))), 
                                       'end if')
 
@@ -589,7 +588,7 @@ class Fortran90CodeGenerator(GenericCodeGenerator):
                 end function %s
             ''' % (Typ, Name, gen(Args), gen(Body), Name)
             elif (ir.do_while, Condition, Body):
-                new_scope('do', Body, '  if (%s) exit'%gen(Condition))
+                new_scope('do', Body, '  if (.not.%s) exit'%gen(Condition))
                 new_def('end do')
                 return scope
             elif (ir.if_, Condition, Body):
@@ -773,6 +772,7 @@ class ClikeCodeGenerator(GenericCodeGenerator):
             elif (ir.if_, Condition, Body):
                 return new_scope('if (%s)'%gen(Condition), Body)
             elif (ir.decl, (ir.type_, Type), Name): declare_var(Type, gen(Name))
+            elif (ir.not_):           return '!'
             elif (ir.assignment):     return '='
             elif (ir.eq):             return '=='
             elif (ir.true):           return 'TRUE'
@@ -912,7 +912,8 @@ class JavaCodeGenerator(ClikeCodeGenerator):
     def get_type(self, node):
         """\return a string with the type of the IR node \c node."""
         with match(node):
-            if ('struct', Type, _): return Type
+            if ('struct', Package, Type, _): 
+                return self.generate(Package)+'.'+self.generate(Type)
             elif ('void'):        return "void"
             elif ('bool'):        return "boolean"
             elif ('character'):   return "char"
@@ -946,10 +947,24 @@ class JavaCodeGenerator(ClikeCodeGenerator):
             # print "pre_def", s
             return scope.pre_def(s)
 
-        def deref((_arg, _struct, mode)):
+        def get_function_scope():
+            s = scope
+            while s.parent != None:
+                s = s.parent
+            return s
+
+        def deref((arg, struct, mode), structname):
             'dereference the holder object for inout and out arguments'
-            if mode == ir.in_: return ''
-            else: return '.get()'
+            if mode == ir.in_: 
+                return gen(structname)
+            else:
+                s = get_function_scope()
+                tmp = '_held_'+gen(structname)
+                decl = '%s %s = %s.get();'%(
+                    self.get_type(struct), tmp, gen(structname))
+                if list(member(decl, s._header)) == []:
+                    s.new_header_def(decl)
+                return tmp
 
         with match(node):
             if (ir.function, Typ, Name, Attrs, Args, Excepts, Froms, Requires, Ensures):
@@ -960,10 +975,10 @@ class JavaCodeGenerator(ClikeCodeGenerator):
             ''' % (Typ, Name, pretty(Args), gen(Body))
 
             elif (ir.get_struct_item, Type, StructName, Item):
-                return gen(StructName)+deref(Type)+'.'+gen(Item)
+                return deref(Type, StructName)+'.'+gen(Item)
 
             elif (ir.set_struct_item, Type, StructName, Item, Value):
-                return gen(StructName)+deref(Type)+'.'+gen(Item)+' = '+gen(Value)
+                return deref(Type, StructName)+'.'+gen(Item)+' = '+gen(Value)
 
             elif (ir.true):           return 'true'
             elif (ir.false):          return 'false'
@@ -1042,7 +1057,7 @@ class PythonCodeGenerator(GenericCodeGenerator):
 
             elif (ir.do_while, Condition, Body):
                 return new_block('while True', Body
-                                 +[(ir.if_, Condition, (ir.stmt, ir.break_))])
+                                 +[(ir.if_, (ir.not_, Condition), (ir.stmt, ir.break_))])
 
             elif (ir.if_, Condition, Body):
                 return new_block('if %s'%gen(Condition), Body)
@@ -1050,6 +1065,7 @@ class PythonCodeGenerator(GenericCodeGenerator):
             elif (ir.decl, Type, Name): return ''
             elif (ir.assignment):     return '='
             elif (ir.eq):             return '=='
+            elif (ir.not_):           return 'not'
             elif (ir.true):           return 'True'
             elif (ir.false):          return 'False'
             elif ((ir.literal, Lit)): return "'%s'"%Lit
