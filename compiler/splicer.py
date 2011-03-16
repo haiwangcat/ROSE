@@ -6,19 +6,21 @@
 # Please report bugs to <adrian@llnl.gov>.
 #
 # \authors <pre>
-# Copyright (c) 2010, Lawrence Livermore National Security, LLC
-# Produced at the Lawrence Livermore National Laboratory.
-# Written by the Components Team <components@llnl.gov>
-# UCRL-CODE-????-???
+#
+# Copyright (c) 2011, Lawrence Livermore National Security, LLC.
+# Produced at the Lawrence Livermore National Laboratory
+# Written by Adrian Prantl <adrian@llnl.gov>.
+#  
+# CODE-473891.
 # All rights reserved.
+#  
+# This file is part of BRAID. For details, see 
+# http://compose-hpc.sourceforge.net/. 
+# Please read the COPYRIGHT file for Our Notice and
+# for the BSD License.
 #
-# This file is part of Babel. For more information, see
-# http://www.llnl.gov/CASC/components/. Please read the COPYRIGHT file
-# for Our Notice and the LICENSE file for ????
-# License.
+# </pre>
 #
-# </pre>    \TODO insert License
-
 import os,re
 
 def replace(filename, splicer_name, text):
