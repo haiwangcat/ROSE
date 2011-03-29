@@ -11,7 +11,7 @@
 # Produced at the Lawrence Livermore National Laboratory
 # Written by Adrian Prantl <adrian@llnl.gov>.
 #  
-# CODE-473891.
+# LLNL-CODE-473891.
 # All rights reserved.
 #  
 # This file is part of BRAID. For details, see 

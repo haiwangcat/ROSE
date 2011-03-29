@@ -1,6 +1,8 @@
 import ir, codegen
-
 # Generator for testcases
+# This is a one-shot script to generate a couple of testcases.
+# It also doubles as a convoluted example of how to use BRAID to
+# generate code in multiple languages.
 
 # Measure two things:
 # - Overhead of function call (struct passing)
@@ -19,22 +21,22 @@ import ir, codegen
 # 1 call                                           1000 calls
 # 1000 accesses                                    1 access
 
-"""
-package s version 1.0  {
-  struct Point1 {
-    float m1;
-  }
-
-  class Benchmark {
-    float run1(in Point1 a, out Point1 b);
-  }
-
-}
-"""
 
 def sidl_code(n, datatype):
     """
     Generate SIDL definition file
+
+    SIDL code will look similar to this:         
+    package s version 1.0  {                     
+      struct Vector1 {                           
+        float m1;                                
+      }                                          
+                                             
+      class Benchmark {                          
+        float run(in Vector1 a, out Vector1 b);  
+      }                                          
+    
+    }                                            
     """
     return (ir.file_, [], [], [
             (ir.package, (ir.identifier, "s"), (ir.version, 1.0),
@@ -355,7 +357,7 @@ function count_insns {
 function medtime {
    # measure the median running user time
    rm -f $2.all
-   MAX=2
+   MAX=10
    for I in `seq $MAX`; do
      echo "measuring $1 ($3@$4,$5) [$I/$MAX]"
      # echo SIDL_DLL_PATH=$SIDL_DLL_PATH
