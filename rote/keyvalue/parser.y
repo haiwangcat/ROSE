@@ -1,4 +1,6 @@
 %token_type {int}
+%type nt {void*}
+%destructor nt { free($$); }
 
 %include {
 #include <stdio.h>
@@ -14,7 +16,7 @@ program ::= kvpairs.
 
 kvpairs ::= kvpairs kvpair.
 
-kvpair ::= ID(K) EQ value(V). {
+kvpair(A) ::= ID(K) EQ value(V). {
   printf("Result %d:%d\n", K, V);
 }
 

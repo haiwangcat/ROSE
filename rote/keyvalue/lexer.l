@@ -11,7 +11,7 @@
 [ \t\n] {}
 
 [0-9]+|[0-9]* {
-  /* yylval.dval = atof(yytext); */
+  yylval.val = atoi(yytext);
   return NUM;
 }
 
