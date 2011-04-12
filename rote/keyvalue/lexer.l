@@ -12,16 +12,23 @@ YYSTYPE yylval;
 [ \t\n] {}
 
 [0-9]+|[0-9]* {
-  yylval.int_val = atoi(yytext);
+  char *text = (char *)calloc(yyleng + 1, sizeof(char));
+  strcpy(text,yytext);
+  text[yyleng] = '\0';
+  yylval.text = text;
   return NUM;
 }
 
 [A-Za-z][A-Za-z0-9]* {
-  yylval.string_val = yytext;
+  char *text = (char *)calloc(yyleng + 1, sizeof(char));
+  strcpy(text,yytext);
+  text[yyleng] = '\0';
+  yylval.text = text;
   return ID;
 }
 
 "=" {
+  yylval.text = NULL;
   return EQ;
 }
 

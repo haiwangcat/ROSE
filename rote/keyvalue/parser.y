@@ -1,13 +1,15 @@
-%token_type {int}
-
 %include {
 #include <stdio.h>
 #include <assert.h>
+#include <iostream>
 #include "parser.h"
 #include "token.h"
-
 extern YYSTYPE yylval;
+extern void handle_parsed_pair(char *key, char *value);
 }
+
+%token_type {char *}
+%token_destructor {free($$);}
 
 %syntax_error {
   printf("Syntax error!\n");
@@ -18,8 +20,12 @@ program ::= kvpairs.
 kvpairs ::= kvpairs kvpair.
 kvpairs ::= .
 
-kvpair ::= ID(K) EQ value(V). {
-  printf("%d->%d\n", K, V);
+kvpair ::= key(K) EQ value(V). {
+  handle_parsed_pair(K, V);
+}
+
+key(K) ::= ID(A) . {
+  K = A;
 }
 
 value(V) ::= ID(A) . {

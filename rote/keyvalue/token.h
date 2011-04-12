@@ -1,8 +1,7 @@
 #ifndef YYSTYPE
 
 typedef union {
-  int int_val;
-  char *string_val;
+  char *text;
 } yystype;
 
 #define YYSTYPE yystype
