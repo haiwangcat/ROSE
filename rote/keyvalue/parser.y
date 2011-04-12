@@ -1,11 +1,11 @@
-%token_type {int}
-%type nt {void*}
-%destructor nt { free($$); }
+%token_type {Token}
 
 %include {
 #include <stdio.h>
 #include <assert.h>
 #include "parser.h"
+#include "Dynamic.h"
+#include "token.h"
 }
 
 %syntax_error {
@@ -15,9 +15,12 @@
 program ::= kvpairs.
 
 kvpairs ::= kvpairs kvpair.
+kvpairs(A) ::= . {
+  A = new Annotation("ann");
+}
 
-kvpair(A) ::= ID(K) EQ value(V). {
-  printf("Result %d:%d\n", K, V);
+kvpair ::= ID(K) EQ value(V). {
+  printf("Result %d:%d\n", K.tok_type, V.tok_type);
 }
 
 value(V) ::= ID(A) . {

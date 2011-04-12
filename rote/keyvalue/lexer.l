@@ -2,6 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include "parser.h"
+#include "token.h"
 %}
 
 %option yylineno
@@ -10,11 +11,7 @@
 
 [ \t\n] {}
 
-[0-9]+|[0-9]* {
-  yylval.val = atoi(yytext);
-  return NUM;
-}
-
+[0-9]+|[0-9]*         { return NUM; }
 [A-Za-z][A-Za-z0-9]*  { return ID; }
 "="                   { return EQ; }
 

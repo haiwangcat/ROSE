@@ -1,8 +1,8 @@
-SOURCES    = lexer.l parser.y main.c
+SOURCES    = lexer.l parser.y main.c Annotation.cpp Dynamic.cpp
 BIN        = kv
 
-OBJECTS   = main.o lex.yy.o parser.o
-CC        = gcc
+OBJECTS   = main.o lex.yy.o parser.o Annotation.o Dynamic.o
+CC        = g++
 CFLAGS    = 
 LDFLAGS   = -lm -lfl
 
@@ -13,6 +13,9 @@ $(BIN): $(OBJECTS)
 
 main.o: main.c parser.h
 	$(CC) -c $<
+
+.cpp.o:
+	$(CC) -c $(CFLAGS) $< -o $@
 
 lex.yy.o: lex.yy.c parser.h
 	$(CC) -c $<
@@ -27,7 +30,7 @@ parser.c parser.h : parser.y
 	./lemon -q $<
 
 lemon: lemon.c
-	$(CC) lemon.c -o lemon
+	gcc lemon.c -o lemon
 
 clean:
 	rm -rf $(BIN) $(OBJECTS) parser.c parser.h lex.yy.c lemon

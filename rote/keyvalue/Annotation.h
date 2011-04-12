@@ -7,10 +7,11 @@ using namespace std;
 
 class Annotation {
   string id;
-  map<string,Dynamic> attribs;
+  map<string,Dynamic *> attribs;
 public:
   Annotation(const string);
   const string get_id();
-  Dynamic get_attrib(const string);
-  void add_attrib(const string,Dynamic val);
+  Dynamic *get_attrib(const string);
+  void add_attrib(const string, Dynamic *val);
+  Annotation *parse(const string);
 };

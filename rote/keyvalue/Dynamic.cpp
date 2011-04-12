@@ -50,13 +50,3 @@ string Dynamic::string_value() {
   string val = *(string *)data;
   return val;
 }
-
-int main() {
-  Dynamic *x;
-  for(int i=0; i < 10000; i++) {
-    x = Dynamic::dynamic_string("Hello");
-    cout << x->string_value() << endl;
-    delete x;
-  }
-  return 0;
-}
