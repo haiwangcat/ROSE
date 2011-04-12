@@ -1,11 +1,12 @@
-%token_type {Token}
+%token_type {int}
 
 %include {
 #include <stdio.h>
 #include <assert.h>
 #include "parser.h"
-#include "Dynamic.h"
 #include "token.h"
+
+extern YYSTYPE yylval;
 }
 
 %syntax_error {
@@ -15,12 +16,10 @@
 program ::= kvpairs.
 
 kvpairs ::= kvpairs kvpair.
-kvpairs(A) ::= . {
-  A = new Annotation("ann");
-}
+kvpairs ::= .
 
 kvpair ::= ID(K) EQ value(V). {
-  printf("Result %d:%d\n", K.tok_type, V.tok_type);
+  printf("%d->%d\n", K, V);
 }
 
 value(V) ::= ID(A) . {
