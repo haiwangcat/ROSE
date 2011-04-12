@@ -9,11 +9,11 @@ const string Annotation::get_id() {
   return id;
 }
 
-Dynamic *Annotation::get_attrib(const string key) {
+const string Annotation::get_attrib(const string key) {
   return attribs[key];
 }
 
-void Annotation::add_attrib(const string key, Dynamic *val) {
+void Annotation::add_attrib(const string key, const string val) {
   assert(attribs.count(key) == 0);
   attribs[key] = val;
 }

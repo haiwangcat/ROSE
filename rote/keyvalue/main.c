@@ -11,7 +11,6 @@
 
 extern FILE *yyin;
 extern YYSTYPE yylval;
-
 int yylex();
 struct yy_buffer_state *yy_scan_string(const char *);
 void yy_delete_buffer(struct yy_buffer_state *);
@@ -41,17 +40,7 @@ int main() {
     yy_scan_string(buf);
     // on EOF yylex will return 0
     while((yv=yylex()) != 0) {
-      char *tok;
-      switch(yv) {
-      case NUM:
-        printf("NUM: %s\n", yylval.text);
-        break;
-      case ID:
-        printf("ID: %s\n", yylval.text);
-        break;
-      }
-      tok = yylval.text;
-      Parse(parser, yv, tok);
+      Parse(parser, yv, yylval.text);
     }
   }
   
