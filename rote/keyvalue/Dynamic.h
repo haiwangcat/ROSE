@@ -8,9 +8,11 @@ class Dynamic {
   DynamicType type;
   void *data;
 public:
-  Dynamic();
   static Dynamic *dynamic_int(int);
   static Dynamic *dynamic_string(const string);
+
+  Dynamic();
+  ~Dynamic();
   int int_value();
   string string_value();
 };
