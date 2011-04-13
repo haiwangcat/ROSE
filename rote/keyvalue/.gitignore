@@ -1,0 +1,7 @@
+*.o
+*.out
+parser.c
+parser.h
+lex.yy.c
+lemon
+kv
