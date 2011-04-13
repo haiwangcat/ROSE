@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "parser.h"
-#include "Dynamic.h"
+#include "Annotation.h"
 #include "token.h"
 #include "lemon.h"
 
@@ -15,18 +15,11 @@ int yylex();
 struct yy_buffer_state *yy_scan_string(const char *);
 void yy_delete_buffer(struct yy_buffer_state *);
 
-// int main() {
-//   Annotation ann("ok");
-//   ann.add_attrib("a1", Dynamic::dynamic_int(5));
-//   ann.add_attrib("a2", Dynamic::dynamic_string("hello"));
-//   cout << ann.get_id() << endl;
-//   cout << ann.get_attrib("a1")->int_value() << endl;
-//   cout << ann.get_attrib("a2")->string_value() << endl;
-//   return 0;
-// }
+Annotation *ann;
 
 void handle_parsed_pair(char *key, char *value) {
   printf("%s->%s\n",key,value);
+  ann->add_attrib(key,value);
 }
 
 int main() {
@@ -34,6 +27,7 @@ int main() {
   int yv;
   char buf[BUFS+1];
   void* parser = ParseAlloc(malloc);
+  ann = new Annotation("ann");
 
   while((n=read(fileno(stdin),buf,BUFS)) > 0) {
     buf[n] = '\0';
@@ -45,6 +39,6 @@ int main() {
   }
   
   Parse(parser,NULL,0);
-  ParseFree(parser,free);
+  ParseFree(parser,free);  
   return 0;
 }
