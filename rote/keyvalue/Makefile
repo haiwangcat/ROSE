@@ -9,7 +9,7 @@ LDFLAGS   = -lm -lfl
 all: lemon $(SOURCES) $(BIN)
 
 $(BIN): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
 main.o: main.c parser.h
 	$(CC) -c $<
