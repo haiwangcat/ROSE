@@ -5,34 +5,45 @@
 #include <iostream>
 #include "parser.h"
 #include "token.h"
+#include "Annotation.h"
 extern YYSTYPE yylval;
-extern void handle_parsed_pair(char *key, char *value);
 }
+
+%extra_argument{Annotation **ann}
 
 %token_type {char *}
 %token_destructor {free($$);}
+
+%type kvpairs {Annotation *}
+%type key     {std::string *}
+%type value   {std::string *}
 
 %syntax_error {
   printf("Syntax error!\n");
 }
 
-program ::= kvpairs.
+program ::= kvpairs(A). {
+  *ann = A;
+}
 
-kvpairs ::= kvpairs kvpair.
-kvpairs ::= .
+kvpairs(Q) ::= kvpairs(S) key(K) EQ value(V) . {
+  Q = S;
+  Q->add_attrib(*K,*V);
+}
 
-kvpair ::= key(K) EQ value(V). {
-  handle_parsed_pair(K, V);
+kvpairs(Q) ::= . {
+  Annotation *ann = new Annotation("ok");
+  Q = ann;
 }
 
 key(K) ::= ID(A) . {
-  K = A;
+  K = new std::string(A);
 }
 
 value(V) ::= ID(A) . {
-  V = A;
+  V = new std::string(A);
 }
 
 value(V) ::= NUM(A) . {
-  V = A;
+  V = new std::string(A);
 }
