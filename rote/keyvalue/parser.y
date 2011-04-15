@@ -4,9 +4,7 @@
 #include <assert.h>
 #include <iostream>
 #include "parser.h"
-#include "token.h"
 #include "Annotation.h"
-extern YYSTYPE yylval;
 }
 
 %extra_argument{Annotation **ann}
@@ -20,6 +18,10 @@ extern YYSTYPE yylval;
 
 %syntax_error {
   printf("Syntax error!\n");
+}
+
+%parse_failure {
+  *ann = NULL;
 }
 
 program ::= kvpairs(A). {

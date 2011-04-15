@@ -1,44 +1,40 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include "parser.h"
 #include "Annotation.h"
-#include "token.h"
+#include "parser.h"
+#include "scanner.h"
 
-#define BUFS (1024)
-
-extern FILE *yyin;
-extern YYSTYPE yylval;
-int yylex();
-struct yy_buffer_state *yy_scan_string(const char *);
-void yy_delete_buffer(struct yy_buffer_state *);
 void *ParseAlloc(void *(*mallocProc)(size_t));
 void Parse(void *yyp,int yymajor,char *yyminor,Annotation **ann);
 void ParseFree(void *p,void (*freeProc)(void*));
 
-Annotation *parse_annotation() {
-  int n;
-  int yv;
-  char buf[BUFS+1];
-  void* parser = ParseAlloc(malloc);
+Annotation *parse_annotation(std::string input) {
   Annotation *result;
+  int yv;
+  void* parser;
+  yyscan_t scanner;
+  yylex_init(&scanner);
+  parser = ParseAlloc(malloc);
 
-  while((n=read(fileno(stdin),buf,BUFS)) > 0) {
-    buf[n] = '\0';
-    yy_scan_string(buf);
-    // on EOF yylex will return 0
-    while((yv=yylex()) != 0) {
-      Parse(parser, yv, yylval.text,&result);
-    }
+  yy_scan_string(input.c_str(),scanner);
+  // on EOF yylex will return 0
+  while((yv=yylex(scanner)) != 0) {
+    int tok_len = yyget_leng(scanner);
+    char *tok = (char *)calloc(tok_len + 1, sizeof(char));
+    strcpy(tok,yyget_text(scanner));
+    Parse(parser,yv,tok,&result);
   }
   Parse(parser,0,NULL,&result);
-  ParseFree(parser,free);  
+  ParseFree(parser,free);
+  yylex_destroy(scanner);
   return result;
 }
 
 int main() {
-  Annotation *ann = parse_annotation();
-  cout << ann->get_attrib("ok") << endl;
+  Annotation *ann = parse_annotation("ok = 5 test = null key = value");
+  if(ann != NULL) {
+    cout << "ok=" << ann->get_attrib("ok") << endl;
+  }
+  cout << "done" << endl;
   return 0;
 }

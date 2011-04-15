@@ -2,6 +2,7 @@
 *.out
 parser.c
 parser.h
-lex.yy.c
+scanner.c
+scanner.h
 lemon
 kv
