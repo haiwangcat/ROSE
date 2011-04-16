@@ -1,8 +1,5 @@
 %include {
-#include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
-#include <iostream>
 #include "parser.h"
 #include "Annotation.h"
 }
@@ -13,8 +10,8 @@
 %token_destructor {free($$);}
 
 %type kvpairs {Annotation *}
-%type key     {std::string *}
-%type value   {std::string *}
+%type key     {char *}
+%type value   {char *}
 
 %syntax_error {
   printf("Syntax error!\n");
@@ -24,28 +21,28 @@
   *ann = NULL;
 }
 
-program ::= kvpairs(A). {
+program ::= ID(K) kvpairs(A). {
+  A->set_id(K);
   *ann = A;
 }
 
 kvpairs(Q) ::= kvpairs(S) key(K) EQ value(V) . {
   Q = S;
-  Q->add_attrib(*K,*V);
+  Q->add_attrib(K,V);
 }
 
 kvpairs(Q) ::= . {
-  Annotation *ann = new Annotation("ok");
-  Q = ann;
+  Q = new Annotation();
 }
 
 key(K) ::= ID(A) . {
-  K = new std::string(A);
+  K = A;
 }
 
 value(V) ::= ID(A) . {
-  V = new std::string(A);
+  V = A;
 }
 
 value(V) ::= NUM(A) . {
-  V = new std::string(A);
+  V = A;
 }

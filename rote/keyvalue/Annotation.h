@@ -8,9 +8,9 @@ class Annotation {
   string id;
   map<string,string> attribs;
 public:
-  Annotation(const string);
   const string get_id();
   const string get_attrib(const string);
+  void set_id(const string);
   void add_attrib(const string, const string);
-  Annotation *parse(const string);
+  static Annotation *parse(const string);
 };

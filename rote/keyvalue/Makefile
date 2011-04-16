@@ -11,7 +11,7 @@ all: lemon $(SOURCES) $(BIN)
 $(BIN): $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
-main.o: main.c scanner.h parser.h
+main.o: main.c
 	$(CC) -c $<
 
 .cpp.o:
