@@ -11,7 +11,7 @@
 
 %type kvpairs {Annotation *}
 %type key     {char *}
-%type value   {char *}
+%type value   {Dynamic *}
 
 %syntax_error {
   printf("Syntax error!\n");
@@ -40,9 +40,9 @@ key(K) ::= ID(A) . {
 }
 
 value(V) ::= ID(A) . {
-  V = A;
+  V = new DynString(A);
 }
 
 value(V) ::= NUM(A) . {
-  V = A;
+  V = new DynInt(atoi(A));
 }

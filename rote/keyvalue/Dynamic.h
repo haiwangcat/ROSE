@@ -2,17 +2,28 @@
 
 using namespace std;
 
-enum DynamicType { UNIT_TYPE, ID_TYPE, STRING_TYPE, INT_TYPE, FLOAT_TYPE };
-
 class Dynamic {
-  DynamicType type;
-  void *data;
 public:
-  static Dynamic *dynamic_int(int);
-  static Dynamic *dynamic_string(const string);
-
-  Dynamic();
-  ~Dynamic();
-  int int_value();
-  string string_value();
+  virtual int int_value() = 0;
+  virtual double double_value() = 0;
+  virtual string string_value() = 0;
 };
+
+class DynInt : public Dynamic {
+  int data;
+public:
+  DynInt(int);
+  virtual int int_value();
+  virtual double double_value();
+  virtual string string_value();
+};
+
+class DynString : public Dynamic {
+  string data;
+public:
+  DynString(string);
+  virtual int int_value();
+  virtual double double_value();
+  virtual string string_value();
+};
+

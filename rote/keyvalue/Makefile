@@ -1,4 +1,4 @@
-SOURCES    = scanner.l parser.y main.c Annotation.cpp Dynamic.cpp
+SOURCES    = scanner.l parser.y main.cpp Annotation.cpp Dynamic.cpp
 BIN        = kv
 
 OBJECTS   = main.o scanner.o parser.o Annotation.o Dynamic.o
@@ -11,10 +11,7 @@ all: lemon $(SOURCES) $(BIN)
 $(BIN): $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
-main.o: main.c
-	$(CC) -c $<
-
-.cpp.o:
+%.o: %.cpp %.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 scanner.o: scanner.c scanner.h parser.h

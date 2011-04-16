@@ -12,7 +12,7 @@ const string Annotation::get_id() {
   return id;
 }
 
-const string Annotation::get_attrib(const string key) {
+Dynamic *Annotation::get_attrib(const string key) {
   return attribs[key];
 }
 
@@ -20,7 +20,7 @@ void Annotation::set_id(const string aid) {
   id = aid;
 }
 
-void Annotation::add_attrib(const string key, const string val) {
+void Annotation::add_attrib(const string key, Dynamic *val) {
   assert(attribs.count(key) == 0);
   attribs[key] = val;
 }

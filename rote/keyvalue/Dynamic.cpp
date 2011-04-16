@@ -1,52 +1,42 @@
 #include "Dynamic.h"
+#include <sstream>
 #include <assert.h>
 
-Dynamic::Dynamic() {
-  type = UNIT_TYPE;
-  data = NULL;
+DynInt::DynInt(int x) {
+  data = x;
 }
 
-Dynamic::~Dynamic() {
-  switch(type) {
-    case UNIT_TYPE:
-      break;
-    case ID_TYPE:
-      delete (string *)data;
-      break;
-    case STRING_TYPE:
-      delete (string *)data;
-      break;
-    case INT_TYPE:
-      delete (int *)data;
-      break;
-    case FLOAT_TYPE:
-      delete (double *)data;
-      break;
-  }
+int DynInt::int_value() {
+  return data;
 }
 
-Dynamic *Dynamic::dynamic_int(int n) {
-  Dynamic *val = new Dynamic();
-  val->type = INT_TYPE;
-  val->data = new int(n);
-  return val;
+double DynInt::double_value() {
+  return double(data);
 }
 
-Dynamic *Dynamic::dynamic_string(const string s) {
-  Dynamic *val = new Dynamic();
-  val->type = STRING_TYPE;
-  val->data = new string(s);
-  return val;
+string DynInt::string_value() {
+  stringstream out;
+  out << data;
+  return out.str();
 }
 
-int Dynamic::int_value() {
-  assert(type == INT_TYPE);
-  int val = *(int *)data;
-  return val;
+DynString::DynString(string x) {
+  data = x;
 }
 
-string Dynamic::string_value() {
-  assert(type == STRING_TYPE);
-  string val = *(string *)data;
-  return val;
+int DynString::int_value() {
+  int x = atoi(data.c_str());
+  return x;
 }
+
+double DynString::double_value() {
+  double x = atof(data.c_str());
+  return x;
+}
+
+string DynString::string_value() {
+  return data;
+}
+
+
+

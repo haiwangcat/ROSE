@@ -5,7 +5,7 @@ int main() {
   Annotation *ann = Annotation::parse("ANN ok=5 test=null key=value");
   if(ann != NULL) {
     cout << "Annotation: " << ann->get_id() << endl;
-    cout << "ok=" << ann->get_attrib("ok") << endl;
+    cout << "ok=" << ann->get_attrib("ok")->string_value() << endl;
     delete ann;
   }
   cout << "done" << endl;
