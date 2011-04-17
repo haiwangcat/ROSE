@@ -8,6 +8,13 @@ void *ParseAlloc(void *(*mallocProc)(size_t));
 void ParseFree(void *p,void (*freeProc)(void*));
 void Parse(void *yyp,int yymajor,char *yyminor,Annotation **ann);
 
+Annotation::~Annotation() {
+  map<string,Dynamic*>::iterator i;
+  for(i=attribs.begin(); i != attribs.end(); i++) {
+    delete i->second;
+  }
+}
+
 const string Annotation::get_id() {
   return id;
 }
@@ -28,15 +35,14 @@ void Annotation::add_attrib(const string key, Dynamic *val) {
 Annotation *Annotation::parse(const string input) {
   Annotation *result;
   yyscan_t scanner;
-  yylex_init(&scanner);
-  void *parser = ParseAlloc(malloc);
-  yy_scan_string(input.c_str(),scanner);
-  
+  void *parser;
   int yv;
+  
+  yylex_init(&scanner);
+  parser = ParseAlloc(malloc);
+  yy_scan_string(input.c_str(),scanner);
   while((yv=yylex(scanner)) != 0) {
-    int tok_len = yyget_leng(scanner);
-    char *tok = (char *)calloc(tok_len + 1, sizeof(char));
-    strcpy(tok,yyget_text(scanner));
+    char *tok = yyget_extra(scanner);
     Parse(parser,yv,tok,&result);
   }
   Parse(parser,0,NULL,&result);

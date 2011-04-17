@@ -9,6 +9,7 @@ class Annotation {
   string id;
   map<string,Dynamic *> attribs;
 public:
+  ~Annotation();
   const string get_id();
   Dynamic *get_attrib(const string);
   void set_id(const string);

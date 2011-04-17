@@ -1,17 +1,20 @@
 %include {
+#include <iostream>
 #include <assert.h>
 #include "parser.h"
 #include "Annotation.h"
+
+using namespace std;
 }
 
-%extra_argument{Annotation **ann}
+%extra_argument   { Annotation **ann }
 
-%token_type {char *}
-%token_destructor {free($$);}
+%token_type       { char * }
+%token_destructor { free($$); }
 
-%type kvpairs {Annotation *}
-%type key     {char *}
-%type value   {Dynamic *}
+%type kvpairs     { Annotation * }
+%type key         { char * }
+%type value       { Dynamic * }
 
 %syntax_error {
   printf("Syntax error!\n");
@@ -45,4 +48,8 @@ value(V) ::= ID(A) . {
 
 value(V) ::= NUM(A) . {
   V = new DynInt(atoi(A));
+}
+
+value(V) ::= STRING(A) . {
+  V = new DynString(A);
 }
