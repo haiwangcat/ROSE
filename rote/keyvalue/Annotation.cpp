@@ -28,7 +28,10 @@ void Annotation::set_id(const string aid) {
 }
 
 void Annotation::add_attrib(const string key, Dynamic *val) {
-  assert(attribs.count(key) == 0);
+  if(attribs.count(key) > 0) {
+    Dynamic *val = attribs[key];
+    delete val;
+  }
   attribs[key] = val;
 }
 
