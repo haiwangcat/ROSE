@@ -1,5 +1,6 @@
 %include {
 #include <iostream>
+#include <stdlib.h>
 #include <assert.h>
 #include "parser.h"
 #include "Annotation.h"
