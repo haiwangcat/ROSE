@@ -1,0 +1,188 @@
+# -*- makefile-automake -*-
+
+TERMITE_TESTS = \
+    testsuite/base/ab.c \
+    testsuite/base/bigger.c \
+    testsuite/base/blocks.c \
+    testsuite/base/bound_t.c \
+    testsuite/base/bsort.c \
+    testsuite/base/cconstants.c \
+    testsuite/base/classes.cxx \
+    testsuite/base/classes2.cxx \
+    testsuite/base/classes3.cxx \
+    testsuite/base/classes_and_returns.cxx \
+    testsuite/base/deepreturn.c \
+    testsuite/base/default_args.cxx \
+    testsuite/base/demo1.cxx \
+    testsuite/base/demo2.cxx \
+    testsuite/base/destructor.cxx \
+    testsuite/base/destructor2.cxx \
+    testsuite/base/destructor_simple.cxx \
+    testsuite/base/for_return1.c \
+    testsuite/base/forinit.c \
+    testsuite/base/initializers/initializer1.cxx \
+    testsuite/base/initializers/initializer2.cxx \
+    testsuite/base/initializers/initializer3.cxx \
+    testsuite/base/initializers/initializer4.cxx \
+    testsuite/base/intval.c \
+    testsuite/base/jump.c \
+    testsuite/base/logical.c \
+    testsuite/base/manyargs.c \
+    testsuite/base/namespaces.cxx \
+    testsuite/base/nested.c \
+    testsuite/base/overload.cxx \
+    testsuite/base/rdtest1.cxx \
+    testsuite/base/rdtest2.cxx \
+    testsuite/base/rdtest3.cxx \
+    testsuite/base/simpleif.c \
+    testsuite/base/small.c \
+    testsuite/base/test1.cxx \
+    testsuite/base/test5.cxx \
+    testsuite/base/test6.cxx \
+    testsuite/base/tests/costa/example1.cxx \
+    testsuite/base/tests/costa/example2.cxx \
+    testsuite/base/tests/costa/example3.cxx \
+    testsuite/base/tests/rdtest0.cxx \
+    testsuite/base/tests/rdtest1.cxx \
+    testsuite/base/tests/rdtest10.cxx \
+    testsuite/base/tests/rdtest10all.cxx \
+    testsuite/base/tests/rdtest10p1.cxx \
+    testsuite/base/tests/rdtest10p2.cxx \
+    testsuite/base/tests/rdtest10p3.cxx \
+    testsuite/base/tests/rdtest11.cxx \
+    testsuite/base/tests/rdtest12.cxx \
+    testsuite/base/tests/rdtest13.cxx \
+    testsuite/base/tests/rdtest14.cxx \
+    testsuite/base/tests/rdtest15.cxx \
+    testsuite/base/tests/rdtest2.cxx \
+    testsuite/base/tests/rdtest3.cxx \
+    testsuite/base/tests/rdtest4.cxx \
+    testsuite/base/tests/rdtest4b.cxx \
+    testsuite/base/tests/rdtest5.cxx \
+    testsuite/base/tests/rdtest6.cxx \
+    testsuite/base/tests/rdtest7.cxx \
+    testsuite/base/tests/rdtest8a.cxx \
+    testsuite/base/tests/rdtest8b.cxx \
+    testsuite/base/tests/rdtest8c.cxx \
+    testsuite/base/tests/rdtest9a.cxx \
+    testsuite/base/tests/rdtest9a_c89.c \
+    testsuite/base/tests/rdtest9b.cxx \
+    testsuite/base/typedefs.cxx \
+    testsuite/base/verysmall.c \
+    testsuite/base/virtual.cxx \
+    testsuite/base/while_call1.c \
+    testsuite/mrtc/failure/des.c \
+    testsuite/mrtc/success/adpcm.c \
+    testsuite/mrtc/success/bs.c \
+    testsuite/mrtc/success/bsort100.c \
+    testsuite/mrtc/success/cnt.c \
+    testsuite/mrtc/success/compress.c \
+    testsuite/mrtc/success/cover.c \
+    testsuite/mrtc/success/crc.c \
+    testsuite/mrtc/success/duff.c \
+    testsuite/mrtc/success/edn.c \
+    testsuite/mrtc/success/expint.c \
+    testsuite/mrtc/success/fac.c \
+    testsuite/mrtc/success/fdct.c \
+    testsuite/mrtc/success/fft1.c \
+    testsuite/mrtc/success/fibcall.c \
+    testsuite/mrtc/success/fir.c \
+    testsuite/mrtc/success/insertsort.c \
+    testsuite/mrtc/success/janne_complex.c \
+    testsuite/mrtc/success/jfdctint.c \
+    testsuite/mrtc/success/lcdnum.c \
+    testsuite/mrtc/success/lms.c \
+    testsuite/mrtc/success/loop3.c \
+    testsuite/mrtc/success/ludcmp.c \
+    testsuite/mrtc/success/matmult.c \
+    testsuite/mrtc/success/minmax.c \
+    testsuite/mrtc/success/minver.c \
+    testsuite/mrtc/success/ndes.c \
+    testsuite/mrtc/success/ns.c \
+    testsuite/mrtc/success/nsichneu.c \
+    testsuite/mrtc/success/qsort-exam.c \
+    testsuite/mrtc/success/qurt.c \
+    testsuite/mrtc/success/recursion.c \
+    testsuite/mrtc/success/select.c \
+    testsuite/mrtc/success/sqrt.c \
+    testsuite/mrtc/success/statemate.c \
+    testsuite/shape/success/artificalsum.cxx \
+    testsuite/shape/success/nnh_xnil.cxx \
+    testsuite/shape/success/nnh_xselnil.cxx \
+    testsuite/shape/success/nnh_xsely.cxx \
+    testsuite/shape/success/nnh_xy.cxx \
+    testsuite/shape/success/nnh_xysel2.cxx \
+    testsuite/shape/success/nnh_xysel3.cxx \
+    testsuite/shape/success/nnh_xysel3shared.cxx \
+    testsuite/shape/success/pathjoin.cxx \
+    testsuite/shape/success/srw98_listreverse.cxx
+
+EXTRA_DIST += $(TERMITE_TESTS) \
+	testsuite/shape/success/README \
+	testsuite/README
+
+TESTS = $(TERMITE_TESTS)
+
+noinst_SCRIPTS = testsuite/c_driver.sh testsuite/cxx_driver.sh
+TEST_EXTENSIONS = .cxx .c
+C_LOG_COMPILER = sh testsuite/c_driver.sh
+AM_C_LOG_FLAGS = 
+CXX_LOG_COMPILER = sh testsuite/cxx_driver.sh
+AM_CXX_LOG_FLAGS =
+
+testdir=check-tests
+
+# The tests are now split into separate targets to facilitate a
+# parallelized run of the testsuite (make -j #N installcheck)
+
+
+.PHONY: tests termite
+
+#check-local: 
+#	rm -f init.token
+#	$(MAKE) tests
+# 	@echo "Cleanup..."
+# 	chmod -R u+w $(testdir)
+# 	rm -rf $(testdir)
+# 	rm -f init.token
+
+tests: termite
+
+init.token:
+	@echo "Init..."
+	rm -rf $(testdir)
+	mkdir -p $(testdir)
+	touch init.token
+
+testsuite/c_driver.sh: Makefile
+	$(AM_V_GEN)
+	@echo '#!/bin/bash' > $@
+	@echo 'cd $(builddir)/testsuite' >> $@
+	@echo 'echo "TERMITE: performing a translation circle of" ../$$1' >> $@
+	@echo 'set -x' >> $@
+	@echo 'NAME=`basename $$1 .c`' >> $@
+	@echo '../$(builddir)/src/c2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) ../$$1 -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(builddir)/src/term2c $${NAME}-1.term -o $${NAME}-2.c || exit 2' >> $@
+	@echo '../$(builddir)/src/c2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2c $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
+if WITH_SWI_PROLOG
+	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
+endif
+
+testsuite/cxx_driver.sh: Makefile
+	$(AM_V_GEN)
+	@echo '#!/bin/bash' > $@
+	@echo 'cd $(builddir)/testsuite' >> $@
+	@echo 'echo "TERMITE: performing a translation circle of" ../$$1' >> $@
+	@echo 'set -x' >> $@
+	@echo 'NAME=`basename ../$$1 .cxx`' >> $@
+	@echo '../$(builddir)/src/c2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) ../$$1 -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(builddir)/src/term2c $${NAME}-1.term -o $${NAME}-2.cxx || exit 2' >> $@
+	@echo '../$(builddir)/src/c2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2c $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
+if WITH_SWI_PROLOG
+	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
+endif
+
