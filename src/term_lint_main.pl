@@ -40,6 +40,16 @@ termite_term(Filename, T) :-
 main :-
     format('Termite Lint~n'),
     current_prolog_flag(argv, Argv),
+    (  append(_, [_, '--', '--help'], Argv)
+    -> format('* usage: need exactly one term file name argument~n'),
+       halt(0)
+    ; true
+    ),
+    (  append(_, [_, '--', '--version'], Argv)
+    -> format('version 1.0~n'),
+       halt(0)
+    ; true
+    ),
     ( append(_SystemArgs, [_ProgramName, '--', Filename], Argv)
     ; format('* usage: need exactly one term file name argument~n'),
       !,

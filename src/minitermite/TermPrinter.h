@@ -209,6 +209,7 @@ TermPrinter<DFI_STORE_TYPE>::getArity(SgNode* astNode)
     case V_SgForStatement:
       // We also don't need the decorator list
     case V_SgClassDeclaration:
+    case V_SgFunctionDeclaration:
     case V_SgMemberFunctionDeclaration:
       return n - 1;
     default: return n;

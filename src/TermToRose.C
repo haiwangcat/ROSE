@@ -439,9 +439,19 @@ TermToRose::binaryToRose(PrologCompTerm* t,string tname) {
   /*get child node 2 (almost-prefix traversal step)*/
   SgNode* child2 = toRose(t->at(1));
 
+  if (tname == "function_declaration") {
+    /* function declarations are special: we create an incomplete
+     * declaration before traversing the body; this is necessary for
+     * recursive functions */
+    s = createFunctionDeclaration(fi,child1,t);
+  }
+
   /* create nodes depending on type */
   if (isBinaryOp(tname)) {
     s = createBinaryOp(fi,child1,child2,t);
+  } else if (tname == "function_declaration") {
+    /* function declaration: created above, needs a fixup here */
+    s = setFunctionDeclarationBody(isSgFunctionDeclaration(s),child2);
   } else if (tname == "cast_exp") {
     s = createUnaryOp(fi,child1,t);
   } else if (tname == "switch_statement") {
@@ -496,18 +506,8 @@ TermToRose::ternaryToRose(PrologCompTerm* t,string tname) {
   /* node to be created */
   SgNode* s = NULL;
 
-  if (tname == "function_declaration") {
-    /* function declarations are special: we create an incomplete
-     * declaration before traversing the body; this is necessary for
-     * recursive functions */
-    s = createFunctionDeclaration(fi,child1,/*FIXME child2,*/t);
-  }
-
   /* create nodes depending on type*/
-  if (tname == "function_declaration") {
-    /* function declaration: created above, needs a fixup here */
-    s = setFunctionDeclarationBody(isSgFunctionDeclaration(s),child3);
-  } else if (tname == "if_stmt") {
+  if (tname == "if_stmt") {
     s = createIfStmt(fi,child1,child2,child3,t);
   } else if (tname == "case_option_stmt") {
     s = createCaseOptionStmt(fi,child1,child2,child3,t);

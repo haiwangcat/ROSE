@@ -125,10 +125,12 @@ TESTS = $(TERMITE_TESTS)
 
 noinst_SCRIPTS = testsuite/c_driver.sh testsuite/cxx_driver.sh
 TEST_EXTENSIONS = .cxx .c
-C_LOG_COMPILER = sh testsuite/c_driver.sh
+C_LOG_COMPILER = bash $(builddir)/testsuite/c_driver.sh
 AM_C_LOG_FLAGS = 
-CXX_LOG_COMPILER = sh testsuite/cxx_driver.sh
+CXX_LOG_COMPILER = bash $(builddir)/testsuite/cxx_driver.sh
 AM_CXX_LOG_FLAGS =
+
+CLEANFILES += $(noinst_SCRIPTS)
 
 testdir=check-tests
 
@@ -138,24 +140,11 @@ testdir=check-tests
 
 .PHONY: tests termite
 
-#check-local: 
-#	rm -f init.token
-#	$(MAKE) tests
-# 	@echo "Cleanup..."
-# 	chmod -R u+w $(testdir)
-# 	rm -rf $(testdir)
-# 	rm -f init.token
-
 tests: termite
-
-init.token:
-	@echo "Init..."
-	rm -rf $(testdir)
-	mkdir -p $(testdir)
-	touch init.token
 
 testsuite/c_driver.sh: Makefile
 	$(AM_V_GEN)
+	@mkdir -p $(builddir)/testsuite
 	@echo '#!/bin/bash' > $@
 	@echo 'cd $(builddir)/testsuite' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" ../$$1' >> $@
@@ -172,6 +161,7 @@ endif
 
 testsuite/cxx_driver.sh: Makefile
 	$(AM_V_GEN)
+	@mkdir -p $(builddir)/testsuite
 	@echo '#!/bin/bash' > $@
 	@echo 'cd $(builddir)/testsuite' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" ../$$1' >> $@

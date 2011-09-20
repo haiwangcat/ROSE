@@ -3,7 +3,9 @@
 INCLUDES = -I$(ROSE_INCLUDE_DIR) \
 	   -I$(BOOST_INCLUDE_DIR) \
            -I$(srcdir)/src/minitermite \
-           -I$(builddir)/src/minitermite
+           -I$(builddir)/src/minitermite \
+	   -I$(builddir)/src
+
 
 nobase_include_HEADERS = \
 	src/minitermite/AstJanitor.h \
@@ -46,7 +48,7 @@ BUILT_SOURCES =
 
 if WITH_SWI_PROLOG # ---------------------------------------------------
 
-INCLUDES += -I$(SWI_PROLOG_INCLUDE_DIR) 
+INCLUDES += -I$(SWI_PROLOG_INCLUDE_DIR)
 ROSELDFLAGS += $(SWI_PROLOG_LIBS) $(SWI_PROLOG_LDADD)
 nobase_dist_data_DATA = \
   src/termite/astproperties.pl  src/termite/loops.pl \
@@ -57,7 +59,7 @@ nobase_dist_data_DATA = \
 
 else # -----------------------------------------------------------------
 
-BUILT_SOURCES += termparser.tab.h++ 
+BUILT_SOURCES += src/termparser.tab.h++ 
 
 nodist_libtermsupport_la_SOURCES = $(BUILT_SOURCES)
 CLEANFILES += src/termparser.c++ src/termparser.h src/termlexer.c++ \
@@ -65,10 +67,10 @@ CLEANFILES += src/termparser.c++ src/termparser.h src/termlexer.c++ \
 libtermsupport_la_SOURCES += src/termparser.y++ src/termlexer.l++
 nobase_include_HEADERS += src/minitermite/termparser.h
 
-termparser.tab.h++: $(srcdir)/src/termparser.y++ Makefile
+src/termparser.tab.h++: $(srcdir)/src/termparser.y++ Makefile
 	$(YACC) -d $(srcdir)/src/termparser.y++ && \
 	rm y.tab.c && \
-	mv y.tab.h termparser.tab.h++
+	mv y.tab.h $@
 
 endif # ----------------------------------------------------------------
 
