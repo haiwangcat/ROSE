@@ -359,8 +359,17 @@ TermToRose::unaryToRose(PrologCompTerm* t,string tname) {
   /*get child node (prefix traversal step)*/
   SgNode* child1 = toRose(t->at(0));
 
+  if (tname == "class_declaration") {
+    /* class declarations must be handled before their bodies because they
+     * can be recursive */
+    s = createClassDeclaration(fi,NULL,t);
+  }
+  
   /* depending on the node type: create it*/
-  if(isValueExp(tname)) {
+  if(tname == "class_declaration") {
+    /* class declaration: created above, needs fixup here */
+    s = setClassDeclarationBody(isSgClassDeclaration(s),child1);
+  } else if(isValueExp(tname)) {
     s = createValueExp(fi,child1,t);
   } else if(isUnaryOp(tname)) {
     s = createUnaryOp(fi,child1,t);
@@ -427,19 +436,11 @@ TermToRose::binaryToRose(PrologCompTerm* t,string tname) {
   SgNode* s = NULL;
   /*get child node 1 (prefix traversal step)*/
   SgNode* child1 = toRose(t->at(0));
-  if (tname == "class_declaration") {
-    /* class declarations must be handled before their bodies because they
-     * can be recursive */
-    s = createClassDeclaration(fi,NULL,t);
-  }
   /*get child node 2 (almost-prefix traversal step)*/
   SgNode* child2 = toRose(t->at(1));
 
   /* create nodes depending on type */
-  if(tname == "class_declaration") {
-    /* class declaration: created above, needs fixup here */
-    s = setClassDeclarationBody(isSgClassDeclaration(s)/*,child1 FIXME*/,child2);
-  } else if (isBinaryOp(tname)) {
+  if (isBinaryOp(tname)) {
     s = createBinaryOp(fi,child1,child2,t);
   } else if (tname == "cast_exp") {
     s = createUnaryOp(fi,child1,t);
@@ -840,6 +841,7 @@ TermToRose::createModifierType(PrologTerm* t) {
   setTypeModifier(c->at(1),&(mt->get_typeModifier()));
   return mt;
 }
+
 /**
  * create SgTypedefType
  */
@@ -873,12 +875,7 @@ TermToRose::createTypedefType(PrologTerm* t) {
     if (annot->at(1)->getName() != "typedef_type") {
       basetype = TermToRose::createType(annot->at(1));
     } else {
-      cerr<<id<<endl;
-      TERM_ASSERT(t, false && "FIXME");
-      /*we don't want to keep the base type empty, use int (irrelevant
-	for unparsing*/
-      basetype = new SgTypeInt();
-      //decl = new SgTypedefDeclaration(FI,n,basetype,NULL,NULL,NULL);
+      basetype = TermToRose::createTypedefType(annot->at(1));      
     }
     decl = createTypedefDeclaration
       (FI, new PrologCompTerm("typedef_declaration", //4,
@@ -2520,6 +2517,9 @@ TermToRose::createClassDeclaration(Sg_File_Info* fi,SgNode* child1 ,PrologCompTe
     new SgClassDeclaration(fi, class_name, e_class_type, NULL/*sg_class_type */,
 			   class_def);
 
+  cerr<<t->getRepresentation()<<endl;
+  cerr<<class_def<<endl;
+
   // Set the type
   TERM_ASSERT(t, d != NULL);
   SgClassType* sg_class_type = NULL;
@@ -2804,8 +2804,8 @@ TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
     debug("...with declaration");
     string id;
     if (ct->getName() == "class_declaration") {
-      ARITY_ASSERT(ct, 5);
-      PrologCompTerm* annot = isPrologCompTerm(ct->at(2));
+      ARITY_ASSERT(ct, 4);
+      PrologCompTerm* annot = isPrologCompTerm(ct->at(1));
       ARITY_ASSERT(annot, 4);
       id = annot->at(0)->getRepresentation();
     }

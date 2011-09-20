@@ -205,9 +205,11 @@ TermPrinter<DFI_STORE_TYPE>::getArity(SgNode* astNode)
     /* Since ~2011, ROSE adds additional 'else' children to these
        nodes that do not make sense in C/C++. 
        We remove them here. */
-    case V_SgDoWhileStmt:
     case V_SgWhileStmt:
     case V_SgForStatement:
+      // We also don't need the decorator list
+    case V_SgClassDeclaration:
+    case V_SgMemberFunctionDeclaration:
       return n - 1;
     default: return n;
   }
