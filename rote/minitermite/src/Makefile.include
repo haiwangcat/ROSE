@@ -1,0 +1,101 @@
+## meant for inclusion by the toplevel -*- makefile-automake -*-
+
+INCLUDES = -I$(ROSE_INCLUDE_DIR) \
+	   -I$(BOOST_INCLUDE_DIR) \
+           -I$(srcdir)/src/minitermite \
+           -I$(builddir)/src/minitermite \
+	   -I$(builddir)/src
+
+
+nobase_include_HEADERS = \
+	src/minitermite/AstJanitor.h \
+	src/minitermite/minitermite.h \
+	src/minitermite/TermPrinter.h \
+	\
+	src/minitermite/TermToRose.h \
+	src/minitermite/PrologTerm.h \
+	src/minitermite/PrologCompTerm.h	\
+	src/minitermite/PrologList.h \
+	src/minitermite/PrologAtom.h \
+	src/minitermite/PrologInt.h \
+	src/minitermite/PrologVariable.h \
+	src/minitermite/RoseToTerm.h \
+	src/minitermite/RoseEnums.h
+
+ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) -L$(BOOST_LIB_DIR) -Wl,-rpath $(BOOST_LIB_DIR)
+
+bin_PROGRAMS = src/termpretty src/c2term src/term2c
+
+if WITH_SWI_PROLOG
+bin_SCRIPTS = src/termite_lint
+
+src/termite_lint: src/term_lint_main.pl src/termite/termite_spec.pl src/termite/termlint.pl
+	TERMITE_LIB=$(srcdir)/src/termite \
+	  $(SWI_PLC) -o src/termite_lint -c $(srcdir)/src/term_lint_main.pl
+endif
+
+AM_YFLAGS = -d
+
+lib_LTLIBRARIES = libtermsupport.la
+libtermsupport_la_SOURCES = \
+	src/RoseToTerm.C \
+	src/TermToRose.C \
+	src/PrologTerm.C \
+	src/RoseEnums.C
+
+CLEANFILES = termpretty.c++ 
+BUILT_SOURCES =	
+
+if WITH_SWI_PROLOG # ---------------------------------------------------
+
+INCLUDES += -I$(SWI_PROLOG_INCLUDE_DIR)
+ROSELDFLAGS += $(SWI_PROLOG_LIBS) $(SWI_PROLOG_LDADD)
+nobase_dist_data_DATA = \
+  src/termite/astproperties.pl  src/termite/loops.pl \
+  src/termite/asttransform.pl   src/termite/utils.pl \
+  src/termite/astwalk.pl        src/termite/callgraph.pl \
+  src/termite/termlint.pl       src/termite/termite_spec.pl \
+  src/termite/markers.pl
+
+else # -----------------------------------------------------------------
+
+BUILT_SOURCES += src/termparser.tab.h++ 
+
+nodist_libtermsupport_la_SOURCES = $(BUILT_SOURCES)
+CLEANFILES += src/termparser.c++ src/termparser.h src/termlexer.c++ \
+              src/termparser.tab.h++
+libtermsupport_la_SOURCES += src/termparser.y++ src/termlexer.l++
+nobase_include_HEADERS += src/minitermite/termparser.h
+
+src/termparser.tab.h++: $(srcdir)/src/termparser.y++ Makefile
+	$(YACC) -d $(srcdir)/src/termparser.y++ && \
+	rm y.tab.c && \
+	mv y.tab.h $@
+
+endif # ----------------------------------------------------------------
+
+src_termpretty_SOURCES = src/termpretty.l++
+src_termpretty_LDADD = -lboost_program_options
+
+src_c2term_SOURCES = src/c2term.C 
+src_term2c_SOURCES = src/term2c.C 
+
+src_term2c_LDADD = libtermsupport.la -lrose 
+src_c2term_LDADD = libtermsupport.la -lrose
+
+src_term2c_LDFLAGS = $(ROSELDFLAGS)
+src_c2term_LDFLAGS = $(ROSELDFLAGS)
+
+EXTRA_DIST += \
+  src/tests \
+  \
+  src/tests/test1.C src/tests/test4.C src/tests/test6.C src/tests/test9.C src/tests/test_control.C \
+  src/tests/test_struct.C src/tests/test2.C src/tests/test5b.C src/tests/test7.C \
+  src/tests/test_class1.C src/tests/test_enum.C src/tests/test_transformme.C src/tests/test3.C \
+  src/tests/test5.C src/tests/test8.C src/tests/test_class2.C src/tests/test_minimal.C \
+  src/tests/test_typedef.C \
+  \
+  src/term2c \
+  src/term_lint_main.pl \
+  src/clang/README src/clang/INSTALL src/clang/clang-termite.patch
+

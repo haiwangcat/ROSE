@@ -1,0 +1,55 @@
+                                                        -*- markdown -*-
+                             minitermite
+
+
+About
+=====
+
+Minitermite is a light-weight library that transforms C(++) programs
+into a term-based representation of their abstract syntax trees (AST)
+and vice versa.
+
+Related work, Provenance
+========================
+
+Minitermite is a spin-off (friendly fork) of Termite [1] which is
+distributed as part of the SATIrE program analysis framework [2] from
+the Computer Languages group at Vienna University of Technology,
+Austria.
+
+[1] http://www.complang.tuwien.ac.at/adrian/termite
+[2] http://www.complang.tuwien.ac.at/satire
+
+Authors
+=======
+
+The corresponding author and maintainer is Adrian Prantl. The original
+Termite was based on an earlier prototype by Christoph Bonitz and
+Markus Schordan.  Gergo Barany contributed the term_lint grammar
+checker, as well as support for the ICFG and other PAG-based analyses
+and numerous bug fixes and improvements. The majority of the Clang
+front-end integration was contributed by Dietmar Ebner with some help
+from Florian Brandner.
+
+Installation instructions
+=========================
+
+	mkdir build && cd build
+    ../configure --prefix=/usr/local --with-rosedir=/opt/rose \
+	             --with-boostdir=/usr --with-swi-prolog=no
+	make -j<N> install
+	make installcheck
+
+Dependencies
+------------
+
+ROSE: http://www.rosecompiler.org/
+flex, yacc, boost
+
+Optional: swi-prolog, clang
+
+License
+=======
+
+Just like SATIrE, minitermite is distributed under a permissive
+three-clause BSD license. See COPYING for details.
