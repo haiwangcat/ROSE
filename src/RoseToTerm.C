@@ -2,16 +2,15 @@
 /* Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
         2007-2008 Adrian Prantl <adrian@complang.tuwien.ac.at>
 */
-#include <satire_rose.h>
+#include <rose.h>
 #include <list>
 #include <cctype>
-#include "termite.h" 
+#include "minitermite.h" 
 // GB (2009-02-25): Use the term printer without DFI stuff.
 #undef HAVE_PAG
 #define HAVE_SATIRE_ICFG 0
 #include "TermPrinter.h"
 #include "RoseToTerm.h"
-#include "satire.h"
 
 using namespace std;
 

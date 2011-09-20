@@ -3,7 +3,7 @@
 */
 #ifndef _AST_JANITOR_H
 #define _AST_JANITOR_H
-#include "satire_rose.h"
+#include <rose.h>
 #include "TermToRose.h"
 
 /**

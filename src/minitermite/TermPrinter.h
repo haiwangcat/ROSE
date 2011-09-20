@@ -11,8 +11,8 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <ctype.h>
 #include <cstdio>
 #include <cstdlib>
-#include <satire_rose.h>
-#include "termite.h"
+#include <rose.h>
+#include "minitermite.h"
 #include <climits>
 
 // GB (2009-02-25): Want to build with ICFG support unless explicitly told
@@ -37,9 +37,10 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <sstream>
 #include <iostream>
 
-#include <aslanalysis.h>
-#include <aslattribute.h>
-
+#if HAVE_ASL
+#  include <aslanalysis.h>
+#  include <aslattribute.h>
+#endif
 
 /* See main.C-template and toProlog.C for examples how to use this */
   
@@ -199,7 +200,17 @@ template<typename DFI_STORE_TYPE>
 int
 TermPrinter<DFI_STORE_TYPE>::getArity(SgNode* astNode) 
 {
-  return AstTests::numSingleSuccs(astNode);
+  int n = AstTests::numSingleSuccs(astNode);
+  switch (astNode->variantT()) {
+    /* Since ~2011, ROSE adds additional 'else' children to these
+       nodes that do not make sense in C/C++. 
+       We remove them here. */
+    case V_SgDoWhileStmt:
+    case V_SgWhileStmt:
+    case V_SgForStatement:
+      return n - 1;
+    default: return n;
+  }
 }
 
 template<typename DFI_STORE_TYPE>

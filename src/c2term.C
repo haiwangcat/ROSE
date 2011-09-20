@@ -8,7 +8,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <iostream>
 #include <fstream>
 
-#include <satire_rose.h>
+#include <rose.h>
 
 #include <getopt.h>
 
@@ -39,8 +39,8 @@ void usage(const char* me)
        << "  --pdf\n"
        << "    Create a PDF printout of the syntax tree.\n\n"
 
-       << "This program was built against "<<SATIRE_PACKAGE_STRING<<",\n"
-       << "please report bugs to <"<<SATIRE_PACKAGE_BUGREPORT<<">."
+       << "This program was built against "<<PACKAGE_STRING<<",\n"
+       << "please report bugs to <"<<PACKAGE_BUGREPORT<<">."
 
        << endl;
 }
@@ -78,8 +78,10 @@ int main(int argc, char** argv) {
     if (argv[i][0] == '-') {
       char empty[] = "";
       bool edg_opt = true;
-      for (struct option *opt = long_options; opt->name; ++opt)
+      for (struct option *opt = long_options; opt->name; ++opt) {
+	if (strlen(argv[i]) > 2 && argv[i][1] == '-' && argv[i][2] == *opt->name) edg_opt = false;
 	if (argv[i][1] == *opt->name) edg_opt = false;
+      }
       if (edg_opt)
 	argv[i] = empty;
     }

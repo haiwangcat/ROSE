@@ -1,4 +1,4 @@
-#include "termite.h"
+#include "minitermite.h"
 
 #include <cstring>
 

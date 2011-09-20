@@ -5,8 +5,8 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 
 #ifndef PROLOGSUPPORT_H_
 #define PROLOGSUPPORT_H_ 
-#include <satire_rose.h>
-#include "termite.h"
+#include <rose.h>
+#include "minitermite.h"
 #include "RoseEnums.h"
 #include <string>
 #include <vector>

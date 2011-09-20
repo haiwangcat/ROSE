@@ -1,13 +1,13 @@
 %{ // -*- C++ -*-
 /* 
 Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
-     2007-2009 Adrian Prantl <adrian@complang.tuwien.ac.at>
+     2007-2011 Adrian Prantl <adrian@complang.tuwien.ac.at>
 */
 using namespace std;
 #include <string>
 #include <vector>
 #include <iostream> 
-#include "termite.h"
+#include "minitermite.h"
 #include "termparser.tab.h++"
 
 int colno = 0;
@@ -21,6 +21,32 @@ void count() {
     else
       colno++;
 } 
+
+#define unescape() \
+  /* expand sequences such as '\n' */                                \
+  char buf[yyleng]; /* if anything, the string should get shorter */ \
+  int i,j;							     \
+  for (i = 0, j= 0; i < yyleng-2; ++i, ++j) {			     \
+    if (yytext[j] == '\\' && i < yyleng-3) {			     \
+      switch(yytext[j+1]) {					     \
+      case '\\': buf[i] = '\\'; ++j; break; /* Literal backslash  */ \
+      case '\"': buf[i] = '\"'; ++j; break; /* Double quote	  */ \
+      case '\'': buf[i] = '\''; ++j; break; /* Single quote	  */ \
+      case  'n': buf[i] = '\n'; ++j; break; /* Newline (line feed)*/ \
+      case  'r': buf[i] = '\r'; ++j; break; /* Carriage return	  */ \
+      case  'b': buf[i] = '\b'; ++j; break; /* Backspace	  */ \
+      case  't': buf[i] = '\t'; ++j; break; /* Horizontal tab	  */ \
+      case  'f': buf[i] = '\f'; ++j; break; /* Form feed	  */ \
+      case  'a': buf[i] = '\a'; ++j; break; /* Alert (bell)	  */ \
+      case  'v': buf[i] = '\v'; ++j; break; /* Vertical tab	  */ \
+      default: buf[i] = yytext[j]; /* nothing */		     \
+      }								     \
+    } else {							     \
+      buf[i] = yytext[j];					     \
+    }                                                                \
+  }								     \
+  buf[i] = 0;
+
 
 %}
 %option yylineno noyywrap
@@ -61,7 +87,8 @@ operator [\-\+\*\/\<\=\>\:\.\#]+
         count();
         yytext++;
         *(yytext + yyleng - 2) = '\0';
-        yylval.strValue = new string(yytext);
+	unescape();
+        yylval.strValue = new string(buf);
 	return(STRING);
         }
 
@@ -76,7 +103,8 @@ operator [\-\+\*\/\<\=\>\:\.\#]+
         count();
         yytext++;
         *(yytext + yyleng - 2) = '\0';
-        yylval.strValue = new string(yytext);
+	unescape();
+        yylval.strValue = new string(buf);
 	return(ATOM);
         }
 

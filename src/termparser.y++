@@ -8,7 +8,7 @@ using namespace std;
 #include <vector>
 #include <string>
 #include <assert.h>
-#include "termite.h"
+#include "minitermite.h"
 
 extern int   yylex();
 extern char* yytext;

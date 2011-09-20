@@ -2,10 +2,10 @@
 Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
           2007-2008 Adrian Prantl <adrian@complang.tuwien.ac.at>
 */
-#include "termite.h"
+#include "minitermite.h"
 #include <iostream>
 #include <stdio.h>
-#include <satire_rose.h>
+#include <rose.h>
 #include "TermToRose.h"
 #include <getopt.h>
 

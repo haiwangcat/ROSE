@@ -4,8 +4,8 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 */
 #ifndef PROLOGTOROSE_H_
 #define PROLOGTOROSE_H_
-#include <satire_rose.h>
-#include "termite.h"
+#include <rose.h>
+#include "minitermite.h"
 #include "RoseEnums.h"
 #include "RoseToTerm.h"
 #include <iostream>

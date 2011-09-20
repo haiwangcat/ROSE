@@ -131,7 +131,7 @@ Index: Driver/TermDumper.cpp
 +#include <string>
 +#include <memory>
 +
-+#include "termite/termite.h"
++#include "minitermite/minitermite.h"
 +
 +using namespace clang;
 +
@@ -2149,10 +2149,10 @@ Index: Driver/clang.cpp
        
        HeaderInfo.ClearFileInfo();      
      }
-Index: Driver/termite/termite.h
+Index: Driver/minitermite/minitermite.h
 ===================================================================
---- Driver/termite/termite.h	(revision 0)
-+++ Driver/termite/termite.h	(revision 0)
+--- Driver/minitermite/minitermite.h	(revision 0)
++++ Driver/minitermite/minitermite.h	(revision 0)
 @@ -0,0 +1,30 @@
 +/* -*- C++ -*-
 + * Copyright 2008 Adrian Prantl <adrian@complang.tuwien.ac.at>
@@ -2184,10 +2184,10 @@ Index: Driver/termite/termite.h
 +#define COMPACT_TERM_NOTATION
 +
 +#endif
-Index: Driver/termite/PrologCompTerm.h
+Index: Driver/minitermite/PrologCompTerm.h
 ===================================================================
---- Driver/termite/PrologCompTerm.h	(revision 0)
-+++ Driver/termite/PrologCompTerm.h	(revision 0)
+--- Driver/minitermite/PrologCompTerm.h	(revision 0)
++++ Driver/minitermite/PrologCompTerm.h	(revision 0)
 @@ -0,0 +1,203 @@
 +/* -*- C++ -*-
 +Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
@@ -2392,10 +2392,10 @@ Index: Driver/termite/PrologCompTerm.h
 +#endif
 +
 +#endif
-Index: Driver/termite/PrologTerm.h
+Index: Driver/minitermite/PrologTerm.h
 ===================================================================
---- Driver/termite/PrologTerm.h	(revision 0)
-+++ Driver/termite/PrologTerm.h	(revision 0)
+--- Driver/minitermite/PrologTerm.h	(revision 0)
++++ Driver/minitermite/PrologTerm.h	(revision 0)
 @@ -0,0 +1,259 @@
 +/* -*- C++ -*-
 +Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
@@ -2411,7 +2411,7 @@ Index: Driver/termite/PrologTerm.h
 +#include <assert.h>
 +
 +#ifndef __TERMITE_H__
-+#  error "Please do not include this file directly. Use termite.h instead."
++#  error "Please do not include this file directly. Use minitermite.h instead."
 +#endif
 +
 +bool init_termite(int argc, char **argv, bool interactive=false);
@@ -2656,10 +2656,10 @@ Index: Driver/termite/PrologTerm.h
 +#endif // SWI
 +
 +#endif
-Index: Driver/termite/PrologInt.h
+Index: Driver/minitermite/PrologInt.h
 ===================================================================
---- Driver/termite/PrologInt.h	(revision 0)
-+++ Driver/termite/PrologInt.h	(revision 0)
+--- Driver/minitermite/PrologInt.h	(revision 0)
++++ Driver/minitermite/PrologInt.h	(revision 0)
 @@ -0,0 +1,151 @@
 +/* -*- C++ -*-
 +Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
@@ -2812,10 +2812,10 @@ Index: Driver/termite/PrologInt.h
 +#endif
 +
 +#endif
-Index: Driver/termite/PrologList.h
+Index: Driver/minitermite/PrologList.h
 ===================================================================
---- Driver/termite/PrologList.h	(revision 0)
-+++ Driver/termite/PrologList.h	(revision 0)
+--- Driver/minitermite/PrologList.h	(revision 0)
++++ Driver/minitermite/PrologList.h	(revision 0)
 @@ -0,0 +1,189 @@
 +/* -*- C++ -*-
 +Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
@@ -3006,10 +3006,10 @@ Index: Driver/termite/PrologList.h
 +#endif
 +
 +#endif
-Index: Driver/termite/PrologAtom.h
+Index: Driver/minitermite/PrologAtom.h
 ===================================================================
---- Driver/termite/PrologAtom.h	(revision 0)
-+++ Driver/termite/PrologAtom.h	(revision 0)
+--- Driver/minitermite/PrologAtom.h	(revision 0)
++++ Driver/minitermite/PrologAtom.h	(revision 0)
 @@ -0,0 +1,62 @@
 +/* -*- C++ -*-
 +Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
@@ -3073,10 +3073,10 @@ Index: Driver/termite/PrologAtom.h
 +#endif
 +
 +#endif
-Index: Driver/termite/PrologVariable.h
+Index: Driver/minitermite/PrologVariable.h
 ===================================================================
---- Driver/termite/PrologVariable.h	(revision 0)
-+++ Driver/termite/PrologVariable.h	(revision 0)
+--- Driver/minitermite/PrologVariable.h	(revision 0)
++++ Driver/minitermite/PrologVariable.h	(revision 0)
 @@ -0,0 +1,28 @@
 +/* -*- C++ -*-
 +Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>

@@ -3,8 +3,8 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
           2007-2009 Adrian Prantl <adrian@complang.tuwien.ac.at>
 */
 
-#include <satire_rose.h>
-#include "termite.h"
+#include <rose.h>
+#include "minitermite.h"
 #include "TermToRose.h"
 #include "AstJanitor.h"
 #include <iostream>
@@ -45,6 +45,19 @@ static inline string makeInameID(PrologCompTerm* annot) {
     if (!(assertion)) \
       cerr << "** ERROR: In " << t->getArity() << "-ary Term\n  >>"	\
 	   << t->getRepresentation() << "<<\n:" << endl;		\
+    ROSE_ASSERT(assertion);						\
+  } while (0)
+
+#define TERM_ASSERT_UPGRADE(t, assertion) do {                          \
+    if (!(assertion))                                                   \
+      cerr << "** ERROR: In " << t->getArity() << "-ary Term\n  >>"	\
+	   << t->getRepresentation() << "<<\n\n"         		\
+           << "====================================\n"			\
+           << "Did you upgrade ROSE?\n"					\
+           << "In that case the arity/layout of "                       \
+           << "certain node types may have changed.\n"		        \
+           << "====================================\n"			\
+           << endl;                                                     \
     ROSE_ASSERT(assertion);						\
   } while (0)
 
@@ -291,7 +304,6 @@ TermToRose::toRose(PrologTerm* t) {
 	  PreprocessingInfo::RelativePositionType locationInL = 
             (PreprocessingInfo::RelativePositionType)
 	    createEnum(ppi->at(1), re.RelativePositionType);
-	
 	  ln->addToAttachedPreprocessingInfo(
 	     new PreprocessingInfo((PreprocessingInfo::DirectiveType)
 				   createEnum(ppi, re.DirectiveType),
@@ -324,11 +336,6 @@ TermToRose::unaryToRose(PrologCompTerm* t,string tname) {
   Sg_File_Info* fi = createFileInfo(t->at(3));
   testFileInfo(fi);
 	
-  if (tname == "class_declaration") {
-    /* class declarations must be handled before their bodies because they
-     * can be recursive */
-    s = createClassDeclaration(fi,NULL,t);
-  }
   /*get child node (prefix traversal step)*/
   SgNode* child1 = toRose(t->at(0));
 
@@ -351,9 +358,6 @@ TermToRose::unaryToRose(PrologCompTerm* t,string tname) {
     s = createExprStatement(fi,child1,t);
   } else if(tname == "default_option_stmt") {
     s = createDefaultOptionStmt(fi,child1,t);
-  } else if(tname == "class_declaration") {
-    /* class declaration: created above, needs fixup here */
-    s = setClassDeclarationBody(isSgClassDeclaration(s),child1);
   } else if(tname == "delete_exp") {
     s = createDeleteExp(fi,child1,t);
   } else if(tname == "var_arg_op") {
@@ -376,7 +380,7 @@ TermToRose::unaryToRose(PrologCompTerm* t,string tname) {
     s = createTypedefDeclaration(fi,t);
   } else cerr<<"**WARNING: unhandled Unary Node: "<<tname<<endl;
     
-  TERM_ASSERT(t, s != NULL);
+  TERM_ASSERT_UPGRADE(t, s != NULL);
 	
   /*set s to be the parent of its child node*/
   //cerr<<s->class_name()<<endl;
@@ -397,23 +401,24 @@ TermToRose::binaryToRose(PrologCompTerm* t,string tname) {
   /*create file info and check it*/
   Sg_File_Info* fi = createFileInfo(t->at(4));
   testFileInfo(fi);
+
+
   /* node to be created*/
   SgNode* s = NULL;
   /*get child node 1 (prefix traversal step)*/
   SgNode* child1 = toRose(t->at(0));
-  if (tname == "function_declaration") {
-    /* function declarations are special: we create an incomplete
-     * declaration before traversing the body; this is necessary for
-     * recursive functions */
-    s = createFunctionDeclaration(fi,child1,t);
+  if (tname == "class_declaration") {
+    /* class declarations must be handled before their bodies because they
+     * can be recursive */
+    s = createClassDeclaration(fi,NULL,t);
   }
   /*get child node 2 (almost-prefix traversal step)*/
   SgNode* child2 = toRose(t->at(1));
-	
-  /* create node depending on type*/
-  if (tname == "function_declaration") {
-    /* function declaration: created above, needs a fixup here */
-    s = setFunctionDeclarationBody(isSgFunctionDeclaration(s),child2);
+
+  /* create nodes depending on type */
+  if(tname == "class_declaration") {
+    /* class declaration: created above, needs fixup here */
+    s = setClassDeclarationBody(isSgClassDeclaration(s)/*,child1 FIXME*/,child2);
   } else if (isBinaryOp(tname)) {
     s = createBinaryOp(fi,child1,child2,t);
   } else if (tname == "cast_exp") {
@@ -439,7 +444,7 @@ TermToRose::binaryToRose(PrologCompTerm* t,string tname) {
     s = createFile(fi,child1,t);
   } else cerr<<"**WARNING: unhandled Binary Node: "<<tname<<endl;
 
-  TERM_ASSERT(t, s != NULL);
+  TERM_ASSERT_UPGRADE(t, s != NULL);
 
   /*set s to be the parent of its child nodes*/
   if (s != NULL) {
@@ -466,9 +471,22 @@ TermToRose::ternaryToRose(PrologCompTerm* t,string tname) {
   /*create file info and check it*/
   Sg_File_Info* fi = createFileInfo(t->at(5));
   testFileInfo(fi);
-  /* create nodes depending on type*/
+
+  /* node to be created */
   SgNode* s = NULL;
-  if (tname == "if_stmt") {
+
+  if (tname == "function_declaration") {
+    /* function declarations are special: we create an incomplete
+     * declaration before traversing the body; this is necessary for
+     * recursive functions */
+    s = createFunctionDeclaration(fi,child1,/*FIXME child2,*/t);
+  }
+
+  /* create nodes depending on type*/
+  if (tname == "function_declaration") {
+    /* function declaration: created above, needs a fixup here */
+    s = setFunctionDeclarationBody(isSgFunctionDeclaration(s),child3);
+  } else if (tname == "if_stmt") {
     s = createIfStmt(fi,child1,child2,child3,t);
   } else if (tname == "case_option_stmt") {
     s = createCaseOptionStmt(fi,child1,child2,child3,t);
@@ -480,7 +498,7 @@ TermToRose::ternaryToRose(PrologCompTerm* t,string tname) {
     s = createConditionalExp(fi,child1,child2,child3,t);
   } else cerr<<"**WARNING: unhandled Ternary Node: "<<tname<<endl;
 
-  TERM_ASSERT(t, s != NULL);
+  TERM_ASSERT_UPGRADE(t, s != NULL);
 
   /*set s to be the parent of its child nodes*/
   if (s != NULL) {
@@ -604,7 +622,7 @@ TermToRose::listToRose(PrologCompTerm* t,string tname) {
   } else if (tname == "catch_statement_seq") {
     s = createCatchStatementSeq(fi,succs);
   }
-  TERM_ASSERT(t, s != NULL);
+  TERM_ASSERT_UPGRADE(t, s != NULL);
 
   /* note that for the list nodes the set_parent operation takes place
    * inside the methods when necessary since they always require
@@ -674,7 +692,7 @@ TermToRose::leafToRose(PrologCompTerm* t,string tname) {
   } else if (tname == "null_expression") {
     s = new SgNullExpression(fi);
   }
-  TERM_ASSERT(t, s != NULL);
+  TERM_ASSERT_UPGRADE(t, s != NULL);
   return s;
 }
 
@@ -2763,11 +2781,13 @@ TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
   PrologCompTerm* ct = isPrologCompTerm(t->at(0));
   if(ct != NULL) {
     debug("...with declaration");
-
     string id;
-    if (ct->getName() == "class_declaration") 
-      id = isPrologCompTerm(ct->at(1))->at(2)->getRepresentation();
-      //id = ct->at(1)->getRepresentation();
+    if (ct->getName() == "class_declaration") {
+      ARITY_ASSERT(ct, 5);
+      PrologCompTerm* annot = isPrologCompTerm(ct->at(2));
+      ARITY_ASSERT(annot, 4);
+      id = annot->at(0)->getRepresentation();
+    }
     else if (ct->getName() == "enum_declaration")
       id = isPrologCompTerm(ct->at(1))->at(0)->getRepresentation();
     else id = ct->getRepresentation();

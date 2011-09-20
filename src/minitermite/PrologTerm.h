@@ -12,7 +12,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <assert.h>
 
 #ifndef __TERMITE_H__
-#  error "Please do not include this file directly. Use termite.h instead."
+#  error "Please do not include this file directly. Use minitermite.h instead."
 #endif
 
 bool init_termite(int argc, char **argv, bool interactive=false);
