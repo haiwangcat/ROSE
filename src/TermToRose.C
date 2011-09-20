@@ -31,13 +31,33 @@ extern PrologTerm* prote;
 using namespace std;
 using namespace boost;
 
+static inline PrologTerm* canonical_type(PrologTerm* term) {
+  PrologCompTerm *t = isPrologCompTerm(term);
+  if (!t) return term;
+  string n = t->getName();
+
+  if (n == "pointer_type")
+    // For iname lookup purposes, we treat array_type(X,null) and
+    // pointer_type(X) as equivalent
+    return new PrologCompTerm("array_type", canonical_type(t->at(0)), new PrologAtom("null"));
+  
+  if (n == "array_type") // remove initializer
+    return new PrologCompTerm(n, canonical_type(t->at(0)), new PrologAtom("null"));
+  
+  if (n == "typedef_type")	// actual type instead of typedef type
+    return canonical_type(t->at(1));
+  
+  return term;
+}
+
 /* Hash Keys */
 static inline string makeFunctionID(const string& func_name, 
 				    const string& func_type) {
   return func_name+'-'+func_type;
 }
 static inline string makeInameID(PrologCompTerm* annot) {
- return annot->at(0)->getRepresentation()+'-'+annot->at(1)->getRepresentation();
+  return annot->at(1)->getRepresentation() +
+    '-' + canonical_type(annot->at(0))->getRepresentation();
 }
 
 /* Error handling. Macros are used to keep a useful line number. */
@@ -1594,6 +1614,7 @@ TermToRose::createInitializedName(Sg_File_Info* fi, SgNode* succ, PrologCompTerm
 
   siname->set_file_info(FI);
 
+  //cerr<<"registering iname: "<<makeInameID(annot)<<endl;
   initializedNameMap[makeInameID(annot)] = siname;
 
   return siname;
