@@ -27,7 +27,7 @@ ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) -L$(BOOST_LIB_DIR) -Wl,
 bin_PROGRAMS = src/termpretty src/c2term src/term2c
 
 if WITH_SWI_PROLOG
-bin_SCRIPTS = src/termite_lint
+bin_SCRIPTS = termite_lint cime3_signatures
 
 BUILT_SOURCES += $(builddir)/PP_termite_spec.pl
 
@@ -38,9 +38,13 @@ else
 	cat $< | sed 's/analysis_info, //g' > $@
 endif
 
-src/termite_lint: src/term_lint_main.pl $(builddir)/PP_termite_spec.pl src/termite/termlint.pl
+termite_lint: $(srcdir)/src/term_lint_main.pl $(builddir)/PP_termite_spec.pl src/termite/termlint.pl
 	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
-	  $(SWI_PLC) -o src/termite_lint -c $(srcdir)/src/term_lint_main.pl
+	  $(SWI_PLC) -o $@ -c $<
+
+cime3_signatures: $(srcdir)/src/cime3_signatures.pl $(builddir)/PP_termite_spec.pl
+	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
+	  $(SWI_PLC) -o $@ -c $<
 endif
 
 AM_YFLAGS = -d
@@ -105,5 +109,6 @@ EXTRA_DIST += \
   \
   src/term2c \
   src/term_lint_main.pl \
+  src/cime3_signatures.pl \
   src/clang/README src/clang/INSTALL src/clang/clang-termite.patch
 

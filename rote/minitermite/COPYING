@@ -94,3 +94,17 @@ Additional BSD Notice
    those of the United States Government or Lawrence Livermore
    National Security, LLC, and shall not be used for advertising or
    product endorsement purposes.
+
+=====================================================================
+
+termlint.pl
+Copyright (C) 2009 Gergo Barany <gergo@complang.tuwien.ac.at>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; version 3 of the License.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
