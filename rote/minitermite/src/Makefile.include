@@ -1,5 +1,5 @@
 ## meant for inclusion by the toplevel -*- makefile-automake -*-
-
+BUILT_SOURCES =	
 INCLUDES = -I$(ROSE_INCLUDE_DIR) \
 	   -I$(BOOST_INCLUDE_DIR) \
            -I$(srcdir)/src/minitermite \
@@ -29,8 +29,17 @@ bin_PROGRAMS = src/termpretty src/c2term src/term2c
 if WITH_SWI_PROLOG
 bin_SCRIPTS = src/termite_lint
 
-src/termite_lint: src/term_lint_main.pl src/termite/termite_spec.pl src/termite/termlint.pl
-	TERMITE_LIB=$(srcdir)/src/termite \
+BUILT_SOURCES += $(builddir)/PP_termite_spec.pl
+
+$(builddir)/PP_termite_spec.pl: src/termite/termite_spec.pl Makefile
+if WITH_ANALYSIS_RESULTS
+	cp $< $@
+else
+	cat $< | sed 's/analysis_info, //g' > $@
+endif
+
+src/termite_lint: src/term_lint_main.pl $(builddir)/PP_termite_spec.pl src/termite/termlint.pl
+	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
 	  $(SWI_PLC) -o src/termite_lint -c $(srcdir)/src/term_lint_main.pl
 endif
 
@@ -44,7 +53,6 @@ libtermsupport_la_SOURCES = \
 	src/RoseEnums.C
 
 CLEANFILES = termpretty.c++ 
-BUILT_SOURCES =	
 
 if WITH_SWI_PROLOG # ---------------------------------------------------
 

@@ -1,7 +1,7 @@
 /* -*- C++ -*-
 Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
-          2007-2009 Adrian Prantl <adrian@complang.tuwien.ac.at>
-          2009 Gergö Barany <gergo@complang.tuwien.ac.at>
+	  2007-2009 Adrian Prantl <adrian@complang.tuwien.ac.at>
+	  2009 Gergö Barany <gergo@complang.tuwien.ac.at>
 */
 #ifndef PROLOGTRAVERSAL_H_
 #define  PROLOGTRAVERSAL_H_
@@ -43,9 +43,9 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #endif
 
 /* See main.C-template and toProlog.C for examples how to use this */
-  
+
 /**
- * Class implementing a traversal to create a PROLOG term 
+ * Class implementing a traversal to create a PROLOG term
  * representing a ROSE-IR
  *
  * Additionally, this template can be instatiated with the DFI_STORE type
@@ -54,16 +54,16 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
  * (i.e., HAVE_PAG is defined).
  */
 template<typename DFI_STORE_TYPE>
-class TermPrinter: public AstBottomUpProcessing<PrologTerm*> 
+class TermPrinter: public AstBottomUpProcessing<PrologTerm*>
 {
 public:
   TermPrinter(DFI_STORE_TYPE analysis_info = 0
-            , std::string analysisname_ = ""
+	    , std::string analysisname_ = ""
 #if HAVE_SATIRE_ICFG
-            , CFG *cfg = 0
-            , SATIrE::Program *program = 0
+	    , CFG *cfg = 0
+	    , SATIrE::Program *program = 0
 #endif
-            )
+	    )
       :
 #if HAVE_PAG && !defined(DO_NOT_USE_DFIPRINTER)
       pagDfiTextPrinter(analysis_info),
@@ -76,14 +76,14 @@ public:
     , cfg(NULL)
     , program(NULL)
 #endif
-  { 
+  {
 #if HAVE_SWI_PROLOG
     int argc;
     char **argv;
-    assert(PL_is_initialised(&argc, &argv) 
+    assert(PL_is_initialised(&argc, &argv)
      && "please run init_termite(argc, argv) first.");
-#endif  
-    withPagAnalysisResults = (analysis_info != 0); 
+#endif
+    withPagAnalysisResults = (analysis_info != 0);
     rootTerm = new PrologAtom("error");
   }
 
@@ -112,22 +112,22 @@ private:
 
   /** create leaf nodes*/
   PrologCompTerm* leafTerm(SgNode* astNode, SynthesizedAttributesList synList,
-                           PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
+			   PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
   /** create unary nodes*/
   PrologCompTerm* unaryTerm(SgNode* astNode, SynthesizedAttributesList synList,
-                           PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
+			   PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
   /** create binary nodes*/
   PrologCompTerm* binaryTerm(SgNode* astNode, SynthesizedAttributesList synList,
-                           PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
+			   PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
   /** create ternary nodes*/
   PrologCompTerm* ternaryTerm(SgNode* astNode, SynthesizedAttributesList synList,
-                           PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
+			   PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
   /** create quaternary nodes*/
   PrologCompTerm* quaternaryTerm(SgNode* astNode, SynthesizedAttributesList synList,
-                           PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
+			   PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
   /** create list nodes*/
   PrologCompTerm* listTerm(SgNode* astNode, SynthesizedAttributesList synList,
-                           PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
+			   PrologTerm* specific, PrologTerm* ar, PrologTerm* fiTerm);
 
   /** the current term */
   PrologTerm* rootTerm;
@@ -151,7 +151,7 @@ private:
    * function */
   PrologCompTerm* functionIdAnnotation(std::string funcname, SgFile *file);
   PrologCompTerm* functionEntryExitAnnotation(std::string funcname,
-                                              SgFile *file);
+					      SgFile *file);
   Procedure* procedureNode(std::string funcname, SgFile *file);
 #else
   /** dummy member */
@@ -161,7 +161,7 @@ private:
 
   PrologList* getAnalysisResultList(SgStatement* stmt);
   PrologCompTerm* pagToProlog(std::string name, std::string analysis,
-                              std::string dfi);
+			      std::string dfi);
 };
 
 typedef TermPrinter<void*> BasicTermPrinter;
@@ -172,7 +172,7 @@ typedef TermPrinter<void*> BasicTermPrinter;
 
 template<typename DFI_STORE_TYPE>
 bool
-TermPrinter<DFI_STORE_TYPE>::isContainer(SgNode* astNode) 
+TermPrinter<DFI_STORE_TYPE>::isContainer(SgNode* astNode)
 {
   // AP 2.2.2008 new rose (hotel) compatibility
   // GB (2008-12-11): AstTests::numSuccContainers does not report container
@@ -198,19 +198,19 @@ TermPrinter<DFI_STORE_TYPE>::isContainer(SgNode* astNode)
 
 template<typename DFI_STORE_TYPE>
 int
-TermPrinter<DFI_STORE_TYPE>::getArity(SgNode* astNode) 
+TermPrinter<DFI_STORE_TYPE>::getArity(SgNode* astNode)
 {
   int n = AstTests::numSingleSuccs(astNode);
   switch (astNode->variantT()) {
     /* Since ~2011, ROSE adds additional 'else' children to these
-       nodes that do not make sense in C/C++. 
+       nodes that do not make sense in C/C++.
        We remove them here. */
     case V_SgWhileStmt:
     case V_SgForStatement:
       // We also don't need the decorator list
     case V_SgClassDeclaration:
-    case V_SgFunctionDeclaration:
-    case V_SgMemberFunctionDeclaration:
+      // case V_SgFunctionDeclaration: FIXME: middle arg
+      // case V_SgMemberFunctionDeclaration:
       return n - 1;
     default: return n;
   }
@@ -250,7 +250,7 @@ PrologTerm* TermPrinter<DFI_STORE_TYPE>::evaluateSynthesizedAttribute(
     if (fileList != NULL && fileList->getName() == "file_list") {
       ROSE_ASSERT (synList.size() == 1);
       synList[0] = fileList->at(0);
-    } 
+    }
   }
 
   else if (SgCastExp* cst = dynamic_cast<SgCastExp*>(astNode)) {
@@ -271,20 +271,20 @@ PrologTerm* TermPrinter<DFI_STORE_TYPE>::evaluateSynthesizedAttribute(
     SgCastExp *nestedCast = isSgCastExp(cst->get_operand());
     SgCastExp *originalCast = isSgCastExp(cst->get_originalExpressionTree());
     SgAddressOfOp *addressOp = isSgAddressOfOp(
-        originalCast ? originalCast->get_operand() : NULL);
+	originalCast ? originalCast->get_operand() : NULL);
     if (nestedCast != NULL && addressOp != NULL &&
-        isSgDotExp(addressOp->get_operand())) {
+	isSgDotExp(addressOp->get_operand())) {
 #if 0
       std::cerr << "** DEBUG: cst = " << cst->unparseToString() << std::endl
-                << "** original: " << (originalCast == NULL ? "NULL"
-                                      : originalCast->unparseToString())
-                << std::endl;
+		<< "** original: " << (originalCast == NULL ? "NULL"
+				      : originalCast->unparseToString())
+		<< std::endl;
       std::cerr << "** original type: " << originalCast->class_name()
-                << std::endl;
+		<< std::endl;
 #endif
       //std::cerr << "** DEBUG: replacing\n" << astNode->unparseToString()
       //	<< "\n with \n" << original->unparseToString() << std::endl;
-	
+
       astNode = originalCast;
 
       // Rebuild the Prolog term for the original expression
@@ -299,9 +299,9 @@ PrologTerm* TermPrinter<DFI_STORE_TYPE>::evaluateSynthesizedAttribute(
   if (fi == NULL) {
     fi = Sg_File_Info::generateDefaultFileInfoForTransformationNode();
     if (isSgLocatedNode(astNode)) {
-      std::cerr << "** WARNING: FileInfo for Node " << astNode->class_name()  
-        << " \"" << astNode->unparseToString() 
-        << "\" was not set." << std::endl;
+      std::cerr << "** WARNING: FileInfo for Node " << astNode->class_name()
+	<< " \"" << astNode->unparseToString()
+	<< "\" was not set." << std::endl;
     }
   }
 
@@ -322,7 +322,7 @@ PrologTerm* TermPrinter<DFI_STORE_TYPE>::evaluateSynthesizedAttribute(
   if (!fi->isFrontendSpecific()) {
     /* add node specific information to the term*/
     PrologTerm* specific = termConv.getSpecific(astNode);
- 
+
     /* analysis results */
     PrologTerm* ar = NULL;
 
@@ -336,17 +336,17 @@ PrologTerm* TermPrinter<DFI_STORE_TYPE>::evaluateSynthesizedAttribute(
       std::string funcname = "";
       SgFunctionDeclaration *d = isSgFunctionDeclaration(astNode);
       if (d != NULL)
-        funcname = d->get_name().str();
+	funcname = d->get_name().str();
       if (funcname != "" && cfg != NULL) {
-        SgNode *p = d->get_parent();
-        while (p != NULL && !isSgFile(p))
-          p = p->get_parent();
-        results->addFirstElement(functionIdAnnotation(funcname, isSgFile(p)));
-        PrologTerm* entryExit
-          = functionEntryExitAnnotation(funcname, isSgFile(p));
-        if (entryExit != NULL) {
-          results->addFirstElement(entryExit);
-        }
+	SgNode *p = d->get_parent();
+	while (p != NULL && !isSgFile(p))
+	  p = p->get_parent();
+	results->addFirstElement(functionIdAnnotation(funcname, isSgFile(p)));
+	PrologTerm* entryExit
+	  = functionEntryExitAnnotation(funcname, isSgFile(p));
+	if (entryExit != NULL) {
+	  results->addFirstElement(entryExit);
+	}
       }
 #endif
 
@@ -359,52 +359,52 @@ PrologTerm* TermPrinter<DFI_STORE_TYPE>::evaluateSynthesizedAttribute(
 #if HAVE_SATIRE_ICFG
       SgVariableSymbol *sym = NULL;
       if (SgVarRefExp *v = isSgVarRefExp(astNode))
-        sym = program->get_symbol(v);
+	sym = program->get_symbol(v);
       if (SgInitializedName *in = isSgInitializedName(astNode)) {
-        sym = program->get_symbol(in);
-        if (sym == NULL) {
-          /* ROSE has NULL symbols for some unused things; for example,
-           * argument names in forward function declarations. But also for
-           * global variables that are declared more than once (which is
-           * totally allowed). Look up this variable in the special little
-           * table for global variable IDs; if it's not there, we invent a
-           * number for these and hope that nothing breaks. */
-          /* GB (2009-11-11): Since we now use SATIrE's own global symbol
-           * table, the branch below is probably dead code. */
-          PrologCompTerm *varid_annot = NULL;
-          SgVariableDeclaration *d = isSgVariableDeclaration(in->get_parent());
-          if (d != NULL && isSgGlobal(d->get_parent())
-           && !d->get_declarationModifier().get_storageModifier().isStatic()) {
-            /* If there is no symbol, ROSE does not give a variable name
-             * either. But we can hack one out of the mangled name, where
-             * the variable name comes right after the substring
-             * "variable_name_". */
-            std::string mname = d->get_mangled_name().str();
-            const char *key = "variable_name_";
-            std::string::size_type pos = mname.find(key);
-            if (pos != std::string::npos && cfg != NULL) {
-              std::string varname = mname.substr(pos + strlen(key));
-              std::map<std::string, unsigned long>::iterator idi;
-              idi = cfg->globalvarnames_ids.find(varname);
-              if (idi != cfg->globalvarnames_ids.end()) {
-                varid_annot = new PrologCompTerm("variable_id", //1,
-                                                 new PrologInt(idi->second));
-              }
-            }
-          }
-          if (varid_annot == NULL) {
-            varid_annot = new PrologCompTerm("variable_id", //1,
-                                             new PrologInt(INT_MAX));
-          }
-          results->addFirstElement(varid_annot);
-        }
+	sym = program->get_symbol(in);
+	if (sym == NULL) {
+	  /* ROSE has NULL symbols for some unused things; for example,
+	   * argument names in forward function declarations. But also for
+	   * global variables that are declared more than once (which is
+	   * totally allowed). Look up this variable in the special little
+	   * table for global variable IDs; if it's not there, we invent a
+	   * number for these and hope that nothing breaks. */
+	  /* GB (2009-11-11): Since we now use SATIrE's own global symbol
+	   * table, the branch below is probably dead code. */
+	  PrologCompTerm *varid_annot = NULL;
+	  SgVariableDeclaration *d = isSgVariableDeclaration(in->get_parent());
+	  if (d != NULL && isSgGlobal(d->get_parent())
+	   && !d->get_declarationModifier().get_storageModifier().isStatic()) {
+	    /* If there is no symbol, ROSE does not give a variable name
+	     * either. But we can hack one out of the mangled name, where
+	     * the variable name comes right after the substring
+	     * "variable_name_". */
+	    std::string mname = d->get_mangled_name().str();
+	    const char *key = "variable_name_";
+	    std::string::size_type pos = mname.find(key);
+	    if (pos != std::string::npos && cfg != NULL) {
+	      std::string varname = mname.substr(pos + strlen(key));
+	      std::map<std::string, unsigned long>::iterator idi;
+	      idi = cfg->globalvarnames_ids.find(varname);
+	      if (idi != cfg->globalvarnames_ids.end()) {
+		varid_annot = new PrologCompTerm("variable_id", //1,
+						 new PrologInt(idi->second));
+	      }
+	    }
+	  }
+	  if (varid_annot == NULL) {
+	    varid_annot = new PrologCompTerm("variable_id", //1,
+					     new PrologInt(INT_MAX));
+	  }
+	  results->addFirstElement(varid_annot);
+	}
       }
       if (sym != NULL) {
-        if (cfg != NULL && !cfg->varsyms_ids.empty()) {
-          PrologCompTerm *varid_annot = new PrologCompTerm("variable_id", //1,
-                                                           varidTerm(sym));
-          results->addFirstElement(varid_annot);
-        }
+	if (cfg != NULL && !cfg->varsyms_ids.empty()) {
+	  PrologCompTerm *varid_annot = new PrologCompTerm("variable_id", //1,
+							   varidTerm(sym));
+	  results->addFirstElement(varid_annot);
+	}
       }
 #endif
 
@@ -413,320 +413,320 @@ PrologTerm* TermPrinter<DFI_STORE_TYPE>::evaluateSynthesizedAttribute(
       std::string funcname = "";
       SgFunctionRefExp *f = isSgFunctionRefExp(astNode);
       if (f != NULL)
-        funcname = f->get_symbol()->get_name().str();
+	funcname = f->get_symbol()->get_name().str();
       if (funcname != "" && cfg != NULL) {
-        SgNode *p = f->get_parent();
-        while (p != NULL && !isSgFile(p))
-          p = p->get_parent();
-        results->addFirstElement(functionIdAnnotation(funcname, isSgFile(p)));
+	SgNode *p = f->get_parent();
+	while (p != NULL && !isSgFile(p))
+	  p = p->get_parent();
+	results->addFirstElement(functionIdAnnotation(funcname, isSgFile(p)));
       }
 #endif
 
       /* function call sites, if appropriate */
 #if HAVE_SATIRE_ICFG
       if (SgFunctionCallExp *fc = isSgFunctionCallExp(astNode)) {
-        SgExpression *function = fc->get_function();
-        if (cfg != NULL) {
-          CallSiteAttribute *csa = (CallSiteAttribute *)
-                fc->getAttribute("SATIrE ICFG call block");
-          PrologInt *callsite = new PrologInt(csa->bb->id);
-          PrologCompTerm *callsite_annot = new PrologCompTerm("call_site", //1,
-                                                              callsite);
-          results->addFirstElement(callsite_annot);
-          /* add information on possible call targets */
-          if (!isSgFunctionRefExp(function)) {
-            using SATIrE::Analyses::PointsToAnalysis;
-            PointsToAnalysis *cspta = cfg->contextSensitivePointsToAnalysis;
-            PrologList *callsite_locs = NULL;
+	SgExpression *function = fc->get_function();
+	if (cfg != NULL) {
+	  CallSiteAttribute *csa = (CallSiteAttribute *)
+		fc->getAttribute("SATIrE ICFG call block");
+	  PrologInt *callsite = new PrologInt(csa->bb->id);
+	  PrologCompTerm *callsite_annot = new PrologCompTerm("call_site", //1,
+							      callsite);
+	  results->addFirstElement(callsite_annot);
+	  /* add information on possible call targets */
+	  if (!isSgFunctionRefExp(function)) {
+	    using SATIrE::Analyses::PointsToAnalysis;
+	    PointsToAnalysis *cspta = cfg->contextSensitivePointsToAnalysis;
+	    PrologList *callsite_locs = NULL;
 #if HAVE_PAG
-            /* output context-sensitive callsite-target location mapping;
-             * but only for the contexts that are actually relevant for the
-             * calling function */
-            SgNode *p = fc->get_parent();
-            while (p != NULL && !isSgFunctionDeclaration(p))
-              p = p->get_parent();
-            assert(isSgFunctionDeclaration(p));
-            std::string funcname =
-              isSgFunctionDeclaration(p)->get_name().str();
-            while (p != NULL && !isSgFile(p))
-              p = p->get_parent();
-            assert(isSgFile(p));
-            Procedure *proc = procedureNode(funcname, isSgFile(p));
-            if (cspta != NULL) {
-              const std::vector<ContextInformation::Context> &ctxs
-                = cfg->contextInformation->allContexts();
-              std::vector<ContextInformation::Context>::const_iterator ctx;
-              for (ctx = ctxs.begin(); ctx != ctxs.end(); ++ctx) {
-                if (ctx->procnum != proc->procnum)
-                  continue;
-                PointsToAnalysis::Location *loc =
-                  cspta->expressionLocation(function, *ctx);
-                PrologInt *pLocation =
-                  new PrologInt(cspta->location_id(cspta->base_location(loc)));
-                PrologCompTerm *ccl =
-                  new PrologCompTerm("context_location", //2,
-                                     ctx->toPrologTerm(),
-                                     pLocation);
-                if (callsite_locs == NULL)
-                  callsite_locs = new PrologList();
-                callsite_locs->addFirstElement(ccl);
-              }
-              PointsToAnalysis::Location *loc =
-                cspta->expressionLocation(function);
-              PrologInt *pLocation =
-                new PrologInt(cspta->location_id(cspta->base_location(loc)));
-              if (callsite_locs == NULL)
-                callsite_locs = new PrologList();
-              callsite_locs->addFirstElement(pLocation);
-            }
+	    /* output context-sensitive callsite-target location mapping;
+	     * but only for the contexts that are actually relevant for the
+	     * calling function */
+	    SgNode *p = fc->get_parent();
+	    while (p != NULL && !isSgFunctionDeclaration(p))
+	      p = p->get_parent();
+	    assert(isSgFunctionDeclaration(p));
+	    std::string funcname =
+	      isSgFunctionDeclaration(p)->get_name().str();
+	    while (p != NULL && !isSgFile(p))
+	      p = p->get_parent();
+	    assert(isSgFile(p));
+	    Procedure *proc = procedureNode(funcname, isSgFile(p));
+	    if (cspta != NULL) {
+	      const std::vector<ContextInformation::Context> &ctxs
+		= cfg->contextInformation->allContexts();
+	      std::vector<ContextInformation::Context>::const_iterator ctx;
+	      for (ctx = ctxs.begin(); ctx != ctxs.end(); ++ctx) {
+		if (ctx->procnum != proc->procnum)
+		  continue;
+		PointsToAnalysis::Location *loc =
+		  cspta->expressionLocation(function, *ctx);
+		PrologInt *pLocation =
+		  new PrologInt(cspta->location_id(cspta->base_location(loc)));
+		PrologCompTerm *ccl =
+		  new PrologCompTerm("context_location", //2,
+				     ctx->toPrologTerm(),
+				     pLocation);
+		if (callsite_locs == NULL)
+		  callsite_locs = new PrologList();
+		callsite_locs->addFirstElement(ccl);
+	      }
+	      PointsToAnalysis::Location *loc =
+		cspta->expressionLocation(function);
+	      PrologInt *pLocation =
+		new PrologInt(cspta->location_id(cspta->base_location(loc)));
+	      if (callsite_locs == NULL)
+		callsite_locs = new PrologList();
+	      callsite_locs->addFirstElement(pLocation);
+	    }
 #else
-            PointsToAnalysis *pto = cfg->pointsToAnalysis;
-            if (pto != NULL) {
-              PointsToAnalysis::Location *loc =
-                pto->expressionLocation(function);
-              PrologInt *pLocation =
-                new PrologInt(pto->location_id(pto->base_location(loc)));
-              if (callsite_locs == NULL)
-                callsite_locs = new PrologList();
-              callsite_locs->addFirstElement(pLocation);
-            }
+	    PointsToAnalysis *pto = cfg->pointsToAnalysis;
+	    if (pto != NULL) {
+	      PointsToAnalysis::Location *loc =
+		pto->expressionLocation(function);
+	      PrologInt *pLocation =
+		new PrologInt(pto->location_id(pto->base_location(loc)));
+	      if (callsite_locs == NULL)
+		callsite_locs = new PrologList();
+	      callsite_locs->addFirstElement(pLocation);
+	    }
 #endif
-            if (callsite_locs != NULL) {
-              PrologCompTerm *callsite_locations =
+	    if (callsite_locs != NULL) {
+	      PrologCompTerm *callsite_locations =
 		new PrologCompTerm("callsite_locations", //2,
-                                     callsite,
-                                     callsite_locs);
-              results->addFirstElement(callsite_locations);
-            }
-          }
-        }
-        if (function->attributeExists(ASL_ATTRIBUTE_ID)) {
-          ASLAttribute *attribute =
-            (ASLAttribute *) function->getAttribute(ASL_ATTRIBUTE_ID);
-          std::string str = attribute->toString();
-          PrologCompTerm *asl_annot = new PrologCompTerm("asl_annot", //1,
-                                                         new PrologAtom(str));
-          results->addFirstElement(asl_annot);
-        }
+				     callsite,
+				     callsite_locs);
+	      results->addFirstElement(callsite_locations);
+	    }
+	  }
+	}
+	if (function->attributeExists(ASL_ATTRIBUTE_ID)) {
+	  ASLAttribute *attribute =
+	    (ASLAttribute *) function->getAttribute(ASL_ATTRIBUTE_ID);
+	  std::string str = attribute->toString();
+	  PrologCompTerm *asl_annot = new PrologCompTerm("asl_annot", //1,
+							 new PrologAtom(str));
+	  results->addFirstElement(asl_annot);
+	}
       }
 #endif
 
       /* call strings, if appropriate */
 #if HAVE_SATIRE_ICFG && HAVE_PAG
       if (isSgProject(astNode)) {
-        if (cfg != NULL && cfg->contextInformation != NULL) {
-          PrologTerm *callStrings = cfg->contextInformation->toPrologTerm();
-          PrologCompTerm *callStringInfo
-            = new PrologCompTerm("callstringinfo", /*1,*/ callStrings);
-          results->addFirstElement(callStringInfo);
-        }
+	if (cfg != NULL && cfg->contextInformation != NULL) {
+	  PrologTerm *callStrings = cfg->contextInformation->toPrologTerm();
+	  PrologCompTerm *callStringInfo
+	    = new PrologCompTerm("callstringinfo", /*1,*/ callStrings);
+	  results->addFirstElement(callStringInfo);
+	}
       }
 #endif
 
       /* points-to information, if appropriate */
 #if HAVE_SATIRE_ICFG && HAVE_PAG
       if (isSgProject(astNode) && cfg != NULL
-          && cfg->contextSensitivePointsToAnalysis != NULL) {
-        using SATIrE::Analyses::PointsToAnalysis;
-        // PointsToAnalysis *merged_pto = cfg->pointsToAnalysis;
-        PointsToAnalysis *pto = cfg->contextSensitivePointsToAnalysis;
+	  && cfg->contextSensitivePointsToAnalysis != NULL) {
+	using SATIrE::Analyses::PointsToAnalysis;
+	// PointsToAnalysis *merged_pto = cfg->pointsToAnalysis;
+	PointsToAnalysis *pto = cfg->contextSensitivePointsToAnalysis;
 
-        /* mapping: locations to their contents; this automagically defines
-         * the set of all locations */
-        PrologList *locations = new PrologList();
-        std::vector<PointsToAnalysis::Location *> locs;
-        pto->interesting_locations(locs);
-        std::vector<PointsToAnalysis::Location *>::const_iterator loc;
-        for (loc = locs.begin(); loc != locs.end(); ++loc) {
-          PrologList *varids = new PrologList();
-          PrologList *funcs = new PrologList();
-          const std::list<SgSymbol *> &syms = pto->location_symbols(*loc);
-          std::list<SgSymbol *>::const_iterator s;
-          for (s = syms.begin(); s != syms.end(); ++s) {
-            if (SgVariableSymbol *varsym = isSgVariableSymbol(*s)) {
-              varids->addFirstElement(varidTerm(varsym));
-            } else if (SgFunctionSymbol *funsym = isSgFunctionSymbol(*s)) {
-              std::string funcname = funsym->get_name().str();
-              Sg_File_Info* fi = funsym->get_declaration()->get_file_info();
-              assert(fi != NULL);
-              SgNode* p = funsym->get_declaration();
-              while (p != NULL && !isSgFile(p))
-                p = p->get_parent();
-              SgFile* file = isSgFile(p);
-              assert(file != NULL);
-              Procedure* proc = procedureNode(funcname, file);
-           // If a Procedure node for this function exists, i.e., we have a
-           // definition for it, then mangle its function number into its
-           // name for unique display.
-              if (proc != NULL) {
-                std::stringstream name;
-                name << funcname << "::" << proc->procnum;
-                funcname = name.str();
-              }
-              funcs->addFirstElement(new PrologAtom(funcname));
-            } else { // {{{ error handling
-              std::cerr
-                << "* unexpected symbol type in points-to location: "
-                << (*s)->class_name()
-                << " <" << (*s)->get_name().str() << ">"
-                << std::endl;
-              std::abort(); // }}}
-            }
-          }
-          PrologCompTerm *loct
-            = new PrologCompTerm("location_varids_funcs", //3,
-                                 new PrologInt(pto->location_id(*loc)),
-                                 varids,
-                                 funcs);
-          locations->addFirstElement(loct);
-        }
-        PrologCompTerm *locationInfo = new PrologCompTerm("locations", //1,
-                                                          locations);
-        results->addFirstElement(locationInfo);
+	/* mapping: locations to their contents; this automagically defines
+	 * the set of all locations */
+	PrologList *locations = new PrologList();
+	std::vector<PointsToAnalysis::Location *> locs;
+	pto->interesting_locations(locs);
+	std::vector<PointsToAnalysis::Location *>::const_iterator loc;
+	for (loc = locs.begin(); loc != locs.end(); ++loc) {
+	  PrologList *varids = new PrologList();
+	  PrologList *funcs = new PrologList();
+	  const std::list<SgSymbol *> &syms = pto->location_symbols(*loc);
+	  std::list<SgSymbol *>::const_iterator s;
+	  for (s = syms.begin(); s != syms.end(); ++s) {
+	    if (SgVariableSymbol *varsym = isSgVariableSymbol(*s)) {
+	      varids->addFirstElement(varidTerm(varsym));
+	    } else if (SgFunctionSymbol *funsym = isSgFunctionSymbol(*s)) {
+	      std::string funcname = funsym->get_name().str();
+	      Sg_File_Info* fi = funsym->get_declaration()->get_file_info();
+	      assert(fi != NULL);
+	      SgNode* p = funsym->get_declaration();
+	      while (p != NULL && !isSgFile(p))
+		p = p->get_parent();
+	      SgFile* file = isSgFile(p);
+	      assert(file != NULL);
+	      Procedure* proc = procedureNode(funcname, file);
+	   // If a Procedure node for this function exists, i.e., we have a
+	   // definition for it, then mangle its function number into its
+	   // name for unique display.
+	      if (proc != NULL) {
+		std::stringstream name;
+		name << funcname << "::" << proc->procnum;
+		funcname = name.str();
+	      }
+	      funcs->addFirstElement(new PrologAtom(funcname));
+	    } else { // {{{ error handling
+	      std::cerr
+		<< "* unexpected symbol type in points-to location: "
+		<< (*s)->class_name()
+		<< " <" << (*s)->get_name().str() << ">"
+		<< std::endl;
+	      std::abort(); // }}}
+	    }
+	  }
+	  PrologCompTerm *loct
+	    = new PrologCompTerm("location_varids_funcs", //3,
+				 new PrologInt(pto->location_id(*loc)),
+				 varids,
+				 funcs);
+	  locations->addFirstElement(loct);
+	}
+	PrologCompTerm *locationInfo = new PrologCompTerm("locations", //1,
+							  locations);
+	results->addFirstElement(locationInfo);
 
-        /* mapping: variables to locations in each context */
-        PrologList *vlocs = new PrologList();
-        std::map<SgVariableSymbol *, unsigned long>::const_iterator v;
-        for (v = cfg->varsyms_ids.begin(); v != cfg->varsyms_ids.end(); ++v) {
-          const std::vector<ContextInformation::Context> &ctxs
-            = cfg->contextInformation->allContexts();
-          std::vector<ContextInformation::Context>::const_iterator ctx;
-          for (ctx = ctxs.begin(); ctx != ctxs.end(); ++ctx) {
-            if (pto->symbol_has_location(v->first, *ctx)) {
-              PrologInt *pLocation = new PrologInt(
-                  pto->location_id(pto->symbol_location(v->first, *ctx)));
-              PrologCompTerm *vcl
-                = new PrologCompTerm("varid_context_location", //3,
-                                     varidTerm(v->first),
-                                     ctx->toPrologTerm(),
-                                     pLocation);
-              vlocs->addFirstElement(vcl);
-            }
-          }
-        }
-        PrologCompTerm *variable_locations
-          = new PrologCompTerm("variable_locations", /*1,*/ vlocs);
-        results->addFirstElement(variable_locations);
+	/* mapping: variables to locations in each context */
+	PrologList *vlocs = new PrologList();
+	std::map<SgVariableSymbol *, unsigned long>::const_iterator v;
+	for (v = cfg->varsyms_ids.begin(); v != cfg->varsyms_ids.end(); ++v) {
+	  const std::vector<ContextInformation::Context> &ctxs
+	    = cfg->contextInformation->allContexts();
+	  std::vector<ContextInformation::Context>::const_iterator ctx;
+	  for (ctx = ctxs.begin(); ctx != ctxs.end(); ++ctx) {
+	    if (pto->symbol_has_location(v->first, *ctx)) {
+	      PrologInt *pLocation = new PrologInt(
+		  pto->location_id(pto->symbol_location(v->first, *ctx)));
+	      PrologCompTerm *vcl
+		= new PrologCompTerm("varid_context_location", //3,
+				     varidTerm(v->first),
+				     ctx->toPrologTerm(),
+				     pLocation);
+	      vlocs->addFirstElement(vcl);
+	    }
+	  }
+	}
+	PrologCompTerm *variable_locations
+	  = new PrologCompTerm("variable_locations", /*1,*/ vlocs);
+	results->addFirstElement(variable_locations);
 
-        /* mapping (or graph...): points-to relationships */
-        PrologList *points_tos = new PrologList();
-        for (loc = locs.begin(); loc != locs.end(); ++loc) {
-          PointsToAnalysis::Location *base = pto->base_location(*loc);
-          if (pto->valid_location(base)) {
-            PrologCompTerm *points_to
-              = new PrologCompTerm("->", //2,
-                                   new PrologInt(pto->location_id(*loc)),
-                                   new PrologInt(pto->location_id(base)));
-            points_tos->addFirstElement(points_to);
-          }
-        }
-        PrologCompTerm *points_to_relations
-          = new PrologCompTerm("points_to_relations", /*1,*/ points_tos);
-        results->addFirstElement(points_to_relations);
+	/* mapping (or graph...): points-to relationships */
+	PrologList *points_tos = new PrologList();
+	for (loc = locs.begin(); loc != locs.end(); ++loc) {
+	  PointsToAnalysis::Location *base = pto->base_location(*loc);
+	  if (pto->valid_location(base)) {
+	    PrologCompTerm *points_to
+	      = new PrologCompTerm("->", //2,
+				   new PrologInt(pto->location_id(*loc)),
+				   new PrologInt(pto->location_id(base)));
+	    points_tos->addFirstElement(points_to);
+	  }
+	}
+	PrologCompTerm *points_to_relations
+	  = new PrologCompTerm("points_to_relations", /*1,*/ points_tos);
+	results->addFirstElement(points_to_relations);
 
-        /* mapping: function nodes to return and argument locations */
+	/* mapping: function nodes to return and argument locations */
 
-        /* mapping: structure locations to named members */
-        // "structlocation_member_location" terms
+	/* mapping: structure locations to named members */
+	// "structlocation_member_location" terms
       }
 #elif HAVE_SATIRE_ICFG && !HAVE_PAG
       /* context-insensitive points-to information */
       if (isSgProject(astNode) && cfg != NULL
-          && cfg->pointsToAnalysis != NULL) {
-        using SATIrE::Analyses::PointsToAnalysis;
-        PointsToAnalysis *pto = cfg->pointsToAnalysis;
+	  && cfg->pointsToAnalysis != NULL) {
+	using SATIrE::Analyses::PointsToAnalysis;
+	PointsToAnalysis *pto = cfg->pointsToAnalysis;
 
-        /* mapping: locations to their contents; this automagically defines
-         * the set of all locations */
-        PrologList *locations = new PrologList();
-        std::vector<PointsToAnalysis::Location *> locs;
-        pto->interesting_locations(locs);
-        std::vector<PointsToAnalysis::Location *>::const_iterator loc;
-        for (loc = locs.begin(); loc != locs.end(); ++loc) {
-          PrologList *varids = new PrologList();
-          PrologList *funcs = new PrologList();
-          const std::list<SgSymbol *> &syms = pto->location_symbols(*loc);
-          std::list<SgSymbol *>::const_iterator s;
-          for (s = syms.begin(); s != syms.end(); ++s) {
-            if (SgVariableSymbol *varsym = isSgVariableSymbol(*s)) {
-              varids->addFirstElement(varidTerm(varsym));
-            } else if (SgFunctionSymbol *funsym = isSgFunctionSymbol(*s)) {
-              std::string funcname = funsym->get_name().str();
-              Sg_File_Info* fi = funsym->get_declaration()->get_file_info();
-              assert(fi != NULL);
-              SgNode* p = funsym->get_declaration();
-              while (p != NULL && !isSgFile(p))
-                p = p->get_parent();
-              SgFile* file = isSgFile(p);
-              assert(file != NULL);
-              Procedure* proc = procedureNode(funcname, file);
-           // If a Procedure node for this function exists, i.e., we have a
-           // definition for it, then mangle its function number into its
-           // name for unique display.
-              if (proc != NULL) {
-                std::stringstream name;
-                name << funcname << "::" << proc->procnum;
-                funcname = name.str();
-              }
-              funcs->addFirstElement(new PrologAtom(funcname));
-            } else { // {{{ error handling
-              std::cerr
-                << "* unexpected symbol type in points-to location: "
-                << (*s)->class_name()
-                << " <" << (*s)->get_name().str() << ">"
-                << std::endl;
-              std::abort(); // }}}
-            }
-          }
-          PrologCompTerm *loct
-            = new PrologCompTerm("location_varids_funcs", // 3,
-                                 new PrologInt(pto->location_id(*loc)),
-                                 varids,
-                                 funcs);
-          locations->addFirstElement(loct);
-        }
-        PrologCompTerm *locationInfo = new PrologCompTerm("locations", //1,
-                                                          locations);
-        results->addFirstElement(locationInfo);
+	/* mapping: locations to their contents; this automagically defines
+	 * the set of all locations */
+	PrologList *locations = new PrologList();
+	std::vector<PointsToAnalysis::Location *> locs;
+	pto->interesting_locations(locs);
+	std::vector<PointsToAnalysis::Location *>::const_iterator loc;
+	for (loc = locs.begin(); loc != locs.end(); ++loc) {
+	  PrologList *varids = new PrologList();
+	  PrologList *funcs = new PrologList();
+	  const std::list<SgSymbol *> &syms = pto->location_symbols(*loc);
+	  std::list<SgSymbol *>::const_iterator s;
+	  for (s = syms.begin(); s != syms.end(); ++s) {
+	    if (SgVariableSymbol *varsym = isSgVariableSymbol(*s)) {
+	      varids->addFirstElement(varidTerm(varsym));
+	    } else if (SgFunctionSymbol *funsym = isSgFunctionSymbol(*s)) {
+	      std::string funcname = funsym->get_name().str();
+	      Sg_File_Info* fi = funsym->get_declaration()->get_file_info();
+	      assert(fi != NULL);
+	      SgNode* p = funsym->get_declaration();
+	      while (p != NULL && !isSgFile(p))
+		p = p->get_parent();
+	      SgFile* file = isSgFile(p);
+	      assert(file != NULL);
+	      Procedure* proc = procedureNode(funcname, file);
+	   // If a Procedure node for this function exists, i.e., we have a
+	   // definition for it, then mangle its function number into its
+	   // name for unique display.
+	      if (proc != NULL) {
+		std::stringstream name;
+		name << funcname << "::" << proc->procnum;
+		funcname = name.str();
+	      }
+	      funcs->addFirstElement(new PrologAtom(funcname));
+	    } else { // {{{ error handling
+	      std::cerr
+		<< "* unexpected symbol type in points-to location: "
+		<< (*s)->class_name()
+		<< " <" << (*s)->get_name().str() << ">"
+		<< std::endl;
+	      std::abort(); // }}}
+	    }
+	  }
+	  PrologCompTerm *loct
+	    = new PrologCompTerm("location_varids_funcs", // 3,
+				 new PrologInt(pto->location_id(*loc)),
+				 varids,
+				 funcs);
+	  locations->addFirstElement(loct);
+	}
+	PrologCompTerm *locationInfo = new PrologCompTerm("locations", //1,
+							  locations);
+	results->addFirstElement(locationInfo);
 
-        /* mapping: variables to locations in each context */
-        PrologList *vlocs = new PrologList();
-        std::map<SgVariableSymbol *, unsigned long>::const_iterator v;
-        for (v = cfg->varsyms_ids.begin(); v != cfg->varsyms_ids.end(); ++v) {
-          if (pto->symbol_has_location(v->first)) {
-            PrologInt *pLocation = new PrologInt(
-                pto->location_id(pto->symbol_location(v->first)));
-            PrologCompTerm *vcl
-              = new PrologCompTerm("varid_location", //2,
-                                   varidTerm(v->first),
-                                   pLocation);
-            vlocs->addFirstElement(vcl);
-          }
-        }
-        PrologCompTerm *variable_locations
-          = new PrologCompTerm("variable_locations", /*1,*/ vlocs);
-        results->addFirstElement(variable_locations);
+	/* mapping: variables to locations in each context */
+	PrologList *vlocs = new PrologList();
+	std::map<SgVariableSymbol *, unsigned long>::const_iterator v;
+	for (v = cfg->varsyms_ids.begin(); v != cfg->varsyms_ids.end(); ++v) {
+	  if (pto->symbol_has_location(v->first)) {
+	    PrologInt *pLocation = new PrologInt(
+		pto->location_id(pto->symbol_location(v->first)));
+	    PrologCompTerm *vcl
+	      = new PrologCompTerm("varid_location", //2,
+				   varidTerm(v->first),
+				   pLocation);
+	    vlocs->addFirstElement(vcl);
+	  }
+	}
+	PrologCompTerm *variable_locations
+	  = new PrologCompTerm("variable_locations", /*1,*/ vlocs);
+	results->addFirstElement(variable_locations);
 
-        /* mapping (or graph...): points-to relationships */
-        PrologList *points_tos = new PrologList();
-        for (loc = locs.begin(); loc != locs.end(); ++loc) {
-          PointsToAnalysis::Location *base = pto->base_location(*loc);
-          if (pto->valid_location(base)) {
-            PrologCompTerm *points_to
-              = new PrologCompTerm("->", //2,
-                                   new PrologInt(pto->location_id(*loc)),
-                                   new PrologInt(pto->location_id(base)));
-            points_tos->addFirstElement(points_to);
-          }
-        }
-        PrologCompTerm *points_to_relations
+	/* mapping (or graph...): points-to relationships */
+	PrologList *points_tos = new PrologList();
+	for (loc = locs.begin(); loc != locs.end(); ++loc) {
+	  PointsToAnalysis::Location *base = pto->base_location(*loc);
+	  if (pto->valid_location(base)) {
+	    PrologCompTerm *points_to
+	      = new PrologCompTerm("->", //2,
+				   new PrologInt(pto->location_id(*loc)),
+				   new PrologInt(pto->location_id(base)));
+	    points_tos->addFirstElement(points_to);
+	  }
+	}
+	PrologCompTerm *points_to_relations
 	  = new PrologCompTerm("points_to_relations", /*1,*/ points_tos);
-        results->addFirstElement(points_to_relations);
+	results->addFirstElement(points_to_relations);
 
-        /* mapping: function nodes to return and argument locations */
+	/* mapping: function nodes to return and argument locations */
 
-        /* mapping: structure locations to named members */
-        // "structlocation_member_location" terms
+	/* mapping: structure locations to named members */
+	// "structlocation_member_location" terms
       }
 #endif
 
@@ -746,23 +746,23 @@ PrologTerm* TermPrinter<DFI_STORE_TYPE>::evaluateSynthesizedAttribute(
     else {
       switch (getArity(astNode)) {
       case 0:
-        t = leafTerm(astNode, synList, specific, ar, fiTerm);
-        break;
+	t = leafTerm(astNode, synList, specific, ar, fiTerm);
+	break;
       case 1:
-        t = unaryTerm(astNode, synList, specific, ar, fiTerm);
-        break;
+	t = unaryTerm(astNode, synList, specific, ar, fiTerm);
+	break;
       case 2:
-        t = binaryTerm(astNode, synList, specific, ar, fiTerm);
-        break;
+	t = binaryTerm(astNode, synList, specific, ar, fiTerm);
+	break;
       case 3:
-        t = ternaryTerm(astNode, synList, specific, ar, fiTerm);
-        break;
+	t = ternaryTerm(astNode, synList, specific, ar, fiTerm);
+	break;
       case 4:
-        t = quaternaryTerm(astNode, synList, specific, ar, fiTerm);
-        break;
+	t = quaternaryTerm(astNode, synList, specific, ar, fiTerm);
+	break;
       default:
-        t = listTerm(astNode, synList, specific, ar, fiTerm);
-        break;
+	t = listTerm(astNode, synList, specific, ar, fiTerm);
+	break;
       }
     }
   }
@@ -787,9 +787,9 @@ TermPrinter<DFI_STORE_TYPE>::getAnalysisResultList(SgStatement* stmt)
   if (withPagAnalysisResults && stmt->get_attributeMechanism()) {
     PrologTerm *preInfo, *postInfo;
      preInfo = pagToProlog("pre_info",  analysisname,
-                           pagDfiTextPrinter.getPreInfo(stmt));
+			   pagDfiTextPrinter.getPreInfo(stmt));
     postInfo = pagToProlog("post_info", analysisname,
-                           pagDfiTextPrinter.getPostInfo(stmt));
+			   pagDfiTextPrinter.getPostInfo(stmt));
     infos->addFirstElement(postInfo);
     infos->addFirstElement(preInfo);
   }
@@ -807,7 +807,7 @@ TermPrinter<DFI_STORE_TYPE>::getAnalysisResultList(SgStatement* stmt)
     /* ICFG node labels identifying branch headers */
     if (stmt->attributeExists("PAG statement head")) {
       StatementAttribute *a =
-        (StatementAttribute *) stmt->getAttribute("PAG statement head");
+	(StatementAttribute *) stmt->getAttribute("PAG statement head");
       PrologInt *l = new PrologInt(a->get_bb()->id);
       PrologCompTerm *head = new PrologCompTerm("branch_head_label");
       head->addSubterm(l);
@@ -831,7 +831,7 @@ extern PrologCompTerm* dfiterm;
 template<typename DFI_STORE_TYPE>
 PrologCompTerm*
 TermPrinter<DFI_STORE_TYPE>::pagToProlog(
-        std::string name, std::string analysis, std::string dfi) {
+	std::string name, std::string analysis, std::string dfi) {
   // Initialize and call the parser
   dfi_name = name.c_str();
   dfi_analysisname = analysis.c_str();
@@ -849,7 +849,11 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::leafTerm(
 {
   PrologCompTerm* t =
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //0+3,
-                       specific, ar, fiTerm);
+		       specific,
+#ifdef HAVE_ANALYSIS_RESULTS
+		       ar,
+#endif
+		       fiTerm);
   return t;
 }
 
@@ -861,8 +865,12 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::unaryTerm(
 {
   PrologCompTerm* t =
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //1+3,
-                       synList.at(0),
-                       specific, ar, fiTerm);
+		       synList.at(0),
+		       specific,
+#ifdef HAVE_ANALYSIS_RESULTS
+		       ar,
+#endif
+		       fiTerm);
   return t;
 }
 
@@ -874,9 +882,13 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::binaryTerm(
 {
   PrologCompTerm* t =
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //2+3,
-                       synList.at(0),
-                       synList.at(1),
-                       specific, ar, fiTerm);
+		       synList.at(0),
+		       synList.at(1),
+		       specific,
+#ifdef HAVE_ANALYSIS_RESULTS
+		       ar,
+#endif
+		       fiTerm);
   return t;
 }
 
@@ -888,10 +900,14 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::ternaryTerm(
 {
   PrologCompTerm* t =
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //3+3,
-                       synList.at(0),
-                       synList.at(1),
-                       synList.at(2),
-                       specific, ar, fiTerm);
+		       synList.at(0),
+		       synList.at(1),
+		       synList.at(2),
+		       specific,
+#ifdef HAVE_ANALYSIS_RESULTS
+		       ar,
+#endif
+		       fiTerm);
   return t;
 }
 
@@ -903,11 +919,15 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::quaternaryTerm(
 {
   PrologCompTerm* t =
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //4+3,
-                       synList.at(0),
-                       synList.at(1),
-                       synList.at(2),
-                       synList.at(3),
-                       specific, ar, fiTerm);
+		       synList.at(0),
+		       synList.at(1),
+		       synList.at(2),
+		       synList.at(3),
+		       specific,
+#ifdef HAVE_ANALYSIS_RESULTS
+		       ar,
+#endif
+		       fiTerm);
   return t;
 }
 
@@ -945,8 +965,12 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::listTerm(
   /* add list to term*/
   PrologCompTerm* t =
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //1+3,
-                      l,
-                      specific, ar, fiTerm);
+		      l,
+		      specific,
+#ifdef HAVE_ANALYSIS_RESULTS
+		       ar,
+#endif
+		       fiTerm);
   return t;
 }
 
@@ -970,7 +994,7 @@ TermPrinter<DFI_STORE_TYPE>::varidTerm(SgVariableSymbol *sym)
 template<typename DFI_STORE_TYPE>
 Procedure*
 TermPrinter<DFI_STORE_TYPE>::procedureNode(std::string funcname,
-                                           SgFile *file) {
+					   SgFile *file) {
   std::multimap<std::string, Procedure *>::iterator mmi, limit;
   mmi = cfg->proc_map.lower_bound(funcname);
   if (mmi != cfg->proc_map.end()) {
@@ -984,10 +1008,10 @@ TermPrinter<DFI_STORE_TYPE>::procedureNode(std::string funcname,
     while (mmi != limit) {
       Procedure *p = mmi++->second;
       if (p->isStatic && p->containingFile == file) {
-        staticCandidate = p;
-        break;
+	staticCandidate = p;
+	break;
       } else if (!p->isStatic) {
-        nonStaticCandidate = p;
+	nonStaticCandidate = p;
       }
     }
     if (staticCandidate != NULL)
@@ -1001,7 +1025,7 @@ TermPrinter<DFI_STORE_TYPE>::procedureNode(std::string funcname,
 template<typename DFI_STORE_TYPE>
 PrologCompTerm*
 TermPrinter<DFI_STORE_TYPE>::functionIdAnnotation(std::string funcname,
-                                                  SgFile *file) {
+						  SgFile *file) {
   Procedure* p = procedureNode(funcname, file);
   PrologInt* funcid_value = NULL;
   if (p != NULL) {
@@ -1022,8 +1046,8 @@ TermPrinter<DFI_STORE_TYPE>::functionEntryExitAnnotation(
   PrologCompTerm* entryExit = NULL;
   if (p != NULL) {
     PrologCompTerm* pair = new PrologCompTerm("-", //2,
-                                   new PrologInt(p->entry->id),
-                                   new PrologInt(p->exit->id));
+				   new PrologInt(p->entry->id),
+				   new PrologInt(p->exit->id));
     entryExit = new PrologCompTerm("function_entry_exit", /*1,*/ pair);
   }
   return entryExit;

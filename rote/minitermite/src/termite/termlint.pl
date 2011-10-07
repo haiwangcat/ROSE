@@ -39,7 +39,7 @@
 
 % This is the grammar specification we use. Its name is hard-coded here,
 % which is fine for our single use case.
-:- consult('termite_spec.pl').
+:- consult('PP_termite_spec.pl').
 
 
 % The tree grammar is a sequence of rules. This predicate defines what a

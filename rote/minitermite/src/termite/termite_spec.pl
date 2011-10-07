@@ -88,7 +88,7 @@ enum_declaration ::=
                      analysis_info, file_info).
 
 function_declaration ::=
-    function_declaration(function_parameter_list, function_definition?,
+    function_declaration(function_parameter_list, {null}, function_definition?,
                          function_declaration_annotation,
                          analysis_info, file_info).
 

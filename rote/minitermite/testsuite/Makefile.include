@@ -20,6 +20,7 @@ TERMITE_TESTS = \
     testsuite/base/destructor_simple.cxx \
     testsuite/base/for_return1.c \
     testsuite/base/forinit.c \
+    testsuite/base/hello.c \
     testsuite/base/initializers/initializer1.cxx \
     testsuite/base/initializers/initializer2.cxx \
     testsuite/base/initializers/initializer3.cxx \
@@ -28,6 +29,7 @@ TERMITE_TESTS = \
     testsuite/base/jump.c \
     testsuite/base/logical.c \
     testsuite/base/manyargs.c \
+    testsuite/base/minimal.c \
     testsuite/base/namespaces.cxx \
     testsuite/base/nested.c \
     testsuite/base/overload.cxx \
