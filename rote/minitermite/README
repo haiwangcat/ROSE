@@ -27,9 +27,10 @@ The corresponding author and maintainer is Adrian Prantl. The original
 Termite was based on an earlier prototype by Christoph Bonitz and
 Markus Schordan.  Gergo Barany contributed the term_lint grammar
 checker, as well as support for the ICFG and other PAG-based analyses
-and numerous bug fixes and improvements. The majority of the Clang
-front-end integration was contributed by Dietmar Ebner with some help
-from Florian Brandner.
+and numerous bug fixes and improvements. Several testcases were
+contributed by Viktor Pavlu. The majority of the Clang front-end
+integration was contributed by Dietmar Ebner with some help from
+Florian Brandner.
 
 Installation instructions
 =========================
@@ -53,3 +54,4 @@ License
 
 Just like SATIrE, minitermite is distributed under a permissive
 three-clause BSD license. See COPYING for details.
+termlint.pl is covered by the GPLv3.
