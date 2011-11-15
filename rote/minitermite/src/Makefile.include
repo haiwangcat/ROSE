@@ -1,5 +1,5 @@
 ## meant for inclusion by the toplevel -*- makefile-automake -*-
-
+BUILT_SOURCES =	
 INCLUDES = -I$(ROSE_INCLUDE_DIR) \
 	   -I$(BOOST_INCLUDE_DIR) \
            -I$(srcdir)/src/minitermite \
@@ -27,11 +27,24 @@ ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) -L$(BOOST_LIB_DIR) -Wl,
 bin_PROGRAMS = src/termpretty src/c2term src/term2c
 
 if WITH_SWI_PROLOG
-bin_SCRIPTS = src/termite_lint
+bin_SCRIPTS = termite_lint cime3_signatures
 
-src/termite_lint: src/term_lint_main.pl src/termite/termite_spec.pl src/termite/termlint.pl
-	TERMITE_LIB=$(srcdir)/src/termite \
-	  $(SWI_PLC) -o src/termite_lint -c $(srcdir)/src/term_lint_main.pl
+BUILT_SOURCES += $(builddir)/PP_termite_spec.pl
+
+$(builddir)/PP_termite_spec.pl: src/termite/termite_spec.pl Makefile
+if WITH_ANALYSIS_RESULTS
+	cp $< $@
+else
+	cat $< | sed 's/analysis_info, //g' > $@
+endif
+
+termite_lint: $(srcdir)/src/term_lint_main.pl $(builddir)/PP_termite_spec.pl src/termite/termlint.pl
+	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
+	  $(SWI_PLC) -o $@ -c $<
+
+cime3_signatures: $(srcdir)/src/cime3_signatures.pl $(builddir)/PP_termite_spec.pl
+	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
+	  $(SWI_PLC) -o $@ -c $<
 endif
 
 AM_YFLAGS = -d
@@ -44,7 +57,6 @@ libtermsupport_la_SOURCES = \
 	src/RoseEnums.C
 
 CLEANFILES = termpretty.c++ 
-BUILT_SOURCES =	
 
 if WITH_SWI_PROLOG # ---------------------------------------------------
 
@@ -97,5 +109,6 @@ EXTRA_DIST += \
   \
   src/term2c \
   src/term_lint_main.pl \
+  src/cime3_signatures.pl \
   src/clang/README src/clang/INSTALL src/clang/clang-termite.patch
 

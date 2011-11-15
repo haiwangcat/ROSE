@@ -1,3 +1,3 @@
 #!/bin/sh
-mdkir m4
+mkdir m4
 autoreconf -i

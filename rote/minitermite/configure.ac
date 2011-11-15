@@ -71,6 +71,14 @@ AC_ARG_WITH(boost_compiler_string,
 AC_SUBST(BOOST_COMPILER_STRING)
 
 
+AC_ARG_WITH([analysis-results],
+   [AS_HELP_STRING([--with-analysis-results],
+     [generate extra 'analysis_result()' terms for every compound term @<:@default=no@:>@])],
+   [with_analysis_results=yes],
+   [with_analysis_results=no])
+AM_CONDITIONAL(WITH_ANALYSIS_RESULTS, [test "x$with_analysis_results" = xyes])
+
+
 # Check for SWI-Prolog (optional)
 #-----------------------------------
 if pl --version |grep -q SWI-Prolog; then 
