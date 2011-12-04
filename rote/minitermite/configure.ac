@@ -142,9 +142,9 @@ AC_SUBST(have_swi_prolog)
 
 # Checks for libraries.
 #-----------------------------------
-AC_CHECK_FILE(${BOOST_LIB_DIR}/libboost_filesystem${BOOST_COMPILER_STRING}-mt.so,
+AC_CHECK_FILE(${BOOST_LIB_DIR}/libboost_filesystem${BOOST_COMPILER_STRING}.so,
     AC_MSG_RESULT([found Boost (hopefully)]),
-    [echo "Could not find 'libboost_filesystem${BOOST_COMPILER_STRING}-mt.so' in '${BOOST_LIB_DIR}'."
+    [echo "Could not find 'libboost_filesystem${BOOST_COMPILER_STRING}.so' in '${BOOST_LIB_DIR}'."
      echo "Please consider using one of the --with-boost* options."
      exit -1 ])
 
