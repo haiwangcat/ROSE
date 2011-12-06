@@ -268,7 +268,12 @@ TermToRose::toRose(const char* filename) {
   PrologTerm* prote = PrologTerm::wrap_PL_Term(term);
 
 #endif
+  // ROSE (late 2011) now goes through the memory pool to see what
+  // source languages we are using when it is unparsing array
+  // type expressions, and fails if there are no files yet
+  SgSourceFile* dummy_to_please_rose = new SgSourceFile();
   SgNode* root = toRose(prote);
+  delete dummy_to_please_rose;
   ROSE_ASSERT(declarationStatementsWithoutScope.empty());
   return root;
 }
@@ -828,6 +833,7 @@ SgArrayType*
 TermToRose::createArrayType(PrologTerm* t) {
   EXPECT_TERM_NAME(PrologCompTerm*, c, t, "array_type");
   /*first subterm is base type*/
+  //cerr<<c->at(1)->getRepresentation()<<endl;
   SgType* base_type = createType(c->at(0));
   TERM_ASSERT(t, base_type != NULL);
   /* second subterm is an expression*/
