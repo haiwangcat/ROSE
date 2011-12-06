@@ -695,6 +695,8 @@ TermToRose::leafToRose(PrologCompTerm* t,string tname) {
     deque<SgNode*>* adummy = new deque<SgNode*>;
     s = createForInitStatement(fi,adummy);
     /* regular leaf nodes*/
+  } else if(isValueExp(tname)) {
+    s = createValueExp(fi,NULL,t);
   } else if (tname == "var_ref_exp") {
     s = createVarRefExp(fi,t);
   } else if (tname == "break_stmt") {
