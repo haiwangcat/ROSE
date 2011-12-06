@@ -88,6 +88,7 @@ endif # ----------------------------------------------------------------
 
 src_termpretty_SOURCES = src/termpretty.l++
 src_termpretty_LDADD = -lboost_program_options
+src_termpretty_LDFLAGS = $(ROSELDFLAGS)
 
 src_c2term_SOURCES = src/c2term.C 
 src_term2c_SOURCES = src/term2c.C 
