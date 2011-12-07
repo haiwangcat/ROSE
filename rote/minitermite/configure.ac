@@ -13,17 +13,16 @@ AM_SILENT_RULES([yes])
 
 # Checks for programs.
 AC_PROG_YACC
-AS_IF([test "x$YACC" = x],[AC_MSG_FAILURE([Please install bison])])
+AS_IF([test "x`which $YACC`" = x],[AC_MSG_FAILURE([Please install bison])])
 AC_PROG_CXX
-AS_IF([test "x$CXX" = x],[AC_MSG_FAILURE([Please install g++])])
+AS_IF([test "x`which $CXX`" = x],[AC_MSG_FAILURE([Please install g++])])
 AC_PROG_CC
-AS_IF([test "x$CC" = x],[AC_MSG_FAILURE([Please install gcc])])
+AS_IF([test "x`which $CC`" = x],[AC_MSG_FAILURE([Please install gcc])])
 AC_PROG_LEX
-AS_IF([test "x$LEX" = x],[AC_MSG_FAILURE([Please install flex])])
+AS_IF([test "x`which $LEX`" = x],[AC_MSG_FAILURE([Please install flex])])
 AC_PROG_SED
-AS_IF([test "x$SED" = x],[AC_MSG_FAILURE([Please install sed])])
+AS_IF([test "x`which $SED`" = x],[AC_MSG_FAILURE([Please install sed])])
 AC_PROG_LIBTOOL
-AS_IF([test "x$LIBTOOL" = x],[AC_MSG_FAILURE([Please install libtool])])
 
 # ROSE PATH
 ROSEDIR='/opt/rose'
