@@ -535,6 +535,8 @@ TermToRose::ternaryToRose(PrologCompTerm* t,string tname) {
     s = createNewExp(fi,child1,child2,child3,t);
   } else if (tname == "conditional_exp") {
     s = createConditionalExp(fi,child1,child2,child3,t);
+  } else if (tname == "program_header_statement") {
+    s = createProgramHeaderStatement(fi,child1,child2,child3,t);
   } else cerr<<"**WARNING: unhandled Ternary Node: "<<tname<<endl;
 
   TERM_ASSERT_UPGRADE(t, s != NULL);
@@ -1463,6 +1465,30 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,PrologCompTerm*) {
   // ROSE 0.9.4a fixup
   fi->set_parent(file);
 
+  // are we unparsing some sort of Fortran sources?
+  bool isFortran = false;
+  if (regex_match(fi->get_filename(), regex(".*[fF](77)?"))) {
+      isFortran = true;
+      file->set_Fortran_only(true);
+  }
+  if (regex_match(fi->get_filename(), regex(".*[fF]90"))) {
+      isFortran = true;
+      file->set_F90_only(true);
+  }
+  if (regex_match(fi->get_filename(), regex(".*[fF]95"))) {
+      isFortran = true;
+      file->set_F95_only(true);
+  }
+  if (regex_match(fi->get_filename(), regex(".*[fF]03"))) {
+      isFortran = true;
+      file->set_F2003_only(true);
+  }
+
+  if (isFortran) {
+    file->set_outputLanguage(SgFile::e_Fortran_output_language);
+    file->set_Fortran_only(true); // FIMXE
+  }
+
   SgGlobal* glob = isSgGlobal(child1);
   ROSE_ASSERT(glob);
 
@@ -1478,7 +1504,8 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,PrologCompTerm*) {
 
   // rebuild the symbol table
   glob->set_symbol_table(NULL);
-  SageInterface::rebuildSymbolTable(glob);
+  if (not isFortran)
+    SageInterface::rebuildSymbolTable(glob);
 
   // Memory Pool Fixups
   for (vector<SgDeclarationStatement*>::iterator it =
@@ -3703,6 +3730,46 @@ TermToRose::createConditionalExp(Sg_File_Info* fi,SgNode* child1,SgNode* child2,
   TERM_ASSERT(t, exp != NULL);
   return exp;
 }
+
+
+/**
+ * create a createProgramHeaderStatement
+ */
+SgProgramHeaderStatement* 
+TermToRose::createProgramHeaderStatement(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode* child3,PrologCompTerm* t) {
+  debug("function declaration:");
+  /* cast parameter list */
+  SgFunctionParameterList* par_list = isSgFunctionParameterList(child1);
+  /* param list must exist*/
+  TERM_ASSERT(t, par_list != NULL);
+  /* get annotation*/
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  /* create type*/
+  SgFunctionType* func_type = isSgFunctionType(createType(annot->at(0)));
+  TERM_ASSERT(t, func_type != NULL);
+  /* get function name*/
+  EXPECT_TERM(PrologAtom*, func_name_term, annot->at(1));
+  SgName func_name = func_name_term->getName();
+  /* create definition*/
+  SgFunctionDefinition* func_def = isSgFunctionDefinition(child3);
+  SgProgramHeaderStatement* stmt = new SgProgramHeaderStatement(fi, func_name, func_type, func_def);
+  TERM_ASSERT(t, stmt != NULL);
+  stmt->set_parameterList(par_list);
+  setDeclarationModifier(annot->at(2),&(stmt->get_declarationModifier()));
+
+  /* register the function declaration with our own symbol table */
+  string id = makeFunctionID(func_name, annot->at(0)->getRepresentation());
+  if (declarationMap.find(id) == declarationMap.end()) {
+    declarationMap[id] = stmt;
+  }
+  /* make sure every function declaration has a first declaration */
+  if (stmt->get_firstNondefiningDeclaration() == NULL) {
+    stmt->set_firstNondefiningDeclaration(declarationMap[id]);
+  }
+
+  return stmt;
+}
+
 
 
 /** issue a warning*/
