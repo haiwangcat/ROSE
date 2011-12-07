@@ -271,9 +271,15 @@ TermToRose::toRose(const char* filename) {
 
 #endif
   // ROSE (late 2011) now goes through the memory pool to see what
-  // source languages we are using when it is unparsing array
-  // type expressions, and fails if there are no files yet
+  // source languages we are using when it is unparsing array type
+  // expressions, and fails if there are no files yet.  We also use
+  // this as temporary parent node to silence a couple of assertions
+  // that would temporarily fail, since we are building our ROSE AST
+  // bottom-up!
   dummy_to_please_rose = new SgSourceFile();
+  Sg_File_Info* fi = FI;
+  fi->set_parent(dummy_to_please_rose);
+  dummy_to_please_rose->set_file_info(fi);
   SgNode* root = toRose(prote);
   delete dummy_to_please_rose;
   ROSE_ASSERT(declarationStatementsWithoutScope.empty());
