@@ -28,6 +28,8 @@ extern FILE* yyin;
 extern PrologTerm* prote;
 #endif
 
+static SgSourceFile* dummy_to_please_rose = NULL;
+
 using namespace std;
 using namespace boost;
 
@@ -271,7 +273,7 @@ TermToRose::toRose(const char* filename) {
   // ROSE (late 2011) now goes through the memory pool to see what
   // source languages we are using when it is unparsing array
   // type expressions, and fails if there are no files yet
-  SgSourceFile* dummy_to_please_rose = new SgSourceFile();
+  dummy_to_please_rose = new SgSourceFile();
   SgNode* root = toRose(prote);
   delete dummy_to_please_rose;
   ROSE_ASSERT(declarationStatementsWithoutScope.empty());
@@ -912,7 +914,9 @@ TermToRose::createTypedefType(PrologTerm* t) {
     declarationStatementsWithoutScope.push_back(decl);
   }
   TERM_ASSERT(t, tpe != NULL);
-
+  if (tpe->get_declaration()->get_parent() == NULL) {
+    tpe->get_declaration()->set_parent(dummy_to_please_rose);
+  }
   return tpe;
 }
 
@@ -2538,8 +2542,8 @@ TermToRose::createClassDeclaration(Sg_File_Info* fi,SgNode* child1 ,PrologCompTe
     new SgClassDeclaration(fi, class_name, e_class_type, NULL/*sg_class_type */,
 			   class_def);
 
-  cerr<<t->getRepresentation()<<endl;
-  cerr<<class_def<<endl;
+  //cerr<<t->getRepresentation()<<endl;
+  //cerr<<class_def<<endl;
 
   // Set the type
   TERM_ASSERT(t, d != NULL);
@@ -2861,6 +2865,9 @@ TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
   string tid = "typedef_type("+annot->at(0)->getRepresentation()+", "
     +annot->at(1)->getRepresentation()+")";
   typeMap[tid] = tdtpe;
+  if (tdtpe->get_declaration()->get_parent() == NULL) {
+    tdtpe->get_declaration()->set_parent(dummy_to_please_rose);
+  }
   TERM_ASSERT(t, d != NULL);
   /* if there is a declaration, set flag and make sure it is set*/
   if(decl != NULL && !decl->isForward()) {
