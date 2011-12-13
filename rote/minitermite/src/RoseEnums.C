@@ -6,7 +6,7 @@
  * Ideally, the contents of most of this file 
  * would be generated from the ROSE sources! 
  *
- * see "o"
+ * see "rose/src/ROSETTA/Grammar/Support.code"
  *
  * 2009 Adrian Prantl <adrian@complang.tuwien.ac.at>
  */

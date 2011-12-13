@@ -343,6 +343,7 @@ TermToRose::toRose(PrologTerm* t) {
 	  PreprocessingInfo::RelativePositionType locationInL =
 	    (PreprocessingInfo::RelativePositionType)
 	    createEnum(ppi->at(1), re.RelativePositionType);
+	
 	  ln->addToAttachedPreprocessingInfo(
 	     new PreprocessingInfo((PreprocessingInfo::DirectiveType)
 				   createEnum(ppi, re.DirectiveType),
