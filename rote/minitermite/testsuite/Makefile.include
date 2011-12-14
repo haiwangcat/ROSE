@@ -152,10 +152,10 @@ testsuite/c_driver.sh: Makefile
 	@echo 'echo "TERMITE: performing a translation circle of" ../$$1' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$1 .c`' >> $@
-	@echo '../$(builddir)/src/c2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) ../$$1 -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(builddir)/src/term2c $${NAME}-1.term -o $${NAME}-2.c || exit 2' >> $@
-	@echo '../$(builddir)/src/c2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2c $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) ../$$1 -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.c || exit 2' >> $@
+	@echo '../$(builddir)/src/src2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
 if WITH_SWI_PROLOG
 	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
 	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
@@ -169,10 +169,10 @@ testsuite/cxx_driver.sh: Makefile
 	@echo 'echo "TERMITE: performing a translation circle of" ../$$1' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename ../$$1 .cxx`' >> $@
-	@echo '../$(builddir)/src/c2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) ../$$1 -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(builddir)/src/term2c $${NAME}-1.term -o $${NAME}-2.cxx || exit 2' >> $@
-	@echo '../$(builddir)/src/c2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2c $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) ../$$1 -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.cxx || exit 2' >> $@
+	@echo '../$(builddir)/src/src2term -I../`dirname $$1` -I$(ROSE_INCLUDE_DIR) $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
 if WITH_SWI_PROLOG
 	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
 	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@

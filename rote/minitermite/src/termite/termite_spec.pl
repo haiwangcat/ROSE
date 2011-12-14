@@ -193,13 +193,18 @@ expression ::=
   | null_expression
   | size_of_op
   | unary_op
-  | value_exp
   | var_arg_copy_op
   | var_arg_end_op
   | var_arg_op
   | var_arg_start_one_operand_op
   | var_arg_start_op
-  | var_ref_exp.
+  | var_ref_exp
+  | functors [long_long_int_val, unsigned_long_long_int_val, long_int_val,
+        unsigned_long_val, int_val, unsigned_int_val, short_val,
+        unsigned_short_val, char_val, unsigned_char_val, float_val,
+        double_val, long_double_val, string_val]
+    with (/*expression?  original expression tree ,*/
+          value_annotation, analysis_info, file_info).
 
 binary_op ::=
     functors [add_op, and_assign_op, and_op, arrow_exp, assign_op,
@@ -252,14 +257,6 @@ unary_op ::=
   | functors [address_of_op, bit_complement_op, minus_minus_op,
         minus_op, not_op, plus_plus_op, pointer_deref_exp, unary_add_op]
     with (expression, unary_op_annotation, analysis_info, file_info).
-
-value_exp ::=
-    functors [long_long_int_val, unsigned_long_long_int_val, long_int_val,
-        unsigned_long_val, int_val, unsigned_int_val, short_val,
-        unsigned_short_val, char_val, unsigned_char_val, float_val,
-        double_val, long_double_val, string_val]
-    with (expression? /* original expression tree */,
-          value_annotation, analysis_info, file_info).
 
 var_arg_copy_op ::=
     var_arg_copy_op(todo).

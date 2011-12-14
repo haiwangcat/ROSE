@@ -175,6 +175,6 @@ fi
 echo
 echo "------------------------------------------------------------------------"
 echo "  [minitermite] configuration summary:"
-echo "    ROSE.................." $ROSEDIR
-echo "    SWI-Prolog............" $SWI_STATUS
+echo "    ROSE .................." $ROSEDIR
+echo "    SWI-Prolog ............" $SWI_STATUS
 echo "------------------------------------------------------------------------"

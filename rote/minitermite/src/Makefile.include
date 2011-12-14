@@ -24,10 +24,10 @@ nobase_include_HEADERS = \
 
 ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) -L$(BOOST_LIB_DIR) -Wl,-rpath $(BOOST_LIB_DIR)
 
-bin_PROGRAMS = src/termpretty src/c2term src/term2c
+bin_PROGRAMS = src/termpretty src/src2term src/term2src
 
 if WITH_SWI_PROLOG
-bin_SCRIPTS = termite_lint cime3_signatures
+bin_SCRIPTS = src/termite_lint src/cime3_signatures
 
 BUILT_SOURCES += $(builddir)/PP_termite_spec.pl
 
@@ -38,11 +38,11 @@ else
 	cat $< | sed 's/analysis_info, //g' > $@
 endif
 
-termite_lint: $(srcdir)/src/term_lint_main.pl $(builddir)/PP_termite_spec.pl src/termite/termlint.pl
+src/termite_lint: $(srcdir)/src/term_lint_main.pl $(builddir)/PP_termite_spec.pl src/termite/termlint.pl
 	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
 	  $(SWI_PLC) -o $@ -c $<
 
-cime3_signatures: $(srcdir)/src/cime3_signatures.pl $(builddir)/PP_termite_spec.pl
+src/cime3_signatures: $(srcdir)/src/cime3_signatures.pl $(builddir)/PP_termite_spec.pl
 	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
 	  $(SWI_PLC) -o $@ -c $<
 endif
@@ -56,7 +56,7 @@ libtermsupport_la_SOURCES = \
 	src/PrologTerm.C \
 	src/RoseEnums.C
 
-CLEANFILES = termpretty.c++ 
+CLEANFILES = termpretty.c++ termite_lint cime3_signatures
 
 if WITH_SWI_PROLOG # ---------------------------------------------------
 
@@ -90,14 +90,14 @@ src_termpretty_SOURCES = src/termpretty.l++
 src_termpretty_LDFLAGS = $(ROSELDFLAGS)
 src_termpretty_LDADD = -lboost_program_options
 
-src_c2term_SOURCES = src/c2term.C 
-src_term2c_SOURCES = src/term2c.C 
+src_src2term_SOURCES = src/src2term.C 
+src_term2src_SOURCES = src/term2src.C 
 
-src_term2c_LDADD = libtermsupport.la -lrose 
-src_c2term_LDADD = libtermsupport.la -lrose
+src_term2src_LDADD = libtermsupport.la -lrose 
+src_src2term_LDADD = libtermsupport.la -lrose
 
-src_term2c_LDFLAGS = $(ROSELDFLAGS)
-src_c2term_LDFLAGS = $(ROSELDFLAGS)
+src_term2src_LDFLAGS = $(ROSELDFLAGS)
+src_src2term_LDFLAGS = $(ROSELDFLAGS)
 
 EXTRA_DIST += \
   src/tests \
@@ -108,7 +108,6 @@ EXTRA_DIST += \
   src/tests/test5.C src/tests/test8.C src/tests/test_class2.C src/tests/test_minimal.C \
   src/tests/test_typedef.C \
   \
-  src/term2c \
   src/term_lint_main.pl \
   src/cime3_signatures.pl \
   src/clang/README src/clang/INSTALL src/clang/clang-termite.patch
