@@ -24,8 +24,28 @@ AC_PROG_SED
 AS_IF([test "x`which $SED`" = x],[AC_MSG_FAILURE([Please install sed])])
 AC_PROG_LIBTOOL
 
+LLNL_ENABLE_REGRESSION
+LLNL_ENABLE_DOCUMENTATION
+
+# DOXYGEN
+AX_WITH_PROG(DOXYGEN, doxygen)
+AS_IF([test -x "$DOXYGEN"], 
+      [DOXYGEN_VERSION=`$DOXYGEN --version`
+       AX_COMPARE_VERSION([$DOXYGEN_VERSION], ge, [1.6.0], 
+           [],
+           [AC_SUBST([DOXYGEN], [])
+	    AM_CONDITIONAL(ENABLE_DOCUMENTATION, false)
+            AC_MSG_NOTICE([doxygen < 1.6 is too old])])
+      ], 
+      AC_MSG_NOTICE([doxygen is missing]))
+
+
 # ROSE PATH
-ROSEDIR='/opt/rose'
+AS_IF([test "x`which roseCompiler`" = x],
+      [ROSEDIR="/opt/rose"],
+      [TMP=`which roseCompiler`
+       TMP=`dirname $TMP`
+       ROSEDIR=`dirname $TMP`])
 AC_ARG_WITH(rosedir,
   [  --with-rosedir=DIR           ROSE install path (default in /opt/rose)],
   [ROSEDIR="$withval"])
@@ -155,6 +175,7 @@ AC_CHECK_LIB([rose], [ROSE_NUMERIC_VERSION], AC_MSG_RESULT([found ROSE]),
 
 AC_CONFIG_FILES([
 Makefile
+Doxyfile
 src/minitermite/minitermite.h
 ])
 
