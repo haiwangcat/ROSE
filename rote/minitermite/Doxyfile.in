@@ -603,7 +603,7 @@ RECURSIVE              = YES
 # excluded from the INPUT source files. This way you can easily exclude a
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = @srcdir@/contrib @builddir@/braid-@PACKAGE_VERSION@ @srcdir@/regression @builddir@/regression @builddir@/braid/parsetab.py @srcdir@/examples @builddir@/examples @builddir@/chpl
+EXCLUDE                = @srcdir@/contrib @srcdir@/testsuite @builddir@/src/minitermite/termparser.h @srcdir@/src/minitermite/termparser.h @builddir@/testsuite
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or
 # directories that are symbolic links (a Unix filesystem feature) are excluded
@@ -662,7 +662,7 @@ IMAGE_PATH             =
 # If FILTER_PATTERNS is specified, this tag will be
 # ignored.
 
-INPUT_FILTER           = @srcdir@/contrib/doxypy-0.4.2/doxypy.py
+INPUT_FILTER           = 
 
 # The FILTER_PATTERNS tag can be used to specify filters on a per file pattern
 # basis.

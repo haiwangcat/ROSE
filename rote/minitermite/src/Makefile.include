@@ -22,7 +22,10 @@ nobase_include_HEADERS = \
 	src/minitermite/RoseToTerm.h \
 	src/minitermite/RoseEnums.h
 
-ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) -L$(BOOST_LIB_DIR) -Wl,-rpath $(BOOST_LIB_DIR)
+ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) \
+            -L$(BOOST_LIB_DIR) -Wl,-rpath $(BOOST_LIB_DIR)
+
+CLEANFILES = termpretty.c++ termite_lint cime3_signatures
 
 bin_PROGRAMS = src/termpretty src/src2term src/term2src
 
@@ -30,6 +33,7 @@ if WITH_SWI_PROLOG
 bin_SCRIPTS = src/termite_lint src/cime3_signatures
 
 BUILT_SOURCES += $(builddir)/PP_termite_spec.pl
+CLEANFILES += $(builddir)/PP_termite_spec.pl
 
 $(builddir)/PP_termite_spec.pl: src/termite/termite_spec.pl Makefile
 if WITH_ANALYSIS_RESULTS
@@ -55,8 +59,6 @@ libtermsupport_la_SOURCES = \
 	src/TermToRose.C \
 	src/PrologTerm.C \
 	src/RoseEnums.C
-
-CLEANFILES = termpretty.c++ termite_lint cime3_signatures
 
 if WITH_SWI_PROLOG # ---------------------------------------------------
 

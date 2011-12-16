@@ -1,0 +1,15 @@
+..                                               -*- rst -*-
+
+============
+mini-Termite
+============
+
+----------------------------------------------------------
+Term-based intermediate representation for source code
+----------------------------------------------------------
+
+:Date: @DATE@
+:Version: @VERSION@
+:Manual section: 1
+:Manual group: Compilers and Programming Languages
+

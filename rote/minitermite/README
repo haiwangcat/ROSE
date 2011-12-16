@@ -35,19 +35,21 @@ Florian Brandner.
 Installation instructions
 =========================
 
-	mkdir build && cd build
+The following commands should do the job on a UNIX-like system::
+
+    mkdir build && cd build
     ../configure --prefix=/usr/local --with-rosedir=/opt/rose \
-	             --with-boostdir=/usr --with-swi-prolog=no
-	make -j<N> install
-	make installcheck
+                 --with-boostdir=/usr --with-swi-prolog=no
+    make -j<N> install
+    make installcheck
 
 Dependencies
-------------
+============
 
 ROSE: http://www.rosecompiler.org/
 flex, yacc, boost
 
-Optional: swi-prolog, clang
+Optional: swi-prolog, clang, doxygen
 
 License
 =======
