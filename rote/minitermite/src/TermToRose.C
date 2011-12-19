@@ -33,6 +33,19 @@ static SgSourceFile* dummy_to_please_rose = NULL;
 using namespace std;
 using namespace boost;
 
+/** issue a warning*/
+void
+TermToRose::warn_msg(std::string msg) {
+  /* since this is only a warning, i think stdout is okay*/
+  cerr << "/*" << msg << "*/\n";
+}
+
+/** output a debug message, unless
+ * compiled with NDEBUG*/
+#define debug(message) {			\
+    /*cerr << message << "\n";*/		\
+}
+
 static inline PrologTerm* canonical_type(PrologTerm* term) {
   PrologCompTerm *t = isPrologCompTerm(term);
   if (!t) return term;
@@ -1879,7 +1892,7 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
   PrologCompTerm* scopeTerm = isPrologCompTerm(annot->at(2));
   TERM_ASSERT(t, scopeTerm != NULL);
   string scope_name = *(toStringP(scopeTerm->at(0)));
-  int scope_type  = toInt(scopeTerm->at(1)); // FIXME should be createEnum(scopeTerm->at(1), re.cv_class_type)
+  int scope_type  = createEnum(scopeTerm->at(1), re.class_type);
   fakeClassScope(scope_name,scope_type,func_decl);
 
   /*important: otherwise unparsing fails*/
@@ -3772,17 +3785,3 @@ TermToRose::createProgramHeaderStatement(Sg_File_Info* fi,SgNode* child1,SgNode*
 }
 
 
-
-/** issue a warning*/
-void
-TermToRose::warn_msg(std::string msg) {
-  /* since this is only a warning, i think stdout is okay*/
-  cerr << "/*" << msg << "*/\n";
-}
-
-/** output a debug message, unless
- * compiled with NDEBUG*/
-void
-TermToRose::debug(std::string message) {
-  //cerr << message << "\n";
-}

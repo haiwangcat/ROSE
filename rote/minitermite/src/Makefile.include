@@ -25,7 +25,7 @@ nobase_include_HEADERS = \
 ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) \
             -L$(BOOST_LIB_DIR) -Wl,-rpath $(BOOST_LIB_DIR)
 
-CLEANFILES = termpretty.c++ termite_lint cime3_signatures
+CLEANFILES = termpretty.c++ src/termite_lint src/cime3_signatures
 
 bin_PROGRAMS = src/termpretty src/src2term src/term2src
 

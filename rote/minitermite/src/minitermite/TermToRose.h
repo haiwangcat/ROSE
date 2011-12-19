@@ -64,7 +64,6 @@ private:
   SgArrayType* createArrayType(PrologTerm*);
   PrologCompTerm* retrieveAnnotation(PrologCompTerm*);
   void abort_unless(bool, std::string);
-  void debug(std::string);
   bool isValueExp(std::string);
   bool isUnaryOp(std::string);
   bool isBinaryOp(std::string);

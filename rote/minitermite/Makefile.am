@@ -64,10 +64,11 @@ $(dist_man_MANS): $(srcdir)/doc/%.1: $(top_builddir)/src/% doc/man_header.txt RE
              fi \
          else echo "**WARNING $@ is not writable, did not update. (This is OK during distcheck)"; \
          fi
-	cat $<.txt
 	@rm -f $<.txt
 
 clean-local:
 	rm -rf doc/html
 	rm -rf doc/latex
 	rm -rf doc/man
+	rm -f testsuite/*-[13].term testsuite/*-[24].[cf]*
+
