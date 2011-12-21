@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.68)
 AC_INIT(minitermite, 1.0, adrian@complang.tuwien.ac.at)
 AC_CONFIG_SRCDIR([README])
 AC_CONFIG_MACRO_DIR([m4])
