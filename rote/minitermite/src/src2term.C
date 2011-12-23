@@ -53,10 +53,13 @@ int main(int argc, char** argv) {
   // automated test outputs.
   vector<char*> argv1;
   char warningOpt[] = "-edg:w";
+  char includeOpt[] = "-I" ROSE_INCLUDE_DIR;
   argv1.push_back(argv[0]);
   argv1.push_back(warningOpt);
+  argv1.push_back(includeOpt);
   for (int i = 1; i < argc; ++i)
     argv1.push_back(argv[i]);
+  int argc1 = argc+2;
 
   // Process our own options
   const char* outfile = NULL;
@@ -123,7 +126,7 @@ int main(int argc, char** argv) {
   }
 
   // Run the EDG frontend
-  SgProject* project = frontend(argc+1,&argv1[0]);
+  SgProject* project = frontend(argc1,&argv1[0]);
 
   if (dot_flag) {
     //  Create dot and pdf files

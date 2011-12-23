@@ -56,6 +56,7 @@ AC_ARG_WITH(rose_includedir,
   [  --with-rose-includedir=DIR   ROSE include path (default in /opt/rose/include)],
   [ROSE_INCLUDE_DIR="$withval"])
 AC_SUBST(ROSE_INCLUDE_DIR)
+AC_DEFINE_UNQUOTED(ROSE_INCLUDE_DIR,["${ROSE_INCLUDE_DIR}"], [Include directory for ROSE headers])
 
 ROSE_LIB_DIR="$ROSEDIR/lib"
 AC_ARG_WITH(rose_libdir,
