@@ -1,6 +1,6 @@
 /* -*- C++ -*-
 Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
-	  2007-2009 Adrian Prantl <adrian@complang.tuwien.ac.at>
+	  2007-2011 Adrian Prantl <adrian@complang.tuwien.ac.at>
 */
 
 #include <rose.h>
@@ -89,7 +89,7 @@ static inline string makeInameID(PrologCompTerm* annot) {
 	   << t->getRepresentation() << "<<\n\n"	 		\
 	   << "====================================\n"			\
 	   << "Did you upgrade ROSE?\n"					\
-	   << "In that case the arity/layout of "                       \
+	   << "In that case the arity/layout of\n"                      \
 	   << "certain node types may have changed.\n"			\
 	   << "====================================\n"			\
 	   << endl;                                                     \
@@ -356,7 +356,7 @@ TermToRose::toRose(PrologTerm* t) {
 	  PreprocessingInfo::RelativePositionType locationInL =
 	    (PreprocessingInfo::RelativePositionType)
 	    createEnum(ppi->at(1), re.RelativePositionType);
-	
+
 	  ln->addToAttachedPreprocessingInfo(
 	     new PreprocessingInfo((PreprocessingInfo::DirectiveType)
 				   createEnum(ppi, re.DirectiveType),
@@ -903,7 +903,7 @@ TermToRose::createTypedefType(PrologTerm* t) {
 #if HAVE_SWI_PROLOG
   } else if (lookaheadDecl(&decl,
 			   "typedef_declaration(_,typedef_annotation("
-			   +annot->at(0)->getRepresentation()+",_,_)," 
+			   +annot->at(0)->getRepresentation()+",_,_),"
 #ifdef HAVE_ANALYSIS_RESULT
 			   "_,"
 #endif
@@ -2568,7 +2568,7 @@ TermToRose::createClassDefinition(Sg_File_Info* fi, std::deque<SgNode*>* succs, 
  * create SgClassDeclaration
  */
 SgClassDeclaration*
-TermToRose::createClassDeclaration(Sg_File_Info* fi,SgNode* child1 ,PrologCompTerm* t) {
+TermToRose::createClassDeclaration(Sg_File_Info* fi, SgNode* child1, PrologCompTerm* t) {
   //cerr<<t->getRepresentation()<<endl;
   /* retrieve annotation*/
   PrologCompTerm* annot = retrieveAnnotation(t);
@@ -2878,7 +2878,7 @@ TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
     if (ct->getName() == "class_declaration") {
       ARITY_ASSERT(ct, 4);
       PrologCompTerm* annot = isPrologCompTerm(ct->at(1));
-      ARITY_ASSERT(annot, 3+AR);
+      ARITY_ASSERT(annot, 4+AR);
       id = annot->at(0)->getRepresentation();
     }
     else if (ct->getName() == "enum_declaration")
@@ -3749,7 +3749,7 @@ TermToRose::createConditionalExp(Sg_File_Info* fi,SgNode* child1,SgNode* child2,
 /**
  * create a createProgramHeaderStatement
  */
-SgProgramHeaderStatement* 
+SgProgramHeaderStatement*
 TermToRose::createProgramHeaderStatement(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode* child3,PrologCompTerm* t) {
   debug("function declaration:");
   /* cast parameter list */
@@ -3783,5 +3783,3 @@ TermToRose::createProgramHeaderStatement(Sg_File_Info* fi,SgNode* child1,SgNode*
 
   return stmt;
 }
-
-

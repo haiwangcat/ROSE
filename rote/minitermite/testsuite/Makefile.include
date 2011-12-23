@@ -1,6 +1,9 @@
 # -*- makefile-automake -*-
 
+# the first two are big, so run them first
 TERMITE_TESTS = \
+    testsuite/mrtc/success/statemate.c \
+    testsuite/mrtc/success/nsichneu.c \
     testsuite/base/ab.c \
     testsuite/base/bigger.c \
     testsuite/base/blocks.c \
@@ -102,13 +105,11 @@ TERMITE_TESTS = \
     testsuite/mrtc/success/minver.c \
     testsuite/mrtc/success/ndes.c \
     testsuite/mrtc/success/ns.c \
-    testsuite/mrtc/success/nsichneu.c \
     testsuite/mrtc/success/qsort-exam.c \
     testsuite/mrtc/success/qurt.c \
     testsuite/mrtc/success/recursion.c \
     testsuite/mrtc/success/select.c \
     testsuite/mrtc/success/sqrt.c \
-    testsuite/mrtc/success/statemate.c \
     testsuite/shape/success/artificalsum.cxx \
     testsuite/shape/success/nnh_xnil.cxx \
     testsuite/shape/success/nnh_xselnil.cxx \
