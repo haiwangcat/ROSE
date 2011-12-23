@@ -389,14 +389,14 @@ TermToRose::unaryToRose(PrologCompTerm* t,std::string tname) {
   Sg_File_Info* fi = createFileInfo(t->at(t->getArity()-1));
   testFileInfo(fi);
 
-  /*get child node (prefix traversal step)*/
-  SgNode* child1 = toRose(t->at(0));
-
   if (tname == "class_declaration") {
     /* class declarations must be handled before their bodies because they
      * can be recursive */
     s = createClassDeclaration(fi,NULL,t);
   }
+
+  /*get child node (prefix traversal step)*/
+  SgNode* child1 = toRose(t->at(0));
 
   /* depending on the node type: create it*/
   if(tname == "class_declaration") {
@@ -516,18 +516,18 @@ TermToRose::binaryToRose(PrologCompTerm* t,std::string tname) {
 SgNode*
 TermToRose::ternaryToRose(PrologCompTerm* t,std::string tname) {
   debug("unparsing ternary");
-  /* assert correct arity of term*/
+  // assert correct arity of term
   ARITY_ASSERT(t, 6);
-  /*get child nodes (prefix traversal step)*/
-  SgNode* child1 = toRose(t->at(0));
-  SgNode* child2 = toRose(t->at(1));
-  SgNode* child3 = toRose(t->at(2));
-  /*create file info and check it*/
+
+  // node to be created 
+  SgNode* s = NULL;
+
+  // create file info and check it
   Sg_File_Info* fi = createFileInfo(t->at(t->getArity()-1));
   testFileInfo(fi);
 
-  /* node to be created */
-  SgNode* s = NULL;
+  // get child nodes (prefix traversal step)
+  SgNode* child1 = toRose(t->at(0));
 
   if (tname == "function_declaration") {
     /* function declarations are special: we create an incomplete
@@ -535,6 +535,10 @@ TermToRose::ternaryToRose(PrologCompTerm* t,std::string tname) {
      * recursive functions */
     s = createFunctionDeclaration(fi,child1,t);
   }
+
+  // remaining children (traversals)
+  SgNode* child2 = toRose(t->at(1));
+  SgNode* child3 = toRose(t->at(2));
 
   /* create nodes depending on type*/
   if (tname == "if_stmt") {
@@ -623,7 +627,7 @@ TermToRose::listToRose(PrologCompTerm* t,std::string tname) {
   /* recursively, create ROSE-IR for list-members*/
   deque<PrologTerm*>* succterms = l->getSuccs();
 
-  /* lookeahead hack for variable declarations: the annotation term must be
+  /* lookahead hack for variable declarations: the annotation term must be
    * traversed first because it may contain a type declaration */
   SgDeclarationStatement *varDeclBaseTypeDecl = NULL;
   if (tname == "variable_declaration") {
@@ -1804,6 +1808,7 @@ TermToRose::createFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u, Prol
   /* get functioon name*/
   EXPECT_TERM(PrologAtom*, func_name_term, annot->at(1));
   SgName func_name = func_name_term->getName();
+  cerr<<"func decl: "<<func_name<<endl;
   /* create declaration*/
   SgFunctionDeclaration* func_decl =
     new SgFunctionDeclaration(fi,func_name,func_type,/*func_def=*/NULL);
