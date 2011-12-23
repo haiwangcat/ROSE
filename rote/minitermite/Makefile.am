@@ -22,7 +22,7 @@ $(top_builddir)/clang/build/Makefile:
 EXTRA_DIST= README COPYING
 
 include src/Makefile.include
-include testsuite/Makefile.include
+include regression/Makefile.include
 
 # ############################################
 # Documentation
