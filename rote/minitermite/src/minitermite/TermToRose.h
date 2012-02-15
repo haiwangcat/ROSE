@@ -175,6 +175,7 @@ private:
   SgTypedefDeclaration* createTypedefDeclaration(Sg_File_Info*, PrologCompTerm*);
   SgPragma* createPragma(Sg_File_Info*, PrologCompTerm*);
   SgImplicitStatement* createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t);
+  SgAttributeSpecificationStatement* createAttributeSpecificationStatement(Sg_File_Info*, PrologCompTerm*);
   char unescape_char(std::string s);
 
 public:

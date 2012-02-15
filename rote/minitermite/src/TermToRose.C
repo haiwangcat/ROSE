@@ -86,12 +86,14 @@ static inline string makeInameID(PrologCompTerm* annot) {
 
 #define TERM_ASSERT_UPGRADE(t, assertion) do {                          \
     if (!(assertion))                                                   \
-      cerr << "** ERROR: In " << t->getArity() << "-ary Term\n  >>"	\
+      cerr << "** ERROR: Unsupported " << t->getArity() << "-ary Term\n  >>" \
 	   << t->getRepresentation() << "<<\n\n"	 		\
 	   << "====================================\n"			\
 	   << "Did you upgrade ROSE?\n"					\
 	   << "In that case the arity/layout of\n"                      \
 	   << "certain node types may have changed.\n"			\
+	   << "In any case, please report this bug to\n"		\
+	   << PACKAGE_BUGREPORT << "\n"					\
 	   << "====================================\n"			\
 	   << endl;                                                     \
     ROSE_ASSERT(assertion);						\
@@ -772,6 +774,8 @@ TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
     s = createPragma(fi,t);
   } else if(tname == "implicit_statement") {
     s = createImplicitStatement(fi,t);
+  } else if(tname == "attribute_specification_statement") {
+    s = createAttributeSpecificationStatement(fi,t);
   } else if (tname == "null_statement") {
     s = new SgNullStatement(fi);
   } else if (tname == "null_expression") {
@@ -3830,4 +3834,20 @@ TermToRose::createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t) {
   SgImplicitStatement* p = new SgImplicitStatement(fi, getFlag(annot->at(0)));
   TERM_ASSERT(t, p != NULL);
   return p;
+}
+
+/**
+ * create SgAttributeSpecificationStatement
+ */
+SgAttributeSpecificationStatement*
+TermToRose::createAttributeSpecificationStatement(Sg_File_Info* fi, PrologCompTerm* t) {
+  /* retrieve annotation */
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  /* create the SgAttributeSpecificationStatement */
+  SgAttributeSpecificationStatement* ass = 
+    new SgAttributeSpecificationStatement(fi);
+  TERM_ASSERT(t, ass != NULL);
+  ass->set_attribute_kind((SgAttributeSpecificationStatement::attribute_spec_enum)
+			  createEnum(annot->at(0), re.attribute_spec));
+  return ass;
 }

@@ -7,6 +7,7 @@
  * would be generated from the ROSE sources! 
  *
  * see "rose/src/ROSETTA/Grammar/Support.code"
+ * and "rose/src/ROSETTA/Grammar/Statement.code"
  *
  * 2009 Adrian Prantl <adrian@complang.tuwien.ac.at>
  */
@@ -306,6 +307,36 @@ static const char* e_DirectiveType[] = {
   "cpreprocessorCompilerGeneratedLinemarker"
 };
 
+
+/////////////////////////////////////////////////////////////////////////
+// Statement.code
+/////////////////////////////////////////////////////////////////////////
+
+
+//! Fortran specific classification of attribute statements (each corresponds to a declaration attribute).
+static const char* e_attribute_spec[] = {
+  "e_unknown_attribute_spec",
+  "e_accessStatement_private",
+  "e_accessStatement_public",
+  "e_allocatableStatement",
+  "e_asynchronousStatement",
+  "e_bindStatement",
+  "e_dataStatement",
+  "e_dimensionStatement",
+  "e_externalStatement",
+  "e_intentStatement",
+  "e_intrinsicStatement",
+  "e_optionalStatement",
+  "e_parameterStatement",
+  "e_pointerStatement",
+  "e_protectedStatement",
+  "e_saveStatement",
+  "e_targetStatement",
+  "e_valueStatement",
+  "e_volatileStatement",
+  "e_last_attribute_spec"
+};
+
 /////////////////////////////////////////////////////////////////////////
 
 //#include <iostream>
@@ -339,4 +370,6 @@ RoseEnums::RoseEnums() {
 
   INIT(e_RelativePositionType, RelativePositionType, RelativePositionTypes)
   INIT(e_DirectiveType, DirectiveType, DirectiveTypes)
+  INIT(e_attribute_spec, attribute_spec, attribute_specs)
 }
+
