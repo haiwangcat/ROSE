@@ -770,6 +770,8 @@ TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
     s = createThisExp(fi,t);
   } else if(tname == "pragma") {
     s = createPragma(fi,t);
+  } else if(tname == "implicit_statement") {
+    s = createImplicitStatement(fi,t);
   } else if (tname == "null_statement") {
     s = new SgNullStatement(fi);
   } else if (tname == "null_expression") {
@@ -3815,4 +3817,17 @@ TermToRose::createProgramHeaderStatement(Sg_File_Info* fi,SgNode* child1,SgNode*
   }
 
   return stmt;
+}
+
+/**
+ * create SgImplicitStatement
+ */
+SgImplicitStatement*
+TermToRose::createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t) {
+  /* retrieve annotation */
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  /* create the SgImplicitStatement */
+  SgImplicitStatement* p = new SgImplicitStatement(fi, getFlag(annot->at(0)));
+  TERM_ASSERT(t, p != NULL);
+  return p;
 }

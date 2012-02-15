@@ -84,8 +84,8 @@ private:
   PrologCompTerm* getTypedefDeclarationSpecific(SgTypedefDeclaration*);
   PrologCompTerm* getConstructorInitializerSpecific(SgConstructorInitializer*);
   PrologCompTerm* getNewExpSpecific(SgNewExp*);
-
   PrologCompTerm* getPragmaSpecific(SgPragma*);
+  PrologCompTerm* getImplicitStatementSpecific(SgImplicitStatement*);
 		
 };
 

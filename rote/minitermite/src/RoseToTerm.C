@@ -104,6 +104,8 @@ RoseToTerm::getSpecific(SgNode* astNode) {
     return getNewExpSpecific(n);
   } else if (SgPragma* n = isSgPragma(astNode)) {
     return getPragmaSpecific(n);
+  } else if (SgImplicitStatement* n = isSgImplicitStatement(astNode)) {
+    return getImplicitStatementSpecific(n);
   } else {
     if (SgLocatedNode* n = dynamic_cast<SgLocatedNode*>(astNode)) {
       // add preprocessing info
@@ -1422,4 +1424,16 @@ RoseToTerm::getPragmaSpecific(SgPragma* n) {
 		     bind1st(equal_to<char>(), ' ')),
 	  s.end());
   return new PrologCompTerm("pragma_annotation", /*1,*/ new PrologAtom(s));
+}
+
+/**
+ * class: SgImplicitStatement
+ * term: pragma(name)
+ * arg name: name
+ */
+PrologCompTerm*
+RoseToTerm::getImplicitStatementSpecific(SgImplicitStatement* is) {
+  return new PrologCompTerm("implict_statement_annotation", 
+			    makeFlag(is->get_implicit_none(), "implicit_none"), 
+			    PPI(is));
 }
