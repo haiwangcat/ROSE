@@ -896,11 +896,18 @@ TermToRose::createArrayType(PrologTerm* t) {
   SgType* base_type = createType(c->at(0));
   TERM_ASSERT(t, base_type != NULL);
   /* second subterm is an expression*/
-  SgExpression* e = NULL;
-  e = isSgExpression(toRose(c->at(1)));
+  SgExpression* e = isSgExpression(toRose(c->at(1)));
   /* use factory method of SgArrayType*/
   SgArrayType* at = SgArrayType::createType(base_type,e);
   TERM_ASSERT(t, at != NULL);
+
+  PrologInt* val = isPrologInt(c->at(2));
+  TERM_ASSERT(t, val != NULL);
+  int rank = val->getValue();
+
+  at->set_rank( rank );
+  at->set_dim_info( isSgExprListExp(toRose(c->at(3))) );
+
   return at;
 }
 

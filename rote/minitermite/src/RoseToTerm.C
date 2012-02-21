@@ -449,6 +449,8 @@ RoseToTerm::getNewExpSpecific(SgNewExp* ne) {
  * term: array_type(nested,index)
  * arg nested: nested type
  * arg index: index (a SgExpression)
+ * arg rank
+ * arg dim_info
  */
 PrologCompTerm*
 RoseToTerm::getArrayTypeSpecific(SgType* mtype) {
@@ -458,9 +460,9 @@ RoseToTerm::getArrayTypeSpecific(SgType* mtype) {
   return new PrologCompTerm
     ("array_type", //2,
      getTypeSpecific(a->get_base_type()), /* get nested type*/
-     (a->get_index() /* get expression*/
-      ? traverseSingleNode(a->get_index())
-      : new PrologAtom("null")));
+     traverseSingleNode(a->get_index()), /* get expression*/
+     new PrologInt(a->get_rank()),
+     traverseSingleNode(a->get_dim_info()));
 }
 
 /**
