@@ -51,9 +51,11 @@ statement ::=
   | continue_stmt
   | declaration_statement
   | default_option_stmt
+  | attribute_specification_statement
   | expr_statement
   | for_init_statement
   | goto_statement
+  | implicit_statement
   | label_statement
   | null_statement
   | return_stmt
@@ -76,6 +78,7 @@ declaration_statement ::=
   | function_parameter_list
   | pragma_declaration
   | program_header_statement
+  | procedure_header_statement
   | typedef_declaration
   | variable_declaration
   | variable_definition.
@@ -102,6 +105,12 @@ program_header_statement ::=
 			     function_declaration_annotation,
 			     analysis_info, file_info).
 
+procedure_header_statement ::=
+    procedure_header_statement(function_parameter_list, {null}, function_definition?,
+			       initialized_name,
+			       procedure_header_statement_annotation,
+			       analysis_info, file_info).
+
 
 pragma_declaration ::=
     pragma_declaration(todo).
@@ -122,6 +131,15 @@ default_option_stmt ::=
     default_option_stmt(statement,
                         default_annotation, analysis_info, file_info).
 
+attribute_specification_statement ::=
+    attribute_specification_statement(attribute_specification_statement_annotation, analysis_info, file_info).
+
+attribute_specification_statement_annotation ::=
+    attribute_specification_statement_annotation(todo /* kind */,
+						 expr_list_exp,
+						 todo /* bind list */,
+						 preprocessing_info).
+
 expr_statement ::=
     expr_statement(expression, default_annotation, analysis_info, file_info).
 
@@ -131,6 +149,14 @@ for_init_statement ::=
 
 goto_statement ::=
     goto_statement(label_annotation, analysis_info, file_info).
+
+implicit_statement ::=
+    implicit_statement(implicit_statement_annotation, analysis_info, file_info).
+
+implicit_statement_annotation ::=
+    implicit_statement_annotation(implicits, preprocessing_info).
+
+implicits ::= atoms [implicit_none].
 
 label_statement ::=
     label_statement(label_annotation, analysis_info, file_info).
@@ -314,6 +340,13 @@ function_declaration_annotation ::=
     function_declaration_annotation(type, name, declaration_modifier,
                                     preprocessing_info).
 
+procedure_header_statement_annotation ::=
+    procedure_header_statement_annotation(type, name, declaration_modifier,
+					  todo /* subprogram kinds */,
+					  todo,
+					  preprocessing_info).
+
+
 class_declaration_annotation ::=
     class_declaration_annotation(name, todo /* class kind */, type,
                                  preprocessing_info).
@@ -378,7 +411,7 @@ preprocessing_info ::=
 
 type ::=
     basic_type
-  | array_type(type, expression?)
+  | array_type(type, expression?, number_or_string /* rank */, expr_list_exp?)
   | function_type(type /* return */, todo /* ellipses */, [type] /* args */)
   | modifier_type(type, type_modifier)
   | named_type

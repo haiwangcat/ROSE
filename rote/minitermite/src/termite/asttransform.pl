@@ -435,14 +435,11 @@ unparse1(UI, pntr_arr_ref_exp(Base, Offset, _, _, _)) :- !,
 unparse1(UI, dot_exp(pointer_deref_exp(E1, _, _, _), E2, _, _, _)) :- !,
   unparse(UI, E1), write('->'), unparse_par(UI, E2).
 
-%unparse1(UI, pointer_deref_exp(var_ref_exp(var_ref_exp_annotation(pointer_type(array_type(), _), _) _), _, _)) :- !, gtrace,
-%  write('*'), unparse_par(UI, E1).
-
 unparse1(UI, pointer_deref_exp(E1, _, _, _)) :- !, 
   write('*'), unparse_par(UI, E1).
 unparse1(UI, cast_exp(E, _, unary_op_annotation(_, Type, _, _, _), _, _)) :- !,
-  (  ( Type \= array_type(_, _),
-       Type \= pointer_type(array_type(_, _)))
+  (  ( Type \= array_type(_, _, _, _),
+       Type \= pointer_type(array_type(_, _, _, _)))
   -> (write('('), unparse(UI, Type), write(')'))
   ;  true),
   unparse_par(UI, E).
@@ -565,16 +562,14 @@ unparse1(_UI, type_double) :- !, write('double').
 unparse1(_UI, type_long_double) :- !, write('long double').
 unparse1(_UI, type_ellipse) :- !, write('...').
 
-unparse1(UI, array_type(Type, Val)) :- !,
-  unparse_type(UI, '', array_type(Type, Val)).
+unparse1(UI, array_type(Type, Val, Rank, DimInfo)) :- !,
+  unparse_type(UI, '', array_type(Type, Val, Rank, DimInfo)).
   %unparse(UI, Type), write('['), unparse(UI, Val), write(']').
 unparse1(_UI, typedef_type(Type, _)) :- !, write(Type).
 unparse1(_UI, class_type(Name,ClassType,_Scope)) :- !,
   write(ClassType), write(' '), write(Name).
 unparse1(UI, enum_type(Type)) :- !, unparse(UI, Type).
 
-%unparse1(UI, pointer_type(array_type(T, V))) :- !, 
-%  write('('), unparse(UI, array_type(T, V)), write(')*').
 unparse1(UI, pointer_type(T)) :- !, unparse(UI, T), write('*').
 unparse1(UI, function_type(T)) :- !, unparse(UI, T), write('()').
 
@@ -695,9 +690,9 @@ unparse_sem(UI, X) :-
 
 % Helper functions for types (esp. arrays)
 unparse_type(UI, Name, Type) :-
-  ( Type = array_type(_,_)
-  ;(Type = pointer_type(array_type(Type,_)),
-    Type \= array_type(_,_))
+  ( Type = array_type(_,_,_,_)
+  ;(Type = pointer_type(array_type(Type,_,_,_)),
+    Type \= array_type(_,_,_,_))
   ), !,
   inner_type(InnerType, Type),
   unparse(UI, InnerType), write(' '), write(Name),
@@ -705,7 +700,7 @@ unparse_type(UI, Name, Type) :-
 
 % FIXME
 unparse_type(UI, Name, pointer_type(Type)) :-
-  Type = array_type(array_type(_,_),_), !,
+  Type = array_type(array_type(_,_,_,_),_,_,_), !,
   inner_type(InnerType, Type),
   unparse(UI, InnerType), write(' (*'), write(Name), write(')'),
   unparse_array_type(UI, Type).
@@ -713,17 +708,17 @@ unparse_type(UI, Name, pointer_type(Type)) :-
 unparse_type(UI, Name, Type) :- !,
   unparse(UI, Type), write(' '), write(Name).
 
-inner_type(DataType, array_type(Type, _)) :- !, inner_type(DataType, Type).
-inner_type(DataType, pointer_type(array_type(Type,_))) :- !,
+inner_type(DataType, array_type(Type, _,_,_)) :- !, inner_type(DataType, Type).
+inner_type(DataType, pointer_type(array_type(Type,_,_,_))) :- !,
   inner_type(DataType, Type).
 inner_type(DataType, DataType).
 
-unparse_array_type(UI, array_type(Type, Val1)) :- !, 
+unparse_array_type(UI, array_type(Type, Val1, _Rank, _DimInfo)) :- !, 
   write('['), unparse(UI, Val1), write(']'),
   unparse_array_type(UI, Type).
-unparse_array_type(UI, pointer_type(array_type(Type,Val))) :-
+unparse_array_type(UI, pointer_type(array_type(Type,Val, Rank, DimInfo))) :-
   write('[]'),
-  unparse_array_type(UI, array_type(Type,Val)).
+  unparse_array_type(UI, array_type(Type,Val,Rank,DimInfo)).
 unparse_array_type(_UI, _).
 
 unparse_enum(_UI, []) :- !.
