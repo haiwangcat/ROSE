@@ -1463,7 +1463,7 @@ RoseToTerm::getPragmaSpecific(SgPragma* n) {
  */
 PrologCompTerm*
 RoseToTerm::getImplicitStatementSpecific(SgImplicitStatement* is) {
-  return new PrologCompTerm("implict_statement_annotation", 
+  return new PrologCompTerm("implicit_statement_annotation", 
 			    makeFlag(is->get_implicit_none(), "implicit_none"), 
 			    PPI(is));
 }

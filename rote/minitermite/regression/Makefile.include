@@ -134,7 +134,7 @@ noinst_SCRIPTS = \
   regression/f90_driver.sh \
   regression/f77_driver.sh
 
-TEST_EXTENSIONS = .cxx .c .f90
+TEST_EXTENSIONS = .cxx .c .f90 .f
 C_LOG_COMPILER = bash $(builddir)/regression/c_driver.sh
 AM_C_LOG_FLAGS = 
 CXX_LOG_COMPILER = bash $(builddir)/regression/cxx_driver.sh

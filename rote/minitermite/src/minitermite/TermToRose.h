@@ -41,6 +41,7 @@ private:
   /* our own little symbol tables */
   std::deque<PrologTerm*>* globalDecls;
   std::map<std::string,SgType*> typeMap;
+  std::map<std::string,SgType*> fortranFunctionTypeMap;
   std::map<std::string,SgDeclarationStatement*> declarationMap;
   std::map<std::string,SgInitializedName*> initializedNameMap;
   std::map<SgInitializedName*, SgVariableSymbol*> variableSymbolMap;
@@ -211,12 +212,12 @@ public:
       *decl = dynamic_cast<DeclType*>(declarationMap[id]);
       ROSE_ASSERT(*decl != NULL);
     } else if (fail) {
-      std::cerr << "**ERROR: Symbol lookup failed: (";
-      if (*decl != NULL) std::cerr << ((SgNode*)*decl)->class_name() <<"*) ";
-      std::cerr << id << std::endl;
-      std::cerr << "FIXME: forward-referencing function references\n" 
-		<< "       are not yet implemented. See lookaheadDecl()." 
-		<< std::endl;
+      //std::cerr << "**ERROR: Symbol lookup failed: (";
+      //if (*decl != NULL) std::cerr << ((SgNode*)*decl)->class_name() <<"*) ";
+      //std::cerr << id << std::endl;
+      //std::cerr << "FIXME: forward-referencing function references\n" 
+      // 		<< "       are not yet implemented. See lookaheadDecl()." 
+      // 		<< std::endl;
       //ROSE_ASSERT(false);
       *decl = NULL;
     }
