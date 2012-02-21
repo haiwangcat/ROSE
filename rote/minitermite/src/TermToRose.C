@@ -3531,8 +3531,18 @@ TermToRose::createDummyFunctionDeclaration(std::string* namestr, PrologTerm* typ
   SgName n = *(namestr);
   EXPECT_NODE(SgFunctionType*, tpe, createType(type_term));
   /* create SgFunctionDeclaration*/
-  SgFunctionDeclaration* d = new SgFunctionDeclaration(FI,n,tpe);
+  //SgFunctionDeclaration* d = new SgFunctionDeclaration(FI,n,tpe);
+
+  // We ALWAYS create a SgProcedureHeaderStatement instead of an
+  // SgFunctionDeclaration. Fortran expects it, and C/C++ will use
+  // only the Funcdecl base class.
+  SgProcedureHeaderStatement* d = new SgProcedureHeaderStatement(FI,n,tpe);
   ROSE_ASSERT(d != NULL);
+  if (tpe->get_return_type()->variantT() == V_SgTypeVoid) 
+    d->set_subprogram_kind(SgProcedureHeaderStatement::e_subroutine_subprogram_kind);
+  else
+    d->set_subprogram_kind(SgProcedureHeaderStatement::e_function_subprogram_kind);
+
   /* postprocessing to satisfy unparser*/
   d->setForward();
   register_func_decl(namestr->c_str(), d, type_term);
