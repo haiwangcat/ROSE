@@ -48,6 +48,8 @@ RoseToTerm::getSpecific(SgNode* astNode) {
     /*be careful with logic: SgMemberFunctionDeclaration is a subtype of SgFunctionDeclaration*/
   } else if (SgMemberFunctionDeclaration* n = dynamic_cast<SgMemberFunctionDeclaration*>(astNode)) {
     return getMemberFunctionDeclarationSpecific(n);
+  } else if (SgProcedureHeaderStatement* n = dynamic_cast<SgProcedureHeaderStatement*>(astNode)) {
+    return getProcedureHeaderStatementSpecific(n);
   } else if (SgFunctionDeclaration* n = dynamic_cast<SgFunctionDeclaration*>(astNode)) {
     return getFunctionDeclarationSpecific(n);
   } else if (SgInitializedName* n = dynamic_cast<SgInitializedName*>(astNode)) {
@@ -215,6 +217,28 @@ RoseToTerm::typeWasDeclaredBefore(std::string type) {
    * whether the object actually needed to be inserted (i.e., was *not*
    * present before) */
   return !declaredTypes.insert(type).second;
+}
+
+/**
+ * class: SgProcedureHeaderStatement
+ * term: function_declaration_annotation(type,name)
+ * arg type: type of the declaration
+ * arg name: name of the declaration
+ * arg dec_mod: declaration modifier (see getDeclarationModifierSpecific)
+ */
+PrologCompTerm*
+RoseToTerm::getProcedureHeaderStatementSpecific(SgProcedureHeaderStatement* decl) {
+  /* create annotation term*/
+  return new PrologCompTerm
+    ("procedure_header_statement_annotation", /*4,*/
+     /* add type and name*/
+     getTypeSpecific(decl->get_type()),
+     new PrologAtom(decl->get_name().getString()),
+     getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
+     getEnum(decl->get_subprogram_kind(), re.subprogram_kinds),
+     new PrologAtom("null"), //FIXME decl->get_end_numeric_label(),
+     //new PrologAtom("null"), decl->get_result_name(),
+     PPI(decl));
 }
 
 /**
@@ -1019,6 +1043,9 @@ RoseToTerm::getVarArgSpecific(SgExpression* e) {
  */
 PrologTerm*
 RoseToTerm::traverseSingleNode(SgNode* astNode) {
+  if (astNode == NULL) 
+    return new PrologAtom("null");
+
   BasicTermPrinter tempt;
   tempt.traverse(astNode);
   PrologTerm*  rep = tempt.getTerm();
@@ -1445,7 +1472,9 @@ RoseToTerm::getImplicitStatementSpecific(SgImplicitStatement* is) {
 PrologCompTerm*
 RoseToTerm::getAttributeSpecificationStatementSpecific(SgAttributeSpecificationStatement* ass) {
   return new PrologCompTerm
-    ("sttribute_specification_statement",
+    ("attribute_specification_statement_annotation",
      getEnum(ass->get_attribute_kind(), re.attribute_specs),
+     traverseSingleNode( ass->get_parameter_list() ),
+     traverseSingleNode( ass->get_bind_list() ),
      PPI(ass));
 }

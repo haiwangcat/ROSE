@@ -176,6 +176,9 @@ private:
   SgPragma* createPragma(Sg_File_Info*, PrologCompTerm*);
   SgImplicitStatement* createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t);
   SgAttributeSpecificationStatement* createAttributeSpecificationStatement(Sg_File_Info*, PrologCompTerm*);
+  SgProcedureHeaderStatement* createProcedureHeaderStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
+  void register_func_decl(SgName, SgFunctionDeclaration*, PrologTerm*);
+
   char unescape_char(std::string s);
 
 public:
@@ -214,7 +217,7 @@ public:
       std::cerr << "FIXME: forward-referencing function references\n" 
 		<< "       are not yet implemented. See lookaheadDecl()." 
 		<< std::endl;
-      ROSE_ASSERT(false);
+      //ROSE_ASSERT(false);
       *decl = NULL;
     }
     return *decl;

@@ -206,14 +206,14 @@ TermPrinter<DFI_STORE_TYPE>::padArity(SynthesizedAttributesList synList, int ari
   size_t l = synList.size();
   ROSE_ASSERT(l <= arity);
   while (l < arity) {
-    std::cerr<< l<<std::endl;
-    synList.debugDump(std::cerr);
+    //    std::cerr<< l<<std::endl;
+    //    synList.debugDump(std::cerr);
     synList.push(new PrologAtom("null"));
   }
 }
 /**
  * ensure that certain node types always have as consistent arity,
- * even though they may or maynot have children by padding them with
+ * even though they may or may not have children by padding them with
  * extra "null" children
  */
 template<typename DFI_STORE_TYPE>

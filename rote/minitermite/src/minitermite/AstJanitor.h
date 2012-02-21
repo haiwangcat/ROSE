@@ -31,7 +31,11 @@ public:
 
 class AstJanitor : public AstTopDownProcessing<InheritedAttribute>
 {
+private:
+  bool isFortran;
 public:
+  AstJanitor(bool _isFortran):isFortran(_isFortran) {};
+  
   //virtual function must be defined
   virtual InheritedAttribute 
   evaluateInheritedAttribute(SgNode *n, InheritedAttribute attr)
@@ -57,14 +61,21 @@ public:
 
     // These nodes don't have a scope associated
     if (SgDeclarationStatement* decl = isSgDeclarationStatement(n)) {
-      if (!isSgVariableDeclaration(decl) 
-	  && !isSgFunctionParameterList(decl)
-	  && !isSgPragmaDeclaration(decl)
-	  ) {
+      VariantT v = decl->variantT();
+      if (   v != V_SgVariableDeclaration
+	  && v != V_SgFunctionParameterList
+	  && v != V_SgPragmaDeclaration
+	  && v != V_SgImplicitStatement
+	  && v != V_SgAttributeSpecificationStatement) {
 	ROSE_ASSERT(scope != NULL);
 	decl->set_scope(scope);
       }
-      TermToRose::addSymbol(scope, decl);
+      if (isFortran && scope->variantT() == V_SgGlobal) { 
+	// I find above condition to be easier to read this way
+      }
+      else {
+	TermToRose::addSymbol(scope, decl);
+      }
     }
 
     if (SgVariableDeclaration *vardecl = isSgVariableDeclaration(n))

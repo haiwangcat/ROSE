@@ -315,27 +315,36 @@ static const char* e_DirectiveType[] = {
 
 //! Fortran specific classification of attribute statements (each corresponds to a declaration attribute).
 static const char* e_attribute_spec[] = {
-  "e_unknown_attribute_spec",
-  "e_accessStatement_private",
-  "e_accessStatement_public",
-  "e_allocatableStatement",
-  "e_asynchronousStatement",
-  "e_bindStatement",
-  "e_dataStatement",
-  "e_dimensionStatement",
-  "e_externalStatement",
-  "e_intentStatement",
-  "e_intrinsicStatement",
-  "e_optionalStatement",
-  "e_parameterStatement",
-  "e_pointerStatement",
-  "e_protectedStatement",
-  "e_saveStatement",
-  "e_targetStatement",
-  "e_valueStatement",
-  "e_volatileStatement",
-  "e_last_attribute_spec"
+  "unknown_attribute_spec",
+  "accessStatement_private",
+  "accessStatement_public",
+  "allocatableStatement",
+  "asynchronousStatement",
+  "bindStatement",
+  "dataStatement",
+  "dimensionStatement",
+  "externalStatement",
+  "intentStatement",
+  "intrinsicStatement",
+  "optionalStatement",
+  "parameterStatement",
+  "pointerStatement",
+  "protectedStatement",
+  "saveStatement",
+  "targetStatement",
+  "valueStatement",
+  "volatileStatement",
+  "last_attribute_spec"
 };
+
+static const char* e_subprogram_kind[] = {
+  "unknown_kind",               /*!< error value */
+  "function_subprogram_kind",   /*!< Fortran function value */
+  "subroutine_subprogram_kind", /*!< Fortran subroutine value */
+  "block_data_subprogram_kind", /*!< Fortran data block value */
+  "last_subprogram_kind"        /*!< last value (upper bound on range of values, used in error checking) */
+};
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -371,5 +380,7 @@ RoseEnums::RoseEnums() {
   INIT(e_RelativePositionType, RelativePositionType, RelativePositionTypes)
   INIT(e_DirectiveType, DirectiveType, DirectiveTypes)
   INIT(e_attribute_spec, attribute_spec, attribute_specs)
+  INIT(e_attribute_spec, attribute_spec, attribute_specs)
+  INIT(e_subprogram_kind, subprogram_kind, subprogram_kinds)
 }
 

@@ -87,6 +87,7 @@ private:
   PrologCompTerm* getPragmaSpecific(SgPragma*);
   PrologCompTerm* getImplicitStatementSpecific(SgImplicitStatement*);
   PrologCompTerm* getAttributeSpecificationStatementSpecific(SgAttributeSpecificationStatement*);
+  PrologCompTerm* getProcedureHeaderStatementSpecific(SgProcedureHeaderStatement*);
 		
 };
 
