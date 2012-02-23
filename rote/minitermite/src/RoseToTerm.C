@@ -257,6 +257,7 @@ RoseToTerm::getFunctionDeclarationSpecific(SgFunctionDeclaration* decl) {
      getTypeSpecific(decl->get_type()),
      new PrologAtom(decl->get_name().getString()),
      getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
+     getSpecialFunctionModifierSpecific(&(decl->get_specialFunctionModifier())),
      PPI(decl));
 }
 
@@ -822,8 +823,21 @@ RoseToTerm::getClassDeclarationSpecific(SgClassDeclaration* cd) {
  * */
 PrologCompTerm*
 RoseToTerm::getClassDefinitionSpecific(SgClassDefinition* def) {
+  PrologList *inhs = new PrologList();
+  SgBaseClassPtrList& is = def->get_inheritances();
+  if (&is != NULL) {
+    for (SgBaseClassPtrList::iterator it = is.begin();
+	 it != is.end(); ++it)
+      inhs->addElement(new PrologCompTerm
+		       ("base_class", 
+			traverseSingleNode((*it)->get_base_class()),
+			makeFlag((*it)->get_isDirectBaseClass(),"direct_base_class"),
+			new PrologCompTerm("default_annotation", /*1,*/ new PrologAtom("null"))));
+  }
+
   return new PrologCompTerm
-    ("class_definition_annotation", //2,
+    ("class_definition_annotation",
+     inhs,
      /* add end of construct*/
      getFileInfo(def->get_endOfConstruct()),
      PPI(def));
@@ -1230,13 +1244,14 @@ RoseToTerm::getFunctionRefExpSpecific(SgFunctionRefExp* r) {
 PrologCompTerm*
 RoseToTerm::getMemberFunctionRefExpSpecific(SgMemberFunctionRefExp* r) {
   ROSE_ASSERT(r != NULL);
-  /* get member function symbol information*/
+  ///* get member function symbol information*/
   SgMemberFunctionSymbol* s = r->get_symbol();
   ROSE_ASSERT(s != NULL);
 
   return new PrologCompTerm
     ("member_function_ref_exp_annotation", //5,
-     getMemberFunctionSymbolSpecific(s),
+     //getMemberFunctionSymbolSpecific(s),
+     new PrologAtom(r->get_symbol()->get_name()),
      new PrologInt(r->get_virtual_call()), // virtual call?
      getTypeSpecific(s->get_type()),   // type
      new PrologInt(r->get_need_qualifier()),   // need qualifier?
@@ -1281,6 +1296,7 @@ RoseToTerm::getMemberFunctionDeclarationSpecific(SgMemberFunctionDeclaration* de
      getClassScopeName(def),
      /* add declaration modifier specific*/
      getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
+     getSpecialFunctionModifierSpecific(&(decl->get_specialFunctionModifier())),
      PPI(decl));
 }
 

@@ -37,7 +37,7 @@ private:
   std::vector<SgDeclarationStatement*> declarationStatementsWithoutScope;
   std::vector<SgLabelStatement*> labelStatementsWithoutScope;
   std::multimap<std::string,SgGotoStatement*> gotoStatementsWithoutLabel;
-  std::vector<SgClassDefinition*> classDefinitions;
+  std::map<std::string,SgClassDefinition*> classDefinitionMap;
   /* our own little symbol tables */
   std::deque<PrologTerm*>* globalDecls;
   std::map<std::string,SgType*> typeMap;
@@ -45,6 +45,8 @@ private:
   std::map<std::string,SgDeclarationStatement*> declarationMap;
   std::map<std::string,SgInitializedName*> initializedNameMap;
   std::map<SgInitializedName*, SgVariableSymbol*> variableSymbolMap;
+  std::multimap<std::string,SgMemberFunctionDeclaration*> memberFunctionDeclarationMap;
+  //std::map<std::pair<SgType*, std::string>, SgClassDefinition*> classMap;
 
   /* arity specific node generation*/
   SgNode* leafToRose(PrologCompTerm*, std::string);
@@ -78,6 +80,7 @@ private:
   int createEnum(PrologTerm*, std::map<std::string, int>);
   SgFunctionDeclaration* setFunctionDeclarationBody(SgFunctionDeclaration*, SgNode*);
   SgClassDeclaration* setClassDeclarationBody(SgClassDeclaration*, SgNode*);
+  void setSpecialFunctionModifier(PrologTerm*, SgSpecialFunctionModifier*);
 
   SgLabelStatement* makeLabel(Sg_File_Info*, std::string);
   std::string* toStringP(PrologTerm*);
@@ -88,7 +91,6 @@ private:
   SgAccessModifier* createAccessModifier(PrologTerm*);
   SgBaseClassModifier* createBaseClassModifier(PrologTerm*);
   SgFunctionModifier* createFunctionModifier(PrologTerm*);
-  SgSpecialFunctionModifier* createSpecialFunctionModifier(PrologTerm*);
 
   SgStorageModifier* createStorageModifier(PrologTerm*);
   SgLinkageModifier* createLinkageModifier(PrologTerm*);

@@ -65,13 +65,16 @@ public:
       if (   v != V_SgVariableDeclaration
 	  && v != V_SgFunctionParameterList
 	  && v != V_SgPragmaDeclaration
+	  && v != V_SgCtorInitializerList
 	  && v != V_SgImplicitStatement
-	  && v != V_SgAttributeSpecificationStatement) {
+	  && v != V_SgAttributeSpecificationStatement
+	  && v != V_SgMemberFunctionDeclaration) {
 	ROSE_ASSERT(scope != NULL);
 	decl->set_scope(scope);
       }
       if (isFortran && scope->variantT() == V_SgGlobal) { 
-	// I find above condition to be easier to read this way
+	/* SKIP, Fortran apparently has no global symbol table */
+	// I find the condition to be easier to read this way
       }
       else {
 	TermToRose::addSymbol(scope, decl);

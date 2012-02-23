@@ -44,7 +44,7 @@ TermToRose::warn_msg(std::string msg) {
 /** output a debug message, unless
  * compiled with NDEBUG*/
 #define debug(message) {                        \
-    /*cerr << message << "\n";*/                \
+    /*cerr << "TERMITE>>" << message << "\n";*/	\
 }
 
 static inline PrologTerm* canonical_type(PrologTerm* term) {
@@ -1454,8 +1454,11 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
               ROSE_ASSERT(false && "enum decl has no parent and no scope?");
               in->set_scope(scp);
             }
-          }
-          else {
+          } else if (parent->variantT() == V_SgCtorInitializerList &&
+		     parent->get_parent()->variantT() == V_SgMemberFunctionDeclaration &&
+		     parent->get_parent()->get_parent()->variantT() == V_SgClassDefinition) {
+	    in->set_scope(isSgClassDefinition(parent->get_parent()->get_parent()));
+	  } else {
 	    ROSE_ASSERT(false && "initialized name without a scope, I'm lost");
           }
         }
@@ -1574,14 +1577,17 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,PrologCompTerm*) {
   for (vector<SgDeclarationStatement*>::iterator it =
                declarationStatementsWithoutScope.begin();
          it != declarationStatementsWithoutScope.end(); it++) {
-    //cerr<<"("<<(*it)->class_name()<<")->set_scope("<<glob->class_name()<<");"<<endl;
+    // cerr<<__FUNCTION__<<": ("<<(*it)->class_name()<<")->set_scope("<<glob->class_name()<<");"<<endl;
 
     // GB: these nodes are not reachable in the AST, so traverse them
     // explicitly
     // (*it)->set_parent(glob);
     AstJanitor janitor(isFortran);
     janitor.traverse(*it, InheritedAttribute(this, glob, glob));
-    if (!isSgVariableDeclaration(*it)) (*it)->set_scope(glob);
+    if ((*it)->get_scope() != NULL &&
+	(*it)->variantT()  != V_SgVariableDeclaration) {
+      (*it)->set_scope(glob);
+    }
 
     // GB: we may need to add stuff to the symbol table since some of the
     // declarations may be hidden inside typedef/variable declarations, and
@@ -1606,7 +1612,8 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,PrologCompTerm*) {
   // AstPostProcessing(file);
 
   // Reset local symbol tables
-  classDefinitions.clear();
+  classDefinitionMap.clear();
+  memberFunctionDeclarationMap.clear();
   typeMap.clear();
   declarationMap.clear();
   globalDecls = NULL;
@@ -1840,6 +1847,7 @@ void TermToRose::register_func_decl(SgName func_name, SgFunctionDeclaration* fun
 {
   /* register the function declaration with our own symbol table */
   string id = makeFunctionID(func_name, type_term->getRepresentation());
+  //cerr << id << endl;
   if (declarationMap.find(id) == declarationMap.end()) {
     declarationMap[id] = func_decl;
   }
@@ -1864,7 +1872,7 @@ TermToRose::createFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u, Prol
   /* create type*/
   SgFunctionType* func_type = isSgFunctionType(createType(annot->at(0)));
   TERM_ASSERT(t, func_type != NULL);
-  /* get functioon name*/
+  /* get function name*/
   EXPECT_TERM(PrologAtom*, func_name_term, annot->at(1));
   SgName func_name = func_name_term->getName();
   //cerr<<"func decl: "<<func_name<<endl;
@@ -1874,6 +1882,7 @@ TermToRose::createFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u, Prol
   TERM_ASSERT(t, func_decl != NULL);
   func_decl->set_parameterList(par_list);
   setDeclarationModifier(annot->at(2),&(func_decl->get_declarationModifier()));
+  setSpecialFunctionModifier(annot->at(3), &func_decl->get_specialFunctionModifier());
 
   register_func_decl(func_name, func_decl, annot->at(0));
 
@@ -1940,32 +1949,51 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
   SgMemberFunctionDeclaration* func_decl =
     new SgMemberFunctionDeclaration(fi,func_name,func_type,func_def);
   TERM_ASSERT(t, func_decl != NULL);
-  /** if there's no declaration we're dealing with a forward declatation*/
+  /** if there's no declaration we're dealing with a forward declaration*/
   func_decl->set_forward(func_def == NULL);
   func_decl->set_parameterList(par_list);
   func_decl->set_CtorInitializerList(ctor_list);
+
   /*post processing*/
-  /* fake class scope*/
+  /* class scope*/
   PrologCompTerm* scopeTerm = isPrologCompTerm(annot->at(2));
   TERM_ASSERT(t, scopeTerm != NULL);
   string scope_name = *(toStringP(scopeTerm->at(0)));
   int scope_type  = createEnum(scopeTerm->at(1), re.class_type);
-  fakeClassScope(scope_name,scope_type,func_decl);
+
+  //func_decl->set_scope(fakeClassScope(scope_name,scope_type,func_decl));
 
   /*important: otherwise unparsing fails*/
   if (func_def != NULL) {
     func_def->set_declaration(func_decl);
   }
-  TERM_ASSERT(t, isSgClassDefinition(func_decl->get_class_scope()) != NULL);
-  TERM_ASSERT(t, func_decl->get_class_scope()->get_declaration() != NULL);
-  func_decl->set_isModified(false);
-  debug(func_decl->get_qualified_name().getString());
+  //TERM_ASSERT(t, isSgClassDefinition(func_decl->get_class_scope()) != NULL);
+  //TERM_ASSERT(t, func_decl->get_class_scope()->get_declaration() != NULL);
+  //func_decl->set_isModified(false);
+  //debug(func_decl->get_qualified_name().getString());
 
   /*set declaration modifier*/
   setDeclarationModifier(annot->at(3),&func_decl->get_declarationModifier());
+  setSpecialFunctionModifier(annot->at(4), &func_decl->get_specialFunctionModifier());
 
+  // Symbol table management
   register_func_decl(func_name, func_decl, annot->at(0));
+  // cerr<<__FUNCTION__<<"**** inserting "+scope_name<<":"<<func_decl<<endl;
+  memberFunctionDeclarationMap.insert(pair<string,SgMemberFunctionDeclaration*>
+				      (scope_name,func_decl));
 
+  // Is this a definition outside of the main class declaration?
+  // ie., parent != scope  
+  // In this case we need to do all the fixups here
+  // cerr<<__FUNCTION__<<"@@@ looking for "<<scope_name<<endl;
+  if (classDefinitionMap.find(scope_name) != classDefinitionMap.end()) {
+    // cerr<<__FUNCTION__<<"@@@ found "<<scope_name<<endl;
+    SgClassDefinition* class_def = classDefinitionMap[scope_name];
+    ROSE_ASSERT(class_def != NULL);
+    func_decl->set_scope(class_def);
+    ROSE_ASSERT(class_def->get_declaration() != NULL);
+    func_decl->set_associatedClassDeclaration(class_def->get_declaration());
+  }
   return func_decl;
 }
 
@@ -2651,7 +2679,7 @@ TermToRose::createClassDefinition(Sg_File_Info* fi, std::deque<SgNode*>* succs, 
    * hence it is put in the annotation and retrieved here */
   PrologCompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
-  EXPECT_TERM(PrologCompTerm*, fi_term, annot->at(0));
+  EXPECT_TERM(PrologCompTerm*, fi_term, annot->at(1));
   Sg_File_Info* end_of_construct = createFileInfo(fi_term);
   TERM_ASSERT(t, end_of_construct != NULL);
 
@@ -2670,10 +2698,25 @@ TermToRose::createClassDefinition(Sg_File_Info* fi, std::deque<SgNode*>* succs, 
     storeVariableSymbolFromDeclaration(d, s);
     it++;
   }
+
+  EXPECT_TERM(PrologList*, inhs, annot->at(0));
+  /* append inheritances */
+  for (int i = 0; i < inhs->getArity(); i++) {
+    EXPECT_TERM(PrologCompTerm*, base_class_term, inhs->at(i));
+    EXPECT_TERM(PrologCompTerm*, class_decl_term, base_class_term->at(0));
+    EXPECT_TERM(PrologCompTerm*, class_decl_annot, class_decl_term->at(1));
+    SgClassDeclaration* base_decl =
+      isSgClassDeclaration(declarationMap[class_decl_annot->at(2)->getRepresentation()]);
+    ROSE_ASSERT(base_decl != NULL);
+    d->append_inheritance(new SgBaseClass(base_decl));
+    // FIXME add directBaseClass flag
+  }
+
   /* set the end of construct*/
   d->set_endOfConstruct(end_of_construct);
 
-  classDefinitions.push_back(d);
+  // this is now in setClassDeclarationBody, because we also need to
+  // index it by the class name: classDefinitions.push_back(d);
   return d;
 }
 
@@ -2736,15 +2779,21 @@ TermToRose::createClassDeclaration(Sg_File_Info* fi, SgNode* child1, PrologCompT
     class_def->set_declaration(d);
   } else {
     d->setForward();
+  }
 
-    // SgClassDeclaration* ndd = d;
-    // lookupDecl(&ndd, type_s->getRepresentation(), false);
+  // Set class declarations of member function declarations
+  // cerr<<__FUNCTION__<<"#### looking for ::"+d->get_name()<<endl;
+  for (multimap<string,SgMemberFunctionDeclaration*>::iterator it =
+               memberFunctionDeclarationMap.find("::"+d->get_name());
+         it != memberFunctionDeclarationMap.end(); it++) {
+    // cerr<<__FUNCTION__<<"#### found "<<it->second<<endl;
+    it->second->set_scope(class_def);
+    it->second->set_associatedClassDeclaration(d);
   }
 
   TERM_ASSERT(t, declarationMap.find(type_s->getRepresentation())
               != declarationMap.end());
-  d->set_firstNondefiningDeclaration(
-      declarationMap[type_s->getRepresentation()]);
+  d->set_firstNondefiningDeclaration(declarationMap[type_s->getRepresentation()]);
 
   return d;
 }
@@ -2760,6 +2809,25 @@ TermToRose::setClassDeclarationBody(SgClassDeclaration* d, SgNode *body) {
     d->set_definingDeclaration(d);
     d->get_firstNondefiningDeclaration()->set_definingDeclaration(d);
     d->unsetForward();
+
+    // Store the class definition in our own symbol table so we can
+    // associate external member function definitions with it
+    // cerr<<__FUNCTION__<<"@@@ storign ::"+string(d->get_name())+":"<<class_def<<endl;
+    // FIXME: using the global namespace will not be general enough
+    classDefinitionMap["::"+d->get_name()] = class_def;
+
+
+    // Set scope of member function declarations
+    // cerr<<__FUNCTION__<<"**** looking for ::"+d->get_name()<<endl;
+    for (multimap<string,SgMemberFunctionDeclaration*>::iterator it =
+	   memberFunctionDeclarationMap.find("::"+d->get_name());
+         it != memberFunctionDeclarationMap.end(); it++) {
+      // cerr<<__FUNCTION__<<"**** found "<<it->second<<endl;
+      //if (it->second->get_scope() == NULL)
+      ROSE_ASSERT(class_def != NULL);
+      it->second->set_scope(class_def);
+      it->second->set_associatedClassDeclaration(d);
+    }
   }
   return d;
 }
@@ -2921,6 +2989,7 @@ TermToRose::createBitVector(PrologTerm* t, std::map<std::string, int> names) {
   deque<PrologTerm*>::iterator it = succs->begin();
   while(it != succs->end()) {
     EXPECT_TERM(PrologAtom*, a, *it);
+    //cerr<<"&& setting "<< names[a->getName()] << " $ " << a->getRepresentation()<< endl;
     (*bv)[names[a->getName()]] = true;
     it++;
   }
@@ -3358,18 +3427,16 @@ TermToRose::createFunctionModifier(PrologTerm* t) {
 /**
  * create SgSpecialFunctionModifier
  */
-SgSpecialFunctionModifier*
-TermToRose::createSpecialFunctionModifier(PrologTerm* t) {
+void
+TermToRose::setSpecialFunctionModifier(PrologTerm* t, SgSpecialFunctionModifier* m) {
   PrologCompTerm* c = isPrologCompTerm(t);
   TERM_ASSERT(t, c != NULL);
+  ROSE_ASSERT(m != NULL);
   //extract bit vector list and create bit vector
   // ( cast done in createBitVector)
   SgBitVector b = *(createBitVector(c->at(0),
                                     re.special_function_modifier));
-  SgSpecialFunctionModifier* m = new SgSpecialFunctionModifier();
-  TERM_ASSERT(t, m != NULL);
   m->set_modifierVector(b);
-  return m;
 }
 
 /**
@@ -3547,7 +3614,7 @@ TermToRose::createDummyFunctionDeclaration(std::string* namestr, PrologTerm* typ
   // only the Funcdecl base class.
   SgProcedureHeaderStatement* d = new SgProcedureHeaderStatement(FI,n,tpe);
   ROSE_ASSERT(d != NULL);
-  cerr<<tpe->get_return_type()->class_name()<< endl;
+  //cerr<<tpe->get_return_type()->class_name()<< endl;
   if (tpe->get_return_type()->variantT() == V_SgTypeVoid)
     if (fortranFunctionTypeMap.find(*namestr) != fortranFunctionTypeMap.end())
       d->set_subprogram_kind(SgProcedureHeaderStatement::e_function_subprogram_kind);
@@ -3578,7 +3645,7 @@ TermToRose::createDummyFunctionSymbol(std::string* namestr, PrologTerm* type_ter
   ROSE_ASSERT(decl != NULL);
   /* use declaration to create SgFunctionSymbol*/
   SgFunctionSymbol* sym = new SgFunctionSymbol(decl);
-  cerr<<"create2:"<<decl->get_name()<< endl;
+  //cerr<<"create2:"<<decl->get_name()<< endl;
   sym->set_parent(new SgSymbolTable());
   return sym;
 }
@@ -3603,7 +3670,7 @@ TermToRose::createDummyMemberFunctionSymbol(PrologTerm* annot_term) {
   /*scope name and type*/
   debug("creating scope for member function declaration for symbol ");
   string scope_name = *(toStringP(scope_term->at(0)));
-  int scope_type = toInt(scope_term->at(1));
+  int scope_type  = createEnum(scope_term->at(1), re.class_type);
   fakeClassScope(scope_name,scope_type,mfunc);
   TERM_ASSERT(annot_term, mfunc->get_class_scope() != NULL);
   /* create symbol */
@@ -3663,9 +3730,24 @@ TermToRose::createMemberFunctionRefExp(Sg_File_Info* fi, PrologCompTerm* ct) {
    * and a PrologTerm* with the type info from annotation*/
   TERM_ASSERT(ct, ct != NULL);
   PrologCompTerm* annot = retrieveAnnotation(ct);
-  ARITY_ASSERT(annot, 3+AR);
+  ARITY_ASSERT(annot, 5+AR);
   /* create member function symbol*/
-  SgMemberFunctionSymbol* sym = createDummyMemberFunctionSymbol(annot->at(0));
+  SgMemberFunctionSymbol* sym;
+  string id = makeFunctionID(annot->at(0)->getRepresentation(), 
+			     annot->at(2)->getRepresentation());
+  SgFunctionDeclaration* decl = NULL;
+  if (lookupDecl(&decl, id)) {
+    /* get the real symbol */
+    SgMemberFunctionDeclaration* mdecl = isSgMemberFunctionDeclaration(decl);
+    ROSE_ASSERT(mdecl != NULL);
+    sym = new SgMemberFunctionSymbol(mdecl);
+  } else {
+    cerr<<"**WARNING: no symbol found for "<<id<<endl;
+    ROSE_ASSERT(false);
+    /* create function symbol*/
+    debug("symbol");
+    sym = createDummyMemberFunctionSymbol(annot->at(2));
+  }
   TERM_ASSERT(ct, sym!= NULL);
   /* virtual call?*/
   int vc = toInt(annot->at(1));
@@ -3674,6 +3756,7 @@ TermToRose::createMemberFunctionRefExp(Sg_File_Info* fi, PrologCompTerm* ct) {
   TERM_ASSERT(ct, tpe != NULL);
   /* need qualifier?*/
   int nc = toInt(annot->at(3));
+  
   SgMemberFunctionRefExp* ref = new SgMemberFunctionRefExp(fi,sym,vc,tpe,nc);
   TERM_ASSERT(ct, ref != NULL);
   return ref;

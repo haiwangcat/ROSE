@@ -98,7 +98,13 @@ function_declaration ::=
 
 function_parameter_list ::=
     function_parameter_list([initialized_name],
-                            default_annotation, analysis_info, file_info).
+			    default_annotation, analysis_info, file_info).
+
+member_function_declaration ::=
+    member_function_declaration(function_parameter_list, {null}, function_definition?,
+				todo /* ctor_initializer_list */,
+				member_function_declaration_annotation,
+				analysis_info, file_info).
 
 program_header_statement ::=
     program_header_statement(function_parameter_list, {null}, function_definition?,
@@ -182,8 +188,11 @@ basic_block ::=
     basic_block([statement], default_annotation, analysis_info, file_info).
 
 class_definition ::=
-    class_definition([variable_declaration], class_definition_annotation,
+    class_definition([class_decls],
+		     class_definition_annotation,
                      analysis_info, file_info).
+
+class_decls ::= variable_declaration|member_function_declaration.
 
 do_while_stmt ::=
     do_while_stmt(statement /* body */, statement /* condition */,
@@ -224,6 +233,7 @@ expression ::=
   | expr_list_exp
   | function_call_exp
   | function_ref_exp
+  | member_function_ref_exp
   | initializer
   | new_exp
   | null_expression
@@ -268,6 +278,9 @@ function_call_exp ::=
 
 function_ref_exp ::=
     function_ref_exp(function_ref_exp_annotation, analysis_info, file_info).
+
+member_function_ref_exp ::=
+    member_function_ref_exp(member_function_ref_exp_annotation, analysis_info, file_info).
 
 new_exp ::=
     new_exp({null}, constructor_initializer?, {null},
@@ -337,14 +350,23 @@ initialized_name_annotation ::=
                                 scope_name?, preprocessing_info).
 
 function_declaration_annotation ::=
-    function_declaration_annotation(type, name, declaration_modifier,
+    function_declaration_annotation(type, name, declaration_modifier, todo /* special */,
                                     preprocessing_info).
+
+member_function_declaration_annotation ::=
+    member_function_declaration_annotation(some_function_type, name, scope_name,
+					   declaration_modifier, todo /* special */,
+					   preprocessing_info).
+
+some_function_type ::= member_function_type | function_type /* static */.
+
+member_function_type ::=
+    member_function_type(type /* return */, todo /* ellipses */, [type] /* args */, todo).
 
 procedure_header_statement_annotation ::=
     procedure_header_statement_annotation(type, name, declaration_modifier,
 					  todo /* subprogram kinds */,
-					  todo,
-					  preprocessing_info).
+					  todo, preprocessing_info).
 
 
 class_declaration_annotation ::=
@@ -355,7 +377,7 @@ enum_declaration_annotation ::=
     enum_declaration_annotation(name, todo, todo, preprocessing_info).
 
 class_definition_annotation ::=
-    class_definition_annotation(file_info, preprocessing_info).
+    class_definition_annotation(todo /* inheritances */, file_info, preprocessing_info).
 
 variable_declaration_specific ::=
     variable_declaration_specific(todo /* declaration modifier */,
@@ -390,6 +412,10 @@ typedef_annotation ::=
 function_ref_exp_annotation ::=
     function_ref_exp_annotation(name, type, preprocessing_info).
 
+member_function_ref_exp_annotation ::=
+    member_function_ref_exp_annotation(name, number_or_string, member_function_type,
+				       number_or_string, preprocessing_info).
+
 function_call_exp_annotation ::=
     function_call_exp_annotation(type, preprocessing_info).
 
@@ -412,11 +438,14 @@ preprocessing_info ::=
 type ::=
     basic_type
   | array_type(type, expression?, number_or_string /* rank */, expr_list_exp?)
-  | function_type(type /* return */, todo /* ellipses */, [type] /* args */)
+  | function_type
+  | member_function_type
   | modifier_type(type, type_modifier)
   | named_type
   | type_default
   | pointer_type(type).
+
+function_type ::= function_type(type /* return */, todo /* ellipses */, [type] /* args */).
 
 basic_type ::=
     atoms [type_bool, type_char, type_double, type_ellipse, type_float,
