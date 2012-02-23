@@ -5,9 +5,9 @@
 About
 =====
 
-Minitermite is a light-weight library that transforms C(++) programs
-into a term-based representation of their abstract syntax trees (AST)
-and vice versa.
+Minitermite is a light-weight library that transforms C, C++, and
+Fortran programs into a term-based representation of their abstract
+syntax trees (AST) and vice versa.
 
 Related work, Provenance
 ========================

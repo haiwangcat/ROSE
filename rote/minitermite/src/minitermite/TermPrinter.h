@@ -44,15 +44,13 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 
 /* See main.C-template and toProlog.C for examples how to use this */
 
-/**
- * Class implementing a traversal to create a PROLOG term
- * representing a ROSE-IR
- *
- * Additionally, this template can be instatiated with the DFI_STORE type
- * in the case the Terms should contain PAG analysis results.
- * This feature is only enabled if Termite was configured with PAG support
- * (i.e., HAVE_PAG is defined).
- */
+/// Class implementing a traversal to create a PROLOG term
+// representing a ROSE-IR
+//
+// Additionally, this template can be instatiated with the DFI_STORE type
+// in the case the Terms should contain PAG analysis results.
+// This feature is only enabled if Termite was configured with PAG support
+// (i.e., HAVE_PAG is defined).
 template<typename DFI_STORE_TYPE>
 class TermPrinter: public AstBottomUpProcessing<PrologTerm*>
 {

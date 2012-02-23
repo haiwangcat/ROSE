@@ -10,7 +10,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 
 #if !HAVE_SWI_PROLOG
 
-/// Representation of a compound prolog term .
+/// Representation of a compound prolog term.
 class PrologCompTerm : public PrologTerm {
 public:
   ~PrologCompTerm() {};
@@ -153,6 +153,7 @@ protected:
   std::vector<PrologTerm *> mSubterms;
 };
 
+/// Representation of an infix operator.
 class PrologInfixOperator : public PrologCompTerm {
 public:
   ~PrologInfixOperator() {};

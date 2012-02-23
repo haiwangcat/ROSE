@@ -11,10 +11,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <string>
 #include <vector>
 
-/**
- * Class supporting generation of PROLOG trees representing ROSE-IR
- *
- */
+/// Class supporting generation of PROLOG trees representing ROSE-IR
 class RoseToTerm {
 public:
   PrologTerm* getSpecific(SgNode*);

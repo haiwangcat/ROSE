@@ -9,13 +9,12 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 
 #if !HAVE_SWI_PROLOG
 
-/**
- * class representing a prolog list*/
+/// class representing a prolog list
 class PrologList : public PrologCompTerm {
  public:
-  /**default constructor*/
+  ///default constructor
   PrologList() {}
-  /** construct from vector*/
+  /// construct from vector
   PrologList(std::deque<PrologTerm*> v) : mTerms(v) {}
   PrologList(std::vector<PrologTerm*> v) :mTerms(v.begin(), v.end()) {}
   
@@ -69,11 +68,10 @@ class PrologList : public PrologCompTerm {
 # else
 
 
-/**
- * class representing a prolog list*/
+/// class representing a prolog list
 class PrologList : public PrologCompTerm {
  public:
-  /** empty list */
+  ///empty list
   PrologList() {
     term = PL_new_term_ref();
     PL_put_nil(term);
@@ -84,7 +82,7 @@ class PrologList : public PrologCompTerm {
 
   PrologList(term_t t) : PrologCompTerm(t) {}
 
-  /** construct from vector*/
+  ///construct from vector
   PrologList(std::vector<PrologTerm*> v) {
     term = PL_new_term_ref();
     PL_put_nil(term);

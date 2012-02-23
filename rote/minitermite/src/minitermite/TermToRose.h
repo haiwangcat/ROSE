@@ -14,10 +14,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <map>
 #include <vector>
 
-/**
- * Class for creating a ROSE-IR (made for unparsing)
- * from its PROLOG term-representation
- */
+/// Class for creating a ROSE-IR (made for unparsing) from its PROLOG term-representation
 class TermToRose {
 public:
   TermToRose() {};

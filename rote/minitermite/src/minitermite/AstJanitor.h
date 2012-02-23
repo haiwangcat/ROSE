@@ -6,22 +6,18 @@
 #include <rose.h>
 #include "TermToRose.h"
 
-/**
- * Perform various tasks to generate a valid AST
- * including the setting of parent scopes an pointers
- */
 #define FI Sg_File_Info::generateDefaultFileInfoForTransformationNode()
 
-class InheritedAttribute
+/// Data structure for AstJanitor
+struct InheritedAttribute
 {
-public:
   TermToRose* conv;
   SgScopeStatement* scope;
   SgNode* parent;
   // Specific constructors are required
   InheritedAttribute(TermToRose* c, 
-		     SgScopeStatement* s = NULL, 
-		     SgNode* p = NULL)
+	       SgScopeStatement* s = NULL, 
+	       SgNode* p = NULL)
     : conv(c), scope(s), parent(p) 
   {};
   InheritedAttribute(const InheritedAttribute& X)
@@ -29,10 +25,14 @@ public:
   {};
 };
 
+
+/// Perform various tasks to generate a valid AST
+//  including the setting of parent scopes an pointers
 class AstJanitor : public AstTopDownProcessing<InheritedAttribute>
 {
 private:
   bool isFortran;
+
 public:
   AstJanitor(bool _isFortran):isFortran(_isFortran) {};
   

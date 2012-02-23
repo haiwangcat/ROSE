@@ -6,10 +6,9 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #define PROLOGATOM_H_
 #include "PrologTerm.h"
 
-/**class representing a prolog atom*/
-
 #if !HAVE_SWI_PROLOG
 
+///class representing a prolog atom
 class PrologAtom : public PrologTerm {
 public:
   ///the destructor

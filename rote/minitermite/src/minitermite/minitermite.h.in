@@ -4,6 +4,63 @@
  * Configures the TERMITE term representation.
  */
 
+/**
+ * \mainpage
+ * <h1>minitermite</h1>
+ *  
+ *  
+ * <h2>About</h2>
+ *  
+ * Minitermite is a light-weight library that transforms C, C++, and
+ * Fortran programs into a term-based representation of their abstract
+ * syntax trees (AST) and vice versa.
+ *  
+ * <h2>Related work, Provenance</h2>
+ *  
+ * Minitermite is a spin-off (friendly fork) of Termite
+ * (http://www.complang.tuwien.ac.at/adrian/termite) which is
+ * distributed as part of the SATIrE program analysis framework
+ * (http://www.complang.tuwien.ac.at/satire/) from
+ * the Computer Languages group at Vienna University of Technology,
+ * Austria.
+ *  
+ * <h2>Authors</h2>
+ *  
+ * The corresponding author and maintainer is Adrian Prantl. The original
+ * Termite was based on an earlier prototype by Christoph Bonitz and
+ * Markus Schordan.  Gergo Barany contributed the term_lint grammar
+ * checker, as well as support for the ICFG and other PAG-based analyses
+ * and numerous bug fixes and improvements. Several testcases were
+ * contributed by Viktor Pavlu. The majority of the Clang front-end
+ * integration was contributed by Dietmar Ebner with some help from
+ * Florian Brandner.
+ *  
+ * <h2>Installation instructions</h2>
+ *  
+ * The following commands should do the job on a UNIX-like system::
+ * <pre> 
+ *     mkdir build && cd build
+ *     ../configure --prefix=/usr/local --with-rosedir=/opt/rose --with-boostdir=/usr --with-swi-prolog=no
+ *     make -j<N> install
+ *     make installcheck
+ * </pre>
+ * 
+ * <h2>Dependencies</h2>
+ *  
+ * ROSE: http://www.rosecompiler.org/
+ * flex, yacc, boost
+ *  
+ * Optional: swi-prolog, clang, doxygen
+ *  
+ * <h2>License</h2>
+ *  
+ * Just like SATIrE, minitermite is distributed under a permissive
+ * three-clause BSD license. See COPYING for details.
+ * termlint.pl is covered by the GPLv3.
+ *  
+
+ */
+
 #ifndef __TERMITE_H__
 #define __TERMITE_H__
 

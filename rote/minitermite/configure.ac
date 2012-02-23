@@ -39,6 +39,13 @@ AS_IF([test -n "$DOXYGEN" -a -x "$DOXYGEN"],
       ], 
       [AC_MSG_NOTICE([doxygen is missing])])
 
+# DOT
+AX_WITH_PROG(DOT, dot)
+AS_IF([test -n "$DOT" -a -x "$DOT"], 
+      [:], 
+      [AM_CONDITIONAL(ENABLE_DOCUMENTATION, false)
+       AC_MSG_NOTICE([dot is missing -> documentation was disabled])])
+
 
 # ROSE PATH
 AS_IF([test "x`which roseCompiler`" = x],
