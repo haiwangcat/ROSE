@@ -30,9 +30,12 @@ include regression/Makefile.include
 
 .PHONY: doc
 doc:
+if ENABLE_DOCUMENTATION
 	@echo "  GEN [doxygen documentation]"
-	@($(DOXYGEN) && $(MAKE) MAKEFLAGS=-j1 -C doc/latex) \
-        || echo "Doxygen not found; SKIPPING"
+	@($(DOXYGEN) && $(MAKE) MAKEFLAGS=-j1 -C doc/latex)
+else
+        @echo "**WARNING: Doxygen was not found by configure; SKIPPING"
+endif 
 
 doc/html/index.html:
 	$(MAKE) doc
