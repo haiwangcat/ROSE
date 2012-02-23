@@ -1454,12 +1454,15 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
               ROSE_ASSERT(false && "enum decl has no parent and no scope?");
               in->set_scope(scp);
             }
-          } else if (parent->variantT() == V_SgCtorInitializerList &&
-		     parent->get_parent()->variantT() == V_SgMemberFunctionDeclaration &&
-		     parent->get_parent()->get_parent()->variantT() == V_SgClassDefinition) {
-	    in->set_scope(isSgClassDefinition(parent->get_parent()->get_parent()));
 	  } else {
-	    ROSE_ASSERT(false && "initialized name without a scope, I'm lost");
+	    // try to make an educated guess by attaching it to the closest parent scope
+	    SgScopeStatement* scope;
+	    do {
+	      scope = isSgScopeStatement(parent);
+	      parent = parent->get_parent();
+	      ROSE_ASSERT(parent == NULL && "initialized name without a scope, I'm lost");
+	    } while (scope == NULL);
+	    in->set_scope(scope);
           }
         }
       }
@@ -1750,7 +1753,7 @@ TermToRose::createInitializedName(Sg_File_Info* fi, SgNode* succ, PrologCompTerm
  */
 SgInitializedName*
 TermToRose::inameFromAnnot(PrologCompTerm* annot) {
-  TERM_ASSERT(annot, false && "deprecated function");
+  //TERM_ASSERT(annot, false && "deprecated function");
   debug("creating initialized name for sg var ref exp");
   /* get type*/
   SgType* tpe = createType(annot->at(0));
@@ -2043,7 +2046,6 @@ TermToRose::createProcedureHeaderStatement(Sg_File_Info* fi, SgNode* par_list_u,
                                         createEnum(annot->at(3), re.subprogram_kind));
 
   register_func_decl(func_name, proc_header_stmt, annot->at(0));
-  //initializedNameMap[makeInameID(annot)] = result_name;
 
   return proc_header_stmt;
 }
@@ -2096,15 +2098,19 @@ TermToRose::createVarRefExp(Sg_File_Info* fi, PrologCompTerm* t) {
   PrologCompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   /* cast SgInitializedName*/
+  bool forward_ref = false;
   SgInitializedName* init_name;
   string id = makeInameID(annot);
   if (initializedNameMap.find(id) != initializedNameMap.end()) {
     // Lookup the closest iname
     init_name = initializedNameMap[id];
   } else {
-    cerr<<id<<endl;
-    TERM_ASSERT(t, false);
+    cerr<<"**WARNING: forward reference to the initialized name "<<id<<endl;
+    // FIXME: We should actually store the iname here and re-use it
+    //when we come to the actual declaration.
+    //TERM_ASSERT(t, false);
     init_name = inameFromAnnot(annot);
+    forward_ref = true;
   }
   TERM_ASSERT(t, init_name != NULL);
   /*cast variable symbol*/
@@ -2114,7 +2120,7 @@ TermToRose::createVarRefExp(Sg_File_Info* fi, PrologCompTerm* t) {
   SgVarRefExp* vre = new SgVarRefExp(fi,var_sym);
   TERM_ASSERT(t, vre != NULL);
   // Set parent pointers
-  //init_name->set_parent(var_sym);
+  if (forward_ref) init_name->set_parent(var_sym);    
   var_sym->set_parent(vre);
   return vre;
 }
