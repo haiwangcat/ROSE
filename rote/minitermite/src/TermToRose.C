@@ -3251,9 +3251,9 @@ TermToRose::createDeleteExp(Sg_File_Info* fi, SgNode* child1, PrologCompTerm* t)
   // cast child fitting constructor
   SgExpression* e = isSgExpression(child1);
   TERM_ASSERT(t, e != NULL);
-  // get "flags"
-  short is_array = toInt(annot->at(0));
-  short need_g = toInt(annot->at(1));
+  // get "flags" Flag
+  bool is_array = getFlag(annot->at(0));
+  bool need_g = getFlag(annot->at(1));
   // create, test, return
   SgDeleteExp* del = new SgDeleteExp(fi,e,is_array,need_g);
   TERM_ASSERT(t, del != NULL);

@@ -982,8 +982,8 @@ RoseToTerm::getDeclarationAttributes(SgDeclarationStatement* s) {
 PrologCompTerm*
 RoseToTerm::getDeleteExpSpecific(SgDeleteExp* de) {
   return new PrologCompTerm("delete_exp_annotation", //3,
-			    new PrologInt(de->get_is_array()),
-			    new PrologInt(de->get_need_global_specifier()),
+			    makeFlag(de->get_is_array(), "is_array"),
+			    makeFlag(de->get_need_global_specifier(), "need_global_specifier"),
 			    PPI(de));
 }
 

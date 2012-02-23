@@ -236,6 +236,7 @@ expression ::=
   | member_function_ref_exp
   | initializer
   | new_exp
+  | delete_exp
   | null_expression
   | size_of_op
   | unary_op
@@ -289,6 +290,12 @@ new_exp ::=
 new_exp_annotation ::=
     new_exp_annotation(type, preprocessing_info).
 
+delete_exp ::=
+    delete_exp(var_ref_exp, delete_exp_annotation, analysis_info, file_info).
+
+delete_exp_annotation ::=
+    delete_exp_annotation(todo, todo, preprocessing_info).
+
 constructor_initializer ::=
     constructor_initializer(expr_list_exp,
 			    constructor_initializer_annotation,
@@ -301,7 +308,8 @@ constructor_initializer_annotation ::=
 
 initializer ::=
     aggregate_initializer
-  | assign_initializer.
+  | assign_initializer
+  | constructor_initializer.
 
 aggregate_initializer ::=
     aggregate_initializer(expr_list_exp,
