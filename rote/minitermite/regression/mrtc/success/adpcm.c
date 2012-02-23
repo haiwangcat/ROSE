@@ -874,8 +874,10 @@ main()
 	 * scanf("%d",&j); scanf("%d",&f);
 	 */
 	j = 10;
-	f = 2000;		/* körs men, används inte */
-
+	f = 2000;
+#if 0 // don't confuse the parser with swedish letters!
+		/* körs men, används inte */
+#endif
 /* 16 KHz sample rate */
 	/* XXmain_0, MAX: 2 */
 	/*
@@ -890,11 +892,12 @@ main()
 
 	/* MAX: 2 */
 
+#if 0 // don't confuse the parser with swedish letters!
 /*******Antar att test_data[0] = 10 och test_data[1]=-6 från ovan,          *******
         och att anropet i forloopen blir encode(test_data[0],test_data[0]);
 		och encode(test_data[1],test_data[1]), eftersom att den annars går
  *******över array gränsen                                                  *******/
-
+#endif
 
 	for (i = 0; i < IN_END; i += 2)
 		compressed[i / 2] = encode(test_data[i], test_data[i + 1]);

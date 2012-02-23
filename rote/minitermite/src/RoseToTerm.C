@@ -129,9 +129,8 @@ RoseToTerm::getPreprocessingInfo(AttachedPreprocessingInfoType* inf) {
   if (inf != NULL) {
     for (AttachedPreprocessingInfoType::reverse_iterator it = inf->rbegin();
 	 it != inf->rend(); ++it) {
-      bool escape =
-	  (*it)->getTypeOfDirective()
-	  != PreprocessingInfo::CpreprocessorIncludeDeclaration;
+      bool escape = (*it)->getTypeOfDirective()
+	!= PreprocessingInfo::CpreprocessorIncludeDeclaration;
 
       PrologCompTerm* ppd = new
 	PrologCompTerm(re.DirectiveTypes[(*it)->getTypeOfDirective()], //3,
