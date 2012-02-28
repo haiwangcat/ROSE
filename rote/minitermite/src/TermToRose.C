@@ -1426,7 +1426,7 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
     }
   }
 
-  // Make sure all endOfConstruct pointers are set; ROSE includes
+  /// Make sure all endOfConstruct pointers are set; ROSE includes
   // essentially the same thing, but that prints verbose diagnostics. Also,
   // the AST janitor does this, but apparently it doesn't always visit every
   // node (SgVariableDefinitions, mostly).
@@ -1460,7 +1460,7 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
 	    do {
 	      scope = isSgScopeStatement(parent);
 	      parent = parent->get_parent();
-	      ROSE_ASSERT(parent == NULL && "initialized name without a scope, I'm lost");
+	      ROSE_ASSERT(parent != NULL && "initialized name without a scope, I'm lost");
 	    } while (scope == NULL);
 	    in->set_scope(scope);
           }
@@ -1994,6 +1994,8 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
     SgClassDefinition* class_def = classDefinitionMap[scope_name];
     ROSE_ASSERT(class_def != NULL);
     func_decl->set_scope(class_def);
+    declarationStatementsWithoutScope.push_back(func_decl);
+    //func_decl->set_parent(global);
     ROSE_ASSERT(class_def->get_declaration() != NULL);
     func_decl->set_associatedClassDeclaration(class_def->get_declaration());
   }

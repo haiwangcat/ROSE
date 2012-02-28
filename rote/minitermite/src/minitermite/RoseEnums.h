@@ -8,7 +8,8 @@ Copyright 2009 Adrian Prantl <adrian@complang.tuwien.ac.at>
 #include <string>
 #include <vector>
 
-/// This is needed for the SgBitVector translation and should help to keep the information at one location for both directions
+/// This is needed for the SgBitVector translation and should help to
+//  keep the information at one location for both directions
 class RoseEnums {
  public:
   RoseEnums();

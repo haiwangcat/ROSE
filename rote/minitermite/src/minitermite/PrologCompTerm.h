@@ -14,8 +14,8 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 class PrologCompTerm : public PrologTerm {
 public:
   ~PrologCompTerm() {};
+
   /// Creates a compound term with the given name. no subterms added yet.
-  
   PrologCompTerm(std::string name = "#ERROR") : mName(name) {};
 
 #if 0
