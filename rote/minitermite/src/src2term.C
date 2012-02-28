@@ -23,15 +23,15 @@ using namespace std;
 void usage(const char* me) 
 {
   cout << "Usage: " << me
-  <<" [FRONTEND OPTIONS] [--dot] [--pdf] src1.c src2.cpp ... [-o termfile.pl]\n"
+  <<" [FRONTEND OPTIONS] [--dot] [--pdf] src1.c src2.cpp src3.f ... [-o termfile.pl]\n"
   <<"  Parse one or more source files and convert them into a TERMITE file."
        << "\n  Header files will be included in the term representation.\n\n"
 
        << "Options:\n"
-       << "  [FRONTENT OPTIONS] will be passed to the C/C++ frontend.\n\n" 
+       << "  [FRONTENT OPTIONS] will be passed to the C/C++/Fortran frontend.\n\n" 
 
        << "  --rose-help\n"
-       << "    Display the help for the C/C++ frontend.\n\n"
+       << "    Display the help for the C/C++/Fortran frontend.\n\n"
 
        << "  -o, --output <termfile.pl>\n"
        << "    Write the output to <termifile.pl> instead of stdout.\n\n"

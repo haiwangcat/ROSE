@@ -215,11 +215,6 @@ void TermToRose::unparse(std::string filename, std::string dir, std::string suff
   unparseInfo->unset_SkipComments();    // generate comments
   unparseInfo->unset_SkipWhitespaces(); // generate all whitespaces to
                                         // format the code
-  unparseInfo->set_SkipQualifiedNames(); // Adrian: skip qualified
-                                         // names -> this would cause
-                                         // a call to the EDG
-                                         // otherwise
-
   //resetParentPointers(glob, file);
 
   if (filename != "") {
@@ -1994,7 +1989,6 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
     SgClassDefinition* class_def = classDefinitionMap[scope_name];
     ROSE_ASSERT(class_def != NULL);
     func_decl->set_scope(class_def);
-    declarationStatementsWithoutScope.push_back(func_decl);
     //func_decl->set_parent(global);
     ROSE_ASSERT(class_def->get_declaration() != NULL);
     func_decl->set_associatedClassDeclaration(class_def->get_declaration());
