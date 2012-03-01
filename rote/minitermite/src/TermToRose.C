@@ -99,7 +99,7 @@ static inline string makeInameID(PrologCompTerm* annot) {
     ROSE_ASSERT(assertion);                                             \
   } while (0)
 
-#ifdef HAVE_ANALYSIS_RESULTS
+#ifdef WITH_ANALYSIS_RESULTS
 #  define AR 0
 #else
 #  define AR 1
@@ -945,7 +945,7 @@ TermToRose::createTypedefType(PrologTerm* t) {
   } else if (lookaheadDecl(&decl,
                            "typedef_declaration(_,typedef_annotation("
                            +annot->at(0)->getRepresentation()+",_,_),"
-#ifdef HAVE_ANALYSIS_RESULT
+#ifdef WITH_ANALYSIS_RESULTS
                            "_,"
 #endif
                            "_)")) {
@@ -968,7 +968,7 @@ TermToRose::createTypedefType(PrologTerm* t) {
                                                  annot->at(0), annot->at(1),
                                                  new PrologAtom("null"),
                                                  new PrologAtom("null")),
-#ifdef HAVE_ANALYSIS_RESULT
+#ifdef WITH_ANALYSIS_RESULTS
                               new PrologAtom("null"),
 #endif
                               new PrologAtom("null")));

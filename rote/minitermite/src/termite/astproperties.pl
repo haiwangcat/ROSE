@@ -418,7 +418,7 @@ file_info(N, Fi) :-
 % Convert between signatures and terms.
 function_signature(FunctionDecl, Type, Name, Modifier) :-
   FunctionDecl = function_declaration(_Params, _Null, _Def, DeclAnnot, _AI, _FI),
-  DeclAnnot = function_declaration_annotation(Type, Name, Modifier, _PPI).
+  DeclAnnot = function_declaration_annotation(Type, Name, Modifier, _Special, _PPI).
 
 %% is_function_call(?Term, ?Name, ?Type).
 % (De-)construct a function call.

@@ -415,10 +415,9 @@ RoseToTerm::getConstructorInitializerSpecific(SgConstructorInitializer* ci) {
   ROSE_ASSERT(ci != NULL);
   /* get name from class declaration*/
   SgClassDeclaration* dec = ci->get_class_decl();
-  ROSE_ASSERT(dec != NULL);
   return new PrologCompTerm
     ("constructor_initializer_annotation",
-     new PrologAtom(dec->get_qualified_name().getString()),
+     dec ? new PrologAtom(dec->get_qualified_name().getString()): new PrologAtom("null"),
      getTypeSpecific(ci->get_expression_type()),
      makeFlag(ci->get_need_name(), "need_name"),
      makeFlag(ci->get_need_qualifier(), "need_qualifier"),
