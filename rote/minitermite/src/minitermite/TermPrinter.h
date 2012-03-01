@@ -880,7 +880,7 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::leafTerm(
   PrologCompTerm* t =
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //0+3,
 		       specific,
-#ifdef WITH_ANALYSIS_RESULTS
+#if HAVE_ANALYSIS_RESULTS
 		       ar,
 #endif
 		       fiTerm);
@@ -897,7 +897,7 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::unaryTerm(
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //1+3,
 		       synList.at(0),
 		       specific,
-#ifdef WITH_ANALYSIS_RESULTS
+#if HAVE_ANALYSIS_RESULTS
 		       ar,
 #endif
 		       fiTerm);
@@ -915,7 +915,7 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::binaryTerm(
 		       synList.at(0),
 		       synList.at(1),
 		       specific,
-#ifdef WITH_ANALYSIS_RESULTS
+#if HAVE_ANALYSIS_RESULTS
 		       ar,
 #endif
 		       fiTerm);
@@ -934,7 +934,7 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::ternaryTerm(
 		       synList.at(1),
 		       synList.at(2),
 		       specific,
-#ifdef WITH_ANALYSIS_RESULTS
+#if HAVE_ANALYSIS_RESULTS
 		       ar,
 #endif
 		       fiTerm);
@@ -954,7 +954,7 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::quaternaryTerm(
 		       synList.at(2),
 		       synList.at(3),
 		       specific,
-#ifdef WITH_ANALYSIS_RESULTS
+#if HAVE_ANALYSIS_RESULTS
 		       ar,
 #endif
 		       fiTerm);
@@ -997,7 +997,7 @@ PrologCompTerm* TermPrinter<DFI_STORE_TYPE>::listTerm(
     new PrologCompTerm(termConv.prologize(astNode->class_name()), //1+3,
 		      l,
 		      specific,
-#ifdef WITH_ANALYSIS_RESULTS
+#if HAVE_ANALYSIS_RESULTS
 		       ar,
 #endif
 		       fiTerm);
