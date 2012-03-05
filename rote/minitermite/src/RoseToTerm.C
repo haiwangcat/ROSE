@@ -851,7 +851,7 @@ PrologCompTerm*
 RoseToTerm::getNamespaceDeclarationStatementSpecific
 (SgNamespaceDeclarationStatement* dec) {
   return new PrologCompTerm
-    ("namespace_declaration_statement", //3,
+    ("namespace_declaration_statement_annotation", //3,
      /* name*/ new PrologAtom(dec->get_name().getString()),
      /* unnamed?*/ new PrologInt((int) dec->get_isUnnamedNamespace()),
      PPI(dec));

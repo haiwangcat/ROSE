@@ -505,7 +505,7 @@ unparse1(UI, source_file(E1, _An, _Ai, file_info(Name, _, _))) :- !,
 unparse1(UI, project(E1, _, _, _)) :- !, unparse(UI, E1).
 
 unparse1(UI, function_declaration(Params, _Null, Definition,
-             function_declaration_annotation(Type, Name, Mod, _), _, _)) :- !,
+             function_declaration_annotation(Type, Name, Mod, _Special, _), _, _)) :- !,
   unparse_modifier(Mod),
   unparse(UI, Type), write(' '), write(Name),
   write('('),
@@ -562,8 +562,8 @@ unparse1(_UI, type_double) :- !, write('double').
 unparse1(_UI, type_long_double) :- !, write('long double').
 unparse1(_UI, type_ellipse) :- !, write('...').
 
-unparse1(UI, array_type(Type, Val, Rank, DimInfo)) :- !,
-  unparse_type(UI, '', array_type(Type, Val, Rank, DimInfo)).
+unparse1(UI, array_type(Type, Val, Rank, IndexExpr)) :- !,
+  unparse_type(UI, '', array_type(Type, Val, Rank, IndexExpr)).
   %unparse(UI, Type), write('['), unparse(UI, Val), write(']').
 unparse1(_UI, typedef_type(Type, _)) :- !, write(Type).
 unparse1(_UI, class_type(Name,ClassType,_Scope)) :- !,
@@ -713,12 +713,12 @@ inner_type(DataType, pointer_type(array_type(Type,_,_,_))) :- !,
   inner_type(DataType, Type).
 inner_type(DataType, DataType).
 
-unparse_array_type(UI, array_type(Type, Val1, _Rank, _DimInfo)) :- !, 
+unparse_array_type(UI, array_type(Type, Val1, _Rank, _IndexExpr)) :- !, 
   write('['), unparse(UI, Val1), write(']'),
   unparse_array_type(UI, Type).
-unparse_array_type(UI, pointer_type(array_type(Type,Val, Rank, DimInfo))) :-
+unparse_array_type(UI, pointer_type(array_type(Type,Val,Rank,IndexExpr))) :-
   write('[]'),
-  unparse_array_type(UI, array_type(Type,Val,Rank,DimInfo)).
+  unparse_array_type(UI, array_type(Type,Val,Rank,IndexExpr)).
 unparse_array_type(_UI, _).
 
 unparse_enum(_UI, []) :- !.

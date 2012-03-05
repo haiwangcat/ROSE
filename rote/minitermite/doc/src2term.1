@@ -1,6 +1,6 @@
 .\" Man page generated from reStructeredText.
 .
-.TH MINI-TERMITE 1 "2012-02-24" "1.0" "Compilers and Programming Languages"
+.TH MINI-TERMITE 1 "2012-03-02" "1.0" "Compilers and Programming Languages"
 .SH NAME
 mini-Termite \- Term-based intermediate representation for source code
 .
@@ -34,7 +34,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .
 .SH SYNOPSIS
 .sp
-src2term [FRONTEND OPTIONS] [\-\-dot] [\-\-pdf] src1.c src2.cpp ... [\-o termfile.pl]
+src2term [FRONTEND OPTIONS] [\-\-dot] [\-\-pdf] src1.c src2.cpp src3.f ... [\-o termfile.pl]
 .SH DESCRIPTION
 .INDENT 0.0
 .INDENT 3.5
@@ -47,12 +47,12 @@ Header files will be included in the term representation.
 .TP
 .B Options:
 .
-[FRONTENT OPTIONS] will be passed to the C/C++ frontend.
+[FRONTENT OPTIONS] will be passed to the C/C++/Fortran frontend.
 .INDENT 7.0
 .TP
 .B \-\-rose\-help
 .
-Display the help for the C/C++ frontend.
+Display the help for the C/C++/Fortran frontend.
 .UNINDENT
 .INDENT 7.0
 .TP
