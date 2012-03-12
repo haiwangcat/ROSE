@@ -121,7 +121,6 @@ void EventReverser::generateCode()
     foreach (const T& edgeAndPaths, routeWithPaths)
         routes[edgeAndPaths.first][0] = edgeAndPaths.second;
     
-    
     // Process other DAGs.
     int dagNum = pathNumManager_->getNumberOfDags();
 #if 0

@@ -22,6 +22,11 @@ string getVarNameString(const VarName& var)
 //! Build a variable expression from a value node in the value graph.
 SgExpression* buildVariable(ValueNode* node)
 {
+    // I think there may be a bug here, since why I did not use 
+    // node->var.getVarRefExp() before?
+#if 1
+    return node->var.getVarRefExp();
+#else
     SgExpression* var;
     if (node->isAvailable())
         var = SageInterface::copyExpression(isSgExpression(node->astNode));
@@ -33,6 +38,7 @@ SgExpression* buildVariable(ValueNode* node)
             var = buildVarRefExp(getVarNameString(node->var.name));
     }
     return var;
+#endif
 }
 
 SgStatement* buildVarDeclaration(ValueNode* newVar, SgExpression* expr)
