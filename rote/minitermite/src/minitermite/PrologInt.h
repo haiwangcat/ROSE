@@ -88,7 +88,8 @@ public:
     //#   endif
 
     term = PL_new_term_ref();
-    PL_put_int64(term, value);
+    int success=PL_put_int64(term, value);
+	if(!success) { /* do someting reasonable */ }
 
 #   if DEBUG_TERMITE
       std::cerr<<"PrologInt: "<<value<<") = "<<term<<std::endl;
@@ -127,7 +128,8 @@ public:
     //#   endif
 
     term = PL_new_term_ref();
-    PL_put_float(term, value);
+    int success=PL_put_float(term, value);
+	if(!success) { /* do someting reasonable */ }
 
 #   if DEBUG_TERMITE
       std::cerr<<"PrologFloat: "<<value<<") = "<<term<<std::endl;

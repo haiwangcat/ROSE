@@ -353,7 +353,7 @@ unparse1(UI, less_than_op(E1, E2, _, _, _)) :- !, unparse_par(UI, E1), write(' <
 unparse1(UI, equality_op(E1, E2, _, _, _)) :- !, unparse_par(UI, E1), write(' == '), unparse_par(UI, E2).
 unparse1(UI, not_equal_op(E1, E2, _, _, _)) :- !, unparse_par(UI, E1), write(' != '), unparse_par(UI, E2).
 
-unparse1(UI, size_of_op(null, size_of_op_annotation(ClassType,_Type, _), _)) :- !,
+unparse1(UI, size_of_op(null, size_of_op_annotation(ClassType,_Type, _), _, _)) :- !,
   write('sizeof('), unparse(UI, ClassType), write(')').
 
 % VALUES
@@ -437,7 +437,7 @@ unparse1(UI, dot_exp(pointer_deref_exp(E1, _, _, _), E2, _, _, _)) :- !,
 
 unparse1(UI, pointer_deref_exp(E1, _, _, _)) :- !, 
   write('*'), unparse_par(UI, E1).
-unparse1(UI, cast_exp(E, _, unary_op_annotation(_, Type, _, _, _), _, _)) :- !,
+unparse1(UI, cast_exp(E, unary_op_annotation(_, Type, _, _, _), _, _)) :- !,
   (  ( Type \= array_type(_, _, _, _),
        Type \= pointer_type(array_type(_, _, _, _)))
   -> (write('('), unparse(UI, Type), write(')'))
@@ -451,6 +451,12 @@ unparse1(UI, dot_exp(E1, E2, _, _, _)) :- !,
   unparse_par(UI, E1), write('.'), unparse_par(UI, E2).
 unparse1(UI, arrow_exp(E1, E2, _, _, _)) :- !,
   unparse_par(UI, E1), write('->'), unparse_par(UI, E2).
+unparse1(UI, new_exp(null, E1, null, _, _, _)) :- !,
+  write('new '), unparse_par(UI, E1).
+unparse1(UI, delete_exp(E1, delete_exp_annotation(is_array,_,_), _, _)) :- !,
+  write('delete[] '), unparse_par(UI, E1).
+unparse1(UI, delete_exp(E1, delete_exp_annotation(is_array_,_,_), _, _)) :- !,
+  write('delete '), unparse_par(UI, E1).
 unparse1(_UI, null_expression(_, _, _)) :- !, write('/*NULL*/').
 unparse1(_UI, null_statement(_, _, _)) :- !, write(';').
 
@@ -504,8 +510,17 @@ unparse1(UI, source_file(E1, _An, _Ai, file_info(Name, _, _))) :- !,
   write('/* '), write(Name), writeln(': */'), unparse(UI, E1).
 unparse1(UI, project(E1, _, _, _)) :- !, unparse(UI, E1).
 
-unparse1(UI, function_declaration(Params, _Null, Definition,
-             function_declaration_annotation(Type, Name, Mod, _Special, _), _, _)) :- !,
+unparse1(UI, function_type(Type, _NumParams, _ParamTypes)) :- !, unparse(UI, Type).
+unparse1(_UI, function_parameter_list(_, _, _)) :- !.
+unparse1(UI, function_parameter_list(List, _, _, _)) :- !, unparse(UI, List).
+
+unparse1(UI, FunctionDecl) :-
+  (  FunctionDecl = function_declaration(Params, Null, Definition,
+                      function_declaration_annotation(Type, Name, Mod, Special, _), _, _)
+  ;  FunctionDecl = template_instantiation_function_decl(Params, Null, Definition,
+                      function_declaration_annotation(Type, Name, Mod, Special, _), _, _),
+     write('/*template*/')
+  ), !,
   unparse_modifier(Mod),
   unparse(UI, Type), write(' '), write(Name),
   write('('),
@@ -522,11 +537,6 @@ unparse1(UI, function_declaration(Params, _Null, Definition,
 	  unparse(UI, Bb)
       )
   ).
-
-
-unparse1(UI, function_type(Type, _NumParams, _ParamTypes)) :- !, unparse(UI, Type).
-unparse1(_UI, function_parameter_list(_, _, _)) :- !.
-unparse1(UI, function_parameter_list(List, _, _, _)) :- !, unparse(UI, List).
 
 % TYPES
 unparse1(UI, T) :-
@@ -547,6 +557,7 @@ unparse1(UI, modifier_type(Type, type_modifier(_A, UPC, ConstVolatile, Elaborate
 unparse1(_UI, type_void) :- !, write('void').
 unparse1(_UI, type_int) :- !, write('int').
 unparse1(_UI, type_char) :- !, write('char').
+unparse1(_UI, type_wchar) :- !, write('wchar').
 unparse1(_UI, type_signed_char) :- !, write('char').
 unparse1(_UI, type_short) :- !, write('short').
 unparse1(_UI, type_long) :- !, write('long').
@@ -592,6 +603,15 @@ unparse1(UI, typedef_declaration(Definition, typedef_annotation(
   ->  unparse_type(UI, Name, Type)
   ;   unparse(UI, Definition), write(' '), write(Name)
   ).
+
+unparse1(_UI, namespace_declaration_statement(_Definition,
+         namespace_declaration_statement_annotation(
+            Name, _Unnamed, _PPI), _Ai, _Fi)) :- !,
+  write('namespace '), 
+  %FIXME unparse(UI, Definition), write(' '),
+  write(Name).
+
+unparse1(_UI, template_declaration(_Annot, _Ai, _Fi)) :- !.
 
 %unparse1(UI, typedef_declaration(_, typedef_annotation(
 %          Name,
@@ -655,6 +675,8 @@ unparse1(_UI, variable_declaration([], _, _, _)) :- !.
 unparse1(UI, aggregate_initializer(Es, _, _, _)) :- !,
   write('{'), unparse(UI, Es), write(' }').
 unparse1(UI, assign_initializer(E, _, _, _)) :- !,
+  write(''), unparse(UI, E).
+unparse1(UI, constructor_initializer(E, _, _, _)) :- !,
   write(''), unparse(UI, E).
 
 unparse1(_UI, pragma_declaration(Pragma, _, _, _)) :-

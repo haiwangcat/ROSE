@@ -127,12 +127,14 @@ goto_function(P, Function, P1) :-
   (  % Prefer to find a real definition first
      find_function(P, Function, P1),
      unzip(P1, Function, _),
-     Function = function_declaration(_Params, _Null, Def, _A1, _Ai1, _F1),
+     ( Function = function_declaration(Params, Null, Def, A1, Ai1, F1)
+     ; Function = template_instantiation_function_decl(Params, Null, Def, A1, Ai1, F1) ),
      Def \= null
   ; 
      find_function(P, Function, P1),
      unzip(P1, Function, _),
-     Function = function_declaration(_, _, null, _, _, _)
+     ( Function = function_declaration(_, _, null, _, _, _)
+     ; Function = template_instantiation_function_decl(_, _, null, _, _, _) )
   ), !.
 
 find_function(P, FunctionTemplate, P3) :-
@@ -147,6 +149,12 @@ find_function(P, FunctionTemplate, P4) :-
   down(P1, 1, P2),
   down(P2, 1, P3),
   find_function1(P3, FunctionTemplate, P4).
+
+find_function(P, FunctionTemplate, P3) :-
+  unzip(P, namespace_declaration_statement(_Definition, _A1, _Ai, _F1), _), !,
+  down(P, 1, P1),
+  down(P1, 1, P2),
+  find_function1(P2, FunctionTemplate, P3).
 
 find_function(zipper(FuncTempl, Ctx), FuncTempl, zipper(FuncTempl, Ctx)).
 

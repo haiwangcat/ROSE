@@ -66,7 +66,8 @@ public:
   ///return the string
   std::string getName() {
     char* name;
-    PL_get_atom_chars(term, &name);
+    int success=PL_get_atom_chars(term, &name);
+    if(!success) { /* do someting reasonable */ }
     return std::string(name);
   }
 };
