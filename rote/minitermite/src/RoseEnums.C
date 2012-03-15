@@ -308,6 +308,29 @@ static const char* e_DirectiveType[] = {
 };
 
 
+static const char* e_template_argument[] = {
+  "argument_undefined", //          = 0, /*!< undefined (error) */
+  "type_argument", //               = 1, /*!< type parameter */
+  "nontype_argument", //            = 2, /*!< nontype parameter */
+  "template_template_argument", //  = 3  /*!< template template parameter */
+};
+static const char* e_template_instantiation[] = {
+  "e_unknown", //  = 0, /*!< error value */
+  "e_default", //  = 1, /*!< default value */
+  "e_none", //     = 2, /*!< no template instantiation */
+  "e_used", //     = 3, /*!< instantiate only templates that are used */
+  "e_all", //      = 4, /*!< instantiate all possible templates */
+  "e_local", //    = 5, /*!< instantiate only used templates and instantiate them as local entities */
+  "e_last", //         /*!< last value (used for error checking) */
+};
+static const char* e_template_parameter[] = {
+  "parameter_undefined", // = 0, /*!< undefined (error) */
+  "type_parameter", //      = 1, /*!< type parameter */
+  "nontype_parameter", //   = 2, /*!< nontype parameter */
+  "template_parameter", //  = 3  /*!< template parameter */
+};
+
+
 /////////////////////////////////////////////////////////////////////////
 // Statement.code
 /////////////////////////////////////////////////////////////////////////
@@ -351,36 +374,40 @@ static const char* e_subprogram_kind[] = {
 //#include <iostream>
 //using namespace std;
 
-#define INIT(SRC,MAP,VEC) \
-  for (i = 0; i < sizeof(SRC)/sizeof(char*); ++i) { \
-    MAP[SRC[i]] = i; \
-    VEC.push_back(SRC[i]); \
+#define INIT(NAME) \
+  for (i = 0; i < sizeof(e_ ## NAME)/sizeof(char*); ++i) { \
+    NAME[e_ ## NAME[i]] = i; \
+    NAME ## s.push_back(e_ ## NAME[i]); \
   }
 
 
 RoseEnums::RoseEnums() {
   size_t i;
-  INIT(e_function_modifier, function_modifier, function_modifiers)
-  INIT(e_special_function_modifier, special_function_modifier, special_function_modifiers)
-  INIT(e_type_modifier, type_modifier, type_modifiers)
-  INIT(e_elaborated_type_modifier, elaborated_type_modifier, elaborated_type_modifiers)
-  INIT(e_declaration_modifier, declaration_modifier, declaration_modifiers)
-  INIT(e_access_modifier, access_modifier, access_modifiers)
-  INIT(e_upc_access_modifier, upc_access_modifier, upc_access_modifiers)
-  INIT(e_storage_modifier, storage_modifier, storage_modifiers)
-  INIT(e_cv_modifier, cv_modifier, cv_modifiers)
+  INIT(function_modifier)
+  INIT(special_function_modifier)
+  INIT(type_modifier)
+  INIT(elaborated_type_modifier)
+  INIT(declaration_modifier)
+  INIT(access_modifier)
+  INIT(upc_access_modifier)
+  INIT(storage_modifier)
+  INIT(cv_modifier)
 
-  INIT(e_class_type, class_type, class_types)
-  INIT(e_throw_kind, throw_kind, throw_kinds)
-  INIT(e_cast_type, cast_type, cast_types)
+  INIT(class_type)
+  INIT(throw_kind)
+  INIT(cast_type)
 
-  INIT(e_static_flag, static_flag, static_flags)
-  INIT(e_ellipses_flag, ellipses_flag, ellipses_flags)
+  INIT(static_flag)
+  INIT(ellipses_flag)
 
-  INIT(e_RelativePositionType, RelativePositionType, RelativePositionTypes)
-  INIT(e_DirectiveType, DirectiveType, DirectiveTypes)
-  INIT(e_attribute_spec, attribute_spec, attribute_specs)
-  INIT(e_attribute_spec, attribute_spec, attribute_specs)
-  INIT(e_subprogram_kind, subprogram_kind, subprogram_kinds)
+  INIT(RelativePositionType)
+  INIT(DirectiveType)
+  INIT(attribute_spec)
+  INIT(attribute_spec)
+  INIT(subprogram_kind)
+
+  INIT(template_argument)
+  INIT(template_instantiation)
+  INIT(template_parameter)
 }
 

@@ -43,7 +43,7 @@ private:
   std::map<std::string,SgInitializedName*> initializedNameMap;
   std::map<SgInitializedName*, SgVariableSymbol*> variableSymbolMap;
   std::multimap<std::string,SgMemberFunctionDeclaration*> memberFunctionDeclarationMap;
-  //std::map<std::pair<SgType*, std::string>, SgClassDefinition*> classMap;
+  std::map<std::string,SgTemplateDeclaration*> templateDeclMap;
 
   /* arity specific node generation*/
   SgNode* leafToRose(PrologCompTerm*, std::string);
@@ -179,6 +179,14 @@ private:
   SgImplicitStatement* createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t);
   SgAttributeSpecificationStatement* createAttributeSpecificationStatement(Sg_File_Info*, PrologCompTerm*);
   SgProcedureHeaderStatement* createProcedureHeaderStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
+  SgFunctionDeclaration* createTemplateInstantiationFunctionDecl(Sg_File_Info*, SgNode*, PrologCompTerm*);
+  SgTemplateArgument* createTemplateArgument(PrologCompTerm*);
+  SgTemplateParameter* createTemplateParameter(Sg_File_Info*, PrologCompTerm*);
+  SgTemplateDeclaration* createTemplateDeclaration(Sg_File_Info*, PrologCompTerm*);
+  SgTypedefSeq* createTypedefSeq(Sg_File_Info*, PrologCompTerm*);
+
+
+
   void register_func_decl(SgName, SgFunctionDeclaration*, PrologTerm*);
 
   char unescape_char(std::string s);
@@ -260,5 +268,11 @@ public:
     return *decl;
   }
 
+  SgTemplateDeclaration* lookupTemplateDecl(std::string name)
+  {
+    if (templateDeclMap.find(name) == templateDeclMap.end())
+      return NULL;
+    else return templateDeclMap[name];
+  }
 };
 #endif

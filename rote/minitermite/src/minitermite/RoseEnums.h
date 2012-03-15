@@ -15,43 +15,32 @@ class RoseEnums {
   RoseEnums();
 
   // ROSE -> TERMITE
-  std::vector<std::string> function_modifiers;
-  std::vector<std::string> special_function_modifiers;
-  std::vector<std::string> type_modifiers;
-  std::vector<std::string> elaborated_type_modifiers;
-  std::vector<std::string> declaration_modifiers;
-  std::vector<std::string> storage_modifiers;
-  std::vector<std::string> access_modifiers;
-  std::vector<std::string> upc_access_modifiers;
-  std::vector<std::string> cv_modifiers;
-  std::vector<std::string> class_types;
-  std::vector<std::string> throw_kinds;
-  std::vector<std::string> cast_types;
-  std::vector<std::string> static_flags;
-  std::vector<std::string> ellipses_flags;
-  std::vector<std::string> RelativePositionTypes;
-  std::vector<std::string> DirectiveTypes;
-  std::vector<std::string> attribute_specs;
-  std::vector<std::string> subprogram_kinds;
-  // TERMITE -> ROSE
-  std::map<std::string, int> function_modifier;
-  std::map<std::string, int> special_function_modifier;
-  std::map<std::string, int> type_modifier;
-  std::map<std::string, int> elaborated_type_modifier;
-  std::map<std::string, int> declaration_modifier;
-  std::map<std::string, int> storage_modifier;
-  std::map<std::string, int> access_modifier;
-  std::map<std::string, int> upc_access_modifier;
-  std::map<std::string, int> cv_modifier;
-  std::map<std::string, int> class_type;
-  std::map<std::string, int> throw_kind;
-  std::map<std::string, int> cast_type;
-  std::map<std::string, int> static_flag;
-  std::map<std::string, int> ellipses_flag;
-  std::map<std::string, int> RelativePositionType;
-  std::map<std::string, int> DirectiveType;
-  std::map<std::string, int> attribute_spec;
-  std::map<std::string, int> subprogram_kind;
+
+#define ROSEENUMS_DECLARE(NAME) \
+  std::vector<std::string>   NAME ## s ; /* ROSE -> TERMITE */ \
+  std::map<std::string, int> NAME;       /* TERMITE -> ROSE */
+
+  ROSEENUMS_DECLARE(function_modifier)
+  ROSEENUMS_DECLARE(special_function_modifier)
+  ROSEENUMS_DECLARE(type_modifier)
+  ROSEENUMS_DECLARE(elaborated_type_modifier)
+  ROSEENUMS_DECLARE(declaration_modifier)
+  ROSEENUMS_DECLARE(storage_modifier)
+  ROSEENUMS_DECLARE(access_modifier)
+  ROSEENUMS_DECLARE(upc_access_modifier)
+  ROSEENUMS_DECLARE(cv_modifier)
+  ROSEENUMS_DECLARE(class_type)
+  ROSEENUMS_DECLARE(throw_kind)
+  ROSEENUMS_DECLARE(cast_type)
+  ROSEENUMS_DECLARE(static_flag)
+  ROSEENUMS_DECLARE(ellipses_flag)
+  ROSEENUMS_DECLARE(RelativePositionType)
+  ROSEENUMS_DECLARE(DirectiveType)
+  ROSEENUMS_DECLARE(attribute_spec)
+  ROSEENUMS_DECLARE(subprogram_kind)
+  ROSEENUMS_DECLARE(template_instantiation)
+  ROSEENUMS_DECLARE(template_argument)
+  ROSEENUMS_DECLARE(template_parameter)
 };
 
 #endif

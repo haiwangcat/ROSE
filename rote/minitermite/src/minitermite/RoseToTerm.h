@@ -69,6 +69,11 @@ private:
   PrologCompTerm* getFunctionRefExpSpecific(SgFunctionRefExp*);
   PrologCompTerm* getFunctionCallExpSpecific(SgFunctionCallExp*);
   PrologCompTerm* getMemberFunctionDeclarationSpecific(SgMemberFunctionDeclaration*);
+  PrologCompTerm* getTemplateInstantiationFunctionDeclSpecific(SgTemplateInstantiationFunctionDecl*);
+  PrologCompTerm* getTemplateArgumentSpecific(SgTemplateArgument*);
+  PrologCompTerm* getTemplateDeclarationSpecific(SgTemplateDeclaration*);
+  PrologCompTerm* getTemplateParameterSpecific(SgTemplateParameter *);
+
   PrologTerm* getTypePtrListSpecific(SgTypePtrList&);
   PrologCompTerm* getMemberFunctionTypeSpecific(SgType*);
   PrologCompTerm* getClassScopeName(SgClassDefinition*);
@@ -81,10 +86,23 @@ private:
   PrologCompTerm* getTypedefDeclarationSpecific(SgTypedefDeclaration*);
   PrologCompTerm* getConstructorInitializerSpecific(SgConstructorInitializer*);
   PrologCompTerm* getNewExpSpecific(SgNewExp*);
+
   PrologCompTerm* getPragmaSpecific(SgPragma*);
   PrologCompTerm* getImplicitStatementSpecific(SgImplicitStatement*);
   PrologCompTerm* getAttributeSpecificationStatementSpecific(SgAttributeSpecificationStatement*);
   PrologCompTerm* getProcedureHeaderStatementSpecific(SgProcedureHeaderStatement*);
+  PrologCompTerm* getTypedefSeqSpecific(SgTypedefSeq *);
+		
+  template <class A> PrologList* traverseList(const A& list) {
+    PrologList* alist = new PrologList();		
+    if (&(list) != NULL) {		
+      for (int i = 0; i<list.size(); ++i) {
+	alist->addElement(traverseSingleNode(list[i]));	
+      }						
+    }
+    return alist;
+  }
+
 		
 };
 

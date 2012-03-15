@@ -50,6 +50,14 @@ RoseToTerm::getSpecific(SgNode* astNode) {
     return getMemberFunctionDeclarationSpecific(n);
   } else if (SgProcedureHeaderStatement* n = dynamic_cast<SgProcedureHeaderStatement*>(astNode)) {
     return getProcedureHeaderStatementSpecific(n);
+  } else if (SgTemplateInstantiationFunctionDecl* n = isSgTemplateInstantiationFunctionDecl(astNode)){
+    return getTemplateInstantiationFunctionDeclSpecific(n);
+  } else if (SgTemplateDeclaration* n = isSgTemplateDeclaration(astNode)) {
+    return getTemplateDeclarationSpecific(n);
+  } else if (SgTemplateParameter* n = isSgTemplateParameter(astNode)) {
+    return getTemplateParameterSpecific(n);
+  } else if (SgTypedefSeq* n = isSgTypedefSeq(astNode)) {
+    return getTypedefSeqSpecific(n);
   } else if (SgFunctionDeclaration* n = dynamic_cast<SgFunctionDeclaration*>(astNode)) {
     return getFunctionDeclarationSpecific(n);
   } else if (SgInitializedName* n = dynamic_cast<SgInitializedName*>(astNode)) {
@@ -84,6 +92,8 @@ RoseToTerm::getSpecific(SgNode* astNode) {
     return getVarArgSpecific(n);
   } else if (SgExpression* n = isSgVarArgStartOneOperandOp(astNode)) {
     return getVarArgSpecific(n);
+  } else if (SgTemplateArgument* n = isSgTemplateArgument(astNode)) {
+    return getTemplateArgumentSpecific(n);
   } else if (SgFunctionRefExp* n = isSgFunctionRefExp(astNode)) {
     return getFunctionRefExpSpecific(n);
   } else if (SgFunctionCallExp* n = isSgFunctionCallExp(astNode)) {
@@ -239,6 +249,69 @@ RoseToTerm::getProcedureHeaderStatementSpecific(SgProcedureHeaderStatement* decl
      //new PrologAtom("null"), decl->get_result_name(),
      PPI(decl));
 }
+
+#define templateDeclarationName(decl) \
+  new PrologAtom(  decl->get_templateDeclaration() ? \
+		   decl->get_templateDeclaration()->get_name().getString() : \
+                   "")
+
+PrologCompTerm*  
+RoseToTerm::getTemplateInstantiationFunctionDeclSpecific(SgTemplateInstantiationFunctionDecl* decl) {
+  return new PrologCompTerm
+    ("template_instantiation_function_decl_annotation", /*6,*/
+     /* add type and name*/
+     getTypeSpecific(decl->get_type()),
+     new PrologAtom(decl->get_name().getString()),
+     getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
+     getSpecialFunctionModifierSpecific(&(decl->get_specialFunctionModifier())),
+     traverseList(decl->get_templateArguments()),
+     templateDeclarationName(decl),
+     PPI(decl));
+
+}
+
+
+PrologCompTerm*  
+RoseToTerm::getTemplateArgumentSpecific(SgTemplateArgument* arg) {
+  return new PrologCompTerm
+    ("template_argument_annotation", 
+     getEnum(arg->get_argumentType(), re.template_arguments),
+     makeFlag(arg->get_isArrayBoundUnknownType(), "isArrayBoundUnknownType"),
+     getTypeSpecific(arg->get_type()),
+     traverseSingleNode(arg->get_expression()),     
+     templateDeclarationName(arg),
+     makeFlag(arg->get_explicitlySpecified(), "explicitlySpecified"));
+}
+
+PrologCompTerm*  
+RoseToTerm::getTemplateDeclarationSpecific(SgTemplateDeclaration* decl) {
+  return new PrologCompTerm
+    ("template_declaration_annotation", 
+     new PrologAtom(decl->get_name().getString()),
+     new PrologAtom(decl->get_string().getString()),
+     getEnum(decl->get_template_kind(), re.template_instantiations),
+     traverseList(decl->get_templateParameters()));
+}
+
+PrologCompTerm*  
+RoseToTerm::getTemplateParameterSpecific(SgTemplateParameter *p) {
+  return new PrologCompTerm
+    ("template_parameter_annotation", 
+     getEnum(p->get_parameterType(), re.template_parameters),
+     getTypeSpecific(p->get_type()),
+     getTypeSpecific(p->get_defaultTypeParameter()),
+     traverseSingleNode(p->get_expression()),
+     traverseSingleNode(p->get_defaultExpressionParameter()),
+     new PrologAtom(p->get_templateDeclaration()->get_name().getString()),
+     new PrologAtom(p->get_defaultTemplateDeclarationParameter()->get_name().getString()));
+}
+
+PrologCompTerm*  
+RoseToTerm::getTypedefSeqSpecific(SgTypedefSeq *p) {
+  return new PrologCompTerm("typedef_seq_annotation", 
+			    traverseList(p->get_typedefs()));
+}
+
 
 /**
  * class: SgFunctionDeclaration
