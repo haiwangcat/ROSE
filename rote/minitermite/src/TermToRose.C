@@ -106,10 +106,10 @@ static inline string makeInameID(PrologCompTerm* annot) {
 #endif
 
 #define ARITY_ASSERT(t, arity) do {                                     \
-    if ((t)->getArity() != (arity-AR)) {                                \
+    if ((t)->getArity() != (arity)) {					\
       cerr << "** ERROR: " << (t)->getArity() << "-ary Term\n  >>"      \
            << (t)->getRepresentation() << "<<\n"                        \
-           << "does not have the expected arity of " << (arity-AR)      \
+           << "does not have the expected arity of " << (arity)		\
            << endl;                                                     \
       ROSE_ASSERT(false && "Arity Error");                              \
     }                                                                   \
@@ -166,7 +166,7 @@ template< class TermType >
 void expect_term(PrologTerm* n, TermType **r,
                  std::string name, int arity) {
   expect_term(n, r, name);
-  ARITY_ASSERT(*r, arity+AR);
+  ARITY_ASSERT(*r, arity);
 }
 
 #define EXPECT_NODE(type, spec, base)           \
@@ -392,7 +392,7 @@ SgNode*
 TermToRose::unaryToRose(PrologCompTerm* t,std::string tname) {
   debug("unparsing unary"); debug(t->getRepresentation());
   /* assert correct arity of term*/
-  ARITY_ASSERT(t, 4);
+  ARITY_ASSERT(t, 4-AR);
 
   /*node to be created*/
   SgNode* s = NULL;
@@ -470,7 +470,7 @@ SgNode*
 TermToRose::binaryToRose(PrologCompTerm* t,std::string tname) {
   debug("unparsing binary"); debug(t->getRepresentation());
   /* assert correct arity of term*/
-  ARITY_ASSERT(t, 5);
+  ARITY_ASSERT(t, 5-AR);
   /*create file info and check it*/
   Sg_File_Info* fi = createFileInfo(t->at(t->getArity()-1));
   testFileInfo(fi);
@@ -530,7 +530,7 @@ SgNode*
 TermToRose::ternaryToRose(PrologCompTerm* t,std::string tname) {
   debug("unparsing ternary");
   // assert correct arity of term
-  ARITY_ASSERT(t, 6);
+  ARITY_ASSERT(t, 6-AR);
 
   // node to be created 
   SgNode* s = NULL;
@@ -599,7 +599,7 @@ SgNode*
 TermToRose::quaternaryToRose(PrologCompTerm* t,std::string tname) {
   debug("unparsing quaternary");
   /* assert correct arity of term*/
-  ARITY_ASSERT(t, 7);
+  ARITY_ASSERT(t, 7-AR);
   /*create file info and check it*/
   Sg_File_Info* fi = createFileInfo(t->at(t->getArity()-1));
   testFileInfo(fi);
@@ -658,7 +658,7 @@ TermToRose::quaternaryToRose(PrologCompTerm* t,std::string tname) {
 SgNode*
 TermToRose::listToRose(PrologCompTerm* t,std::string tname) {
   debug("unparsing list node");
-  ARITY_ASSERT(t, 4);
+  ARITY_ASSERT(t, 4-AR);
   EXPECT_TERM(PrologList*, l, t->at(0));
   /*create file info and check it*/
   Sg_File_Info* fi = createFileInfo(t->at(t->getArity()-1));
@@ -739,7 +739,7 @@ SgNode*
 TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
   debug("unparsing leaf");
   /* assert correct arity of term*/
-  ARITY_ASSERT(t, 3);
+  ARITY_ASSERT(t, 3-AR);
   /* create file info and check it*/
   Sg_File_Info* fi = createFileInfo(t->at(t->getArity()-1));
   testFileInfo(fi);
@@ -1237,7 +1237,7 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
     PrologCompTerm* annot = retrieveAnnotation(t);
     TERM_ASSERT(t, annot != NULL);
     /* get value and name, find the declaration*/
-    ARITY_ASSERT(annot, 4+AR);
+    ARITY_ASSERT(annot, 5-AR);
     int value = toInt(annot->at(0));
     SgName v_name = *toStringP(annot->at(1));
 
@@ -1361,7 +1361,7 @@ TermToRose::createUnaryOp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
   //cerr << t->getRepresentation() << endl << succ << endl;
   PrologCompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
-  ARITY_ASSERT(annot, 5+AR);
+  ARITY_ASSERT(annot, 5);
   // GB (2008-12-04): A unary op's mode is now represented by an atom
   // 'prefix' or 'postfix', not by a numerical constant.
   // PrologInt* mode = isPrologInt(annot->at(0));
@@ -2192,7 +2192,7 @@ TermToRose::createProcedureHeaderStatement(Sg_File_Info* fi, SgNode* par_list_u,
 PrologCompTerm*
 TermToRose::retrieveAnnotation(PrologCompTerm* t) {
   /* the position of the annotation depends on the arity of the term*/
-  EXPECT_TERM(PrologCompTerm*, a, t->at(t->getArity()-3));
+  EXPECT_TERM(PrologCompTerm*, a, t->at(t->getArity()-(3-AR)));
   return a;
 }
 
@@ -3202,7 +3202,7 @@ TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
     if (ct->getName() == "class_declaration") {
       ARITY_ASSERT(ct, 4);
       PrologCompTerm* annot = isPrologCompTerm(ct->at(1));
-      ARITY_ASSERT(annot, 3+AR);
+      ARITY_ASSERT(annot, 3);
       id = annot->at(0)->getRepresentation();
     }
     else if (ct->getName() == "enum_declaration")

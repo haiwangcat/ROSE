@@ -99,9 +99,9 @@ AC_SUBST(BOOST_COMPILER_STRING)
 
 
 AC_ARG_WITH([analysis-results],
-   [AS_HELP_STRING([--with-analysis-results],
+   [AS_HELP_STRING([--with-analysis-results=yes|no],
      [generate extra 'analysis_result()' terms for every compound term @<:@default=no@:>@])],
-   [with_analysis_results=yes],
+   [with_analysis_results="$withval"],
    [with_analysis_results=no])
 AS_IF([test "x$with_analysis_results" = xyes],
       [AC_DEFINE(HAVE_ANALYSIS_RESULTS, 1, [generate extra analysis_result() terms])],
@@ -198,6 +198,7 @@ fi
 echo
 echo "------------------------------------------------------------------------"
 echo "  [minitermite] configuration summary:"
-echo "    ROSE .................." $ROSEDIR
-echo "    SWI-Prolog ............" $SWI_STATUS
+echo "    ROSE ............................." $ROSEDIR
+echo "    SWI-Prolog ......................." $SWI_STATUS
+echo "    generate analysis result terms ..." $with_analysis_results
 echo "------------------------------------------------------------------------"
