@@ -74,9 +74,11 @@ int main(int argc, char**argv) {
     ("help", "produce help message")
     ("version", "display the version")
     ("level,l", po::value<int>(), "display terms only up to level N")
+    ("input-file", po::value< vector<string> >(), "input file")
     ;
+
   po::positional_options_description p;
-  p.add("input-file", -1);
+  p.add("input-file", 1);
 
   po::variables_map vm;
   po::store(po::command_line_parser(argc, argv).
