@@ -1242,7 +1242,7 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
     PrologCompTerm* annot = retrieveAnnotation(t);
     TERM_ASSERT(t, annot != NULL);
     /* get value and name, find the declaration*/
-    ARITY_ASSERT(annot, 5-AR);
+    ARITY_ASSERT(annot, 4);
     int value = toInt(annot->at(0));
     SgName v_name = *toStringP(annot->at(1));
 
