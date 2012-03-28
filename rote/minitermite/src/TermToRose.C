@@ -203,13 +203,18 @@ bool TermToRose::getFlag(PrologTerm *t) {
 void TermToRose::unparseFile(SgSourceFile& f, std::string prefix, std::string suffix,
                                SgUnparse_Info* ui)
 {
-  std::string fn = regex_replace(
-      regex_replace(f.get_file_info()->get_filenameString(),
-                    regex("(\\..+?)$"),
-                    suffix+string("\\1")),
-      regex("^.*/"), prefix+string("/")).c_str();
-  ofstream ofile(fn.c_str());
-  cerr << "Unparsing " << fn << endl;
+  string fn = f.get_file_info()->get_filenameString();
+
+  int prefix_end = fn.rfind('/');
+  if (prefix_end == fn.length()) prefix_end = 0;
+  else prefix_end++;
+  int suffix_start = fn.rfind('.');
+
+  stringstream name;
+  name << prefix << '/' << fn.substr(prefix_end, suffix_start-prefix_end)
+       << suffix << fn.substr(suffix_start);
+  ofstream ofile(name.str().c_str());
+  cerr << "Unparsing " << name.str() << endl;
   ofile << globalUnparseToString(f.get_globalScope(), ui);
 }
 
@@ -3200,9 +3205,9 @@ TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
     debug("...with declaration");
     string id;
     if (ct->getName() == "class_declaration") {
-      ARITY_ASSERT(ct, 4);
+      ARITY_ASSERT(ct, 4-AR);
       PrologCompTerm* annot = isPrologCompTerm(ct->at(1));
-      ARITY_ASSERT(annot, 3);
+      ARITY_ASSERT(annot, 4);
       id = annot->at(0)->getRepresentation();
     }
     else if (ct->getName() == "enum_declaration")
