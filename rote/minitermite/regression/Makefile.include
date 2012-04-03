@@ -78,6 +78,7 @@ TERMITE_TESTS = \
     regression/base/while_call1.c \
     regression/fortran/trivial.f90 \
     regression/fortran/simple_ccsd_t2.f \
+    regression/fortran/complex.f03 \
     regression/mrtc/failure/des.c \
     regression/mrtc/success/adpcm.c \
     regression/mrtc/success/bs.c \
@@ -132,16 +133,19 @@ noinst_SCRIPTS = \
   regression/c_driver.sh \
   regression/cxx_driver.sh \
   regression/f90_driver.sh \
+  regression/f03_driver.sh \
   regression/f77_driver.sh
 
-TEST_EXTENSIONS = .cxx .c .f90 .f
-C_LOG_COMPILER = bash $(builddir)/regression/c_driver.sh
+TEST_EXTENSIONS = .cxx .c .f90 .f03 .f
+C_LOG_COMPILER = sh $(builddir)/regression/c_driver.sh
 AM_C_LOG_FLAGS = 
-CXX_LOG_COMPILER = bash $(builddir)/regression/cxx_driver.sh
+CXX_LOG_COMPILER = sh $(builddir)/regression/cxx_driver.sh
 AM_CXX_LOG_FLAGS =
-F90_LOG_COMPILER = bash $(builddir)/regression/f90_driver.sh
+F90_LOG_COMPILER = sh $(builddir)/regression/f90_driver.sh
 AM_F90_LOG_FLAGS = 
-F_LOG_COMPILER = bash $(builddir)/regression/f77_driver.sh
+F03_LOG_COMPILER = sh $(builddir)/regression/f03_driver.sh
+AM_F03_LOG_FLAGS = 
+F_LOG_COMPILER = sh $(builddir)/regression/f77_driver.sh
 AM_F_LOG_FLAGS = 
 
 CLEANFILES += $(noinst_SCRIPTS)
@@ -197,6 +201,23 @@ regression/f90_driver.sh: Makefile
 	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.f90 || exit 2' >> $@
 	@echo '../$(builddir)/src/src2term -I../`dirname $$1` $${NAME}-2.f90 -o $${NAME}-3.term || exit 3' >> $@
 	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.f90 || exit 4' >>$@
+if WITH_SWI_PROLOG
+	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
+endif
+
+regression/f03_driver.sh: Makefile
+	$(AM_V_GEN)
+	@mkdir -p $(builddir)/regression
+	@echo '#!/bin/bash' > $@
+	@echo 'cd $(builddir)/regression' >> $@
+	@echo 'echo "TERMITE: performing a translation circle of" ../$$1' >> $@
+	@echo 'set -x' >> $@
+	@echo 'NAME=`basename ../$$1 .f03`' >> $@
+	@echo '../$(builddir)/src/src2term -I../`dirname $$1` ../$$1 -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.f03 || exit 2' >> $@
+	@echo '../$(builddir)/src/src2term -I../`dirname $$1` $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.f03 || exit 4' >>$@
 if WITH_SWI_PROLOG
 	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
 	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@

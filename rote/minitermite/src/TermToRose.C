@@ -1065,6 +1065,7 @@ TermToRose::createType(PrologTerm* t) {
       type = NULL;
     } else
     if (tname=="type_bool") type = new SgTypeBool();
+    else if (tname=="type_complex") type = new SgTypeComplex();
     else if (tname=="type_char") type = new SgTypeChar();
     else if (tname=="type_default") type = new SgTypeDefault();
     else if (tname=="type_double") type = new SgTypeDouble();

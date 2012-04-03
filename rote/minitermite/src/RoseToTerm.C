@@ -584,6 +584,7 @@ RoseToTerm::getTypeSpecific(SgType* stype) {
     t = getMemberFunctionTypeSpecific(stype);
   } else if ( /* simple types */
 	     cn == "SgTypeBool"  ||
+	     cn == "SgTypeComplex"  ||
 	     cn == "SgTypeChar"  ||
 	     cn == "SgTypeDefault"  ||
 	     cn == "SgTypeDouble"  ||
