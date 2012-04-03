@@ -60,19 +60,19 @@ int main(int argc, char** argv) {
   for (int i = 1; i < argc; ++i)
     argv1.push_back(argv[i]);
   int argc1 = argc+2;
-
-  // Process our own options
+// Process our own options
   const char* outfile = NULL;
   int dot_flag = 0;
   int pdf_flag = 0;
   int version_flag = 0;
   int help_flag = 0;
+  int rose_help_flag = 0;
 
   static struct option long_options[] = {
     /* These options set a flag. */
     {"version", no_argument, &version_flag, 1},
     {"help", no_argument, &help_flag, 1},
-    {"rose-help", no_argument, &help_flag, 1},
+    {"rose-help", no_argument, &rose_help_flag, 1},
     {"dot", no_argument, &dot_flag, 1},
     {"pdf", no_argument, &pdf_flag, 1},
     /* These don't */
@@ -112,6 +112,12 @@ int main(int argc, char** argv) {
   }
   if (help_flag) { 
     usage(argv[0]); 
+    return 0;
+  }
+  if (rose_help_flag) { 
+    argc1 = 2;
+    argv1[1] = strdup("--help");
+    frontend(argc1,&argv1[0]);
     return 0;
   }
   if (version_flag) { 
