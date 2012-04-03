@@ -808,6 +808,8 @@ TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
     s = createTemplateDeclaration(fi, t);
   } else if(tname == "typedef_seq") {
     s = createTypedefSeq(fi, t);
+  } else if (tname == "contains_statement") {
+    s = new SgContainsStatement(fi);
   } else if (tname == "null_statement") {
     s = new SgNullStatement(fi);
   } else if (tname == "null_expression") {
@@ -1056,6 +1058,8 @@ TermToRose::createType(PrologTerm* t) {
       type = createModifierType(t);
     } else if (tname == "typedef_type") {
       type = createTypedefType(t);
+    } else if (tname == "type_complex") {
+      type = new SgTypeComplex(createType(c->at(0)));
     } else TERM_ASSERT(t, false && "Unknown type enountered");
   }
   if (PrologAtom* a = isPrologAtom(t)) {
@@ -1065,7 +1069,6 @@ TermToRose::createType(PrologTerm* t) {
       type = NULL;
     } else
     if (tname=="type_bool") type = new SgTypeBool();
-    else if (tname=="type_complex") type = new SgTypeComplex();
     else if (tname=="type_char") type = new SgTypeChar();
     else if (tname=="type_default") type = new SgTypeDefault();
     else if (tname=="type_double") type = new SgTypeDouble();
@@ -1576,7 +1579,7 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,PrologCompTerm*) {
 
   if (isFortran) {
     file->set_outputLanguage(SgFile::e_Fortran_output_language);
-    file->set_Fortran_only(true); // FIMXE
+    file->set_Fortran_only(true);
   }
 
   SgGlobal* glob = isSgGlobal(child1);
@@ -2608,6 +2611,12 @@ TermToRose::createIfStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNod
   /* create statement*/
   if_stmt = new SgIfStmt(fi,test_stmt,true_branch,false_branch);
   TERM_ASSERT(t, if_stmt != NULL);
+
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  if_stmt->set_has_end_statement(    getFlag(annot->at(0)) );
+  if_stmt->set_use_then_keyword(     getFlag(annot->at(1)) );
+  if_stmt->set_is_else_if_statement( getFlag(annot->at(2)) );
+
   return if_stmt;
 }
 
@@ -4187,3 +4196,5 @@ TermToRose::createAttributeSpecificationStatement(Sg_File_Info* fi, PrologCompTe
   ass->set_bind_list(      isSgExprListExp(toRose(annot->at(2))) );
   return ass;
 }
+
+

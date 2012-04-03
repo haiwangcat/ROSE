@@ -31,7 +31,7 @@ private:
   PrologCompTerm* getInitializedNameSpecific(SgInitializedName*);
   PrologCompTerm* getVarRefExpSpecific(SgVarRefExp*);
   PrologCompTerm* getAssignInitializerSpecific(SgAssignInitializer*);
-  PrologTerm* getTypeSpecific(SgType*);
+  PrologTerm*     getTypeSpecific(SgType*);
   PrologCompTerm* getFunctionTypeSpecific(SgType*);
   PrologCompTerm* getPointerTypeSpecific(SgType*);
   PrologCompTerm* getClassTypeSpecific(SgType*);
@@ -50,16 +50,15 @@ private:
   PrologCompTerm* getDeleteExpSpecific(SgDeleteExp*);
   PrologCompTerm* getRefExpSpecific(SgRefExp*);
   PrologCompTerm* getVarArgSpecific(SgExpression*);
-  //PrologCompTerm* getAccessModifierSpecific(SgAccessModifier*);
   PrologCompTerm* getBaseClassModifierSpecific(SgBaseClassModifier*); 
   PrologCompTerm* getFunctionModifierSpecific(SgFunctionModifier*);
   PrologCompTerm* getSpecialFunctionModifierSpecific(SgSpecialFunctionModifier*);
   PrologCompTerm* getLinkageModifierSpecific(SgLinkageModifier*);
-  PrologAtom* createStorageModifierAtom(SgStorageModifier&);
-  PrologAtom* createAccessModifierAtom(SgAccessModifier&);
+  PrologAtom*     createStorageModifierAtom(SgStorageModifier&);
+  PrologAtom*     createAccessModifierAtom(SgAccessModifier&);
   PrologCompTerm* getStorageModifierSpecific(SgStorageModifier*);
   PrologCompTerm* getElaboratedTypeModifierSpecific(SgElaboratedTypeModifier*);
-  PrologAtom* createConstVolatileModifierAtom(SgConstVolatileModifier&);
+  PrologAtom*     createConstVolatileModifierAtom(SgConstVolatileModifier&);
   PrologCompTerm* getConstVolatileModifierSpecific(SgConstVolatileModifier*);
   PrologCompTerm* getUPC_AccessModifierSpecific(SgUPC_AccessModifier*);
   PrologCompTerm* getTypeModifierSpecific(SgTypeModifier*);
@@ -74,7 +73,7 @@ private:
   PrologCompTerm* getTemplateDeclarationSpecific(SgTemplateDeclaration*);
   PrologCompTerm* getTemplateParameterSpecific(SgTemplateParameter *);
 
-  PrologTerm* getTypePtrListSpecific(SgTypePtrList&);
+  PrologTerm*     getTypePtrListSpecific(SgTypePtrList&);
   PrologCompTerm* getMemberFunctionTypeSpecific(SgType*);
   PrologCompTerm* getClassScopeName(SgClassDefinition*);
   PrologCompTerm* getMemberFunctionSymbolSpecific(SgMemberFunctionSymbol*);
@@ -91,7 +90,9 @@ private:
   PrologCompTerm* getImplicitStatementSpecific(SgImplicitStatement*);
   PrologCompTerm* getAttributeSpecificationStatementSpecific(SgAttributeSpecificationStatement*);
   PrologCompTerm* getProcedureHeaderStatementSpecific(SgProcedureHeaderStatement*);
-  PrologCompTerm* getTypedefSeqSpecific(SgTypedefSeq *);
+  PrologCompTerm* getTypedefSeqSpecific(SgTypedefSeq*);
+  PrologCompTerm* getTypeComplexSpecific(SgTypeComplex*);
+  PrologCompTerm* getIfStmtSpecific(SgIfStmt*);
 		
   template <class A> PrologList* traverseList(const A& list) {
     PrologList* alist = new PrologList();		

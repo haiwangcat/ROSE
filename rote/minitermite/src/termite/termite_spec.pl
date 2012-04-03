@@ -49,6 +49,7 @@ statement ::=
     break_stmt
   | case_option_stmt
   | continue_stmt
+  | contains_statement
   | declaration_statement
   | default_option_stmt
   | attribute_specification_statement
@@ -70,6 +71,9 @@ case_option_stmt ::=
 
 continue_stmt ::=
     continue_stmt(default_annotation, analysis_info, file_info).
+
+contains_statement ::=
+    contains_statement(default_annotation, analysis_info, file_info).
 
 declaration_statement ::=
     class_declaration
@@ -214,7 +218,10 @@ global ::=
 if_stmt ::=
     if_stmt(statement /* condition */, statement /* true */,
             statement? /* else */,
-            default_annotation, analysis_info, file_info).
+            if_stmt_annotation, analysis_info, file_info).
+
+if_stmt_annotation ::=
+    if_stmt_annotation(todo, todo, todo, preprocessing_info).
 
 switch_statement ::=
     switch_statement(statement /* key */, statement /* body */,
@@ -450,6 +457,7 @@ type ::=
   | member_function_type
   | modifier_type(type, type_modifier)
   | named_type
+  | type_complex(basic_type)
   | type_default
   | pointer_type(type).
 

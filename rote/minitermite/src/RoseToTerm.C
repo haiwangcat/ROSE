@@ -45,7 +45,7 @@ RoseToTerm::getSpecific(SgNode* astNode) {
     return getUnaryOpSpecific(n);
   } else if (SgBinaryOp* n = dynamic_cast<SgBinaryOp*>(astNode)) {
     return getBinaryOpSpecific(n);
-    /*be careful with logic: SgMemberFunctionDeclaration is a subtype of SgFunctionDeclaration*/
+    /*be careful with order: SgMemberFunctionDeclaration is a subtype of SgFunctionDeclaration*/
   } else if (SgMemberFunctionDeclaration* n = dynamic_cast<SgMemberFunctionDeclaration*>(astNode)) {
     return getMemberFunctionDeclarationSpecific(n);
   } else if (SgProcedureHeaderStatement* n = dynamic_cast<SgProcedureHeaderStatement*>(astNode)) {
@@ -120,6 +120,8 @@ RoseToTerm::getSpecific(SgNode* astNode) {
     return getImplicitStatementSpecific(n);
   } else if (SgAttributeSpecificationStatement* n = isSgAttributeSpecificationStatement(astNode)) {
     return getAttributeSpecificationStatementSpecific(n);
+  } else if (SgIfStmt* n = isSgIfStmt(astNode)) {
+    return getIfStmtSpecific(n);
   } else {
     if (SgLocatedNode* n = dynamic_cast<SgLocatedNode*>(astNode)) {
       // add preprocessing info
@@ -562,59 +564,55 @@ RoseToTerm::getModifierTypeSpecific(SgType* stype) {
  * */
 PrologTerm*
 RoseToTerm::getTypeSpecific(SgType* stype) {
-  string cn = stype->class_name();
+  VariantT v = stype->variantT();
   /*type is represented by a prolog term*/
   PrologTerm*  t = NULL;
   /* composite types implemented in different functions*/
-  if (cn == "SgFunctionType") {
-    t = getFunctionTypeSpecific(stype);
-  } else if (cn == "SgPointerType") {
-    t = getPointerTypeSpecific(stype);
-  } else if (cn == "SgClassType") {
-    t = getClassTypeSpecific(stype);
-  } else if (cn == "SgTypedefType") {
-    t = getTypedefTypeSpecific(stype);
-  } else if (cn == "SgEnumType") {
-    t = getEnumTypeSpecific(stype);
-  } else if (cn == "SgArrayType") {
-    t = getArrayTypeSpecific(stype);
-  } else if (cn == "SgModifierType") {
-    t = getModifierTypeSpecific(stype);
-  } else if (cn == "SgMemberFunctionType") {
-    t = getMemberFunctionTypeSpecific(stype);
-  } else if ( /* simple types */
-	     cn == "SgTypeBool"  ||
-	     cn == "SgTypeComplex"  ||
-	     cn == "SgTypeChar"  ||
-	     cn == "SgTypeDefault"  ||
-	     cn == "SgTypeDouble"  ||
-	     cn == "SgTypeEllipse"  ||
-	     cn == "SgTypeFloat"  ||
-	     cn == "SgTypeGlobalVoid"  ||
-	     cn == "SgTypeInt"  ||
-	     cn == "SgTypeLong"  ||
-	     cn == "SgTypeLongDouble"  ||
-	     cn == "SgTypeLongLong"  ||
-	     cn == "SgTypeShort"  ||
-	     cn == "SgTypeSignedChar"  ||
-	     cn == "SgTypeSignedInt"  ||
-	     cn == "SgTypeSignedLong"  ||
-	     cn == "SgTypeSignedShort"  ||
-	     cn == "SgTypeString"  ||
-	     cn == "SgTypeUnknown"  ||
-	     cn == "SgTypeUnsignedChar"  ||
-	     cn == "SgTypeUnsignedInt"  ||
-	     cn == "SgTypeUnsignedLong"  ||
-	     cn == "SgTypeUnsignedLongLong"  ||
-	     cn == "SgTypeUnsignedShort"  ||
-	     cn == "SgTypeVoid"  ||
-	     cn == "SgTypeWchar"
-	      ) {
-    t =  new PrologAtom(prologize(cn));
-  } else {
+  switch (v) {
+  case V_SgFunctionType:       t = getFunctionTypeSpecific(stype);       break;
+  case V_SgPointerType:        t = getPointerTypeSpecific(stype);        break; 
+  case V_SgClassType:          t = getClassTypeSpecific(stype);		 break; 
+  case V_SgTypedefType:        t = getTypedefTypeSpecific(stype);	 break; 
+  case V_SgEnumType:	       t = getEnumTypeSpecific(stype);		 break; 
+  case V_SgArrayType:          t = getArrayTypeSpecific(stype);		 break; 
+  case V_SgModifierType:       t = getModifierTypeSpecific(stype);	 break; 
+  case V_SgMemberFunctionType: t = getMemberFunctionTypeSpecific(stype); break; 
+  case V_SgTypeComplex:        
+    t = getTypeComplexSpecific(isSgTypeComplex(stype));        
+    break;
+  /* simple types */
+  case V_SgTypeBool:
+  case V_SgTypeChar:
+  case V_SgTypeDefault:
+  case V_SgTypeDouble:
+  case V_SgTypeEllipse:
+  case V_SgTypeFloat:
+  case V_SgTypeGlobalVoid:
+  case V_SgTypeInt:
+  case V_SgTypeLong:
+  case V_SgTypeLongDouble:
+  case V_SgTypeLongLong:
+  case V_SgTypeShort:
+  case V_SgTypeSignedChar:
+  case V_SgTypeSignedInt:
+  case V_SgTypeSignedLong:
+  case V_SgTypeSignedShort:
+  case V_SgTypeString:
+  case V_SgTypeUnknown:
+  case V_SgTypeUnsignedChar:
+  case V_SgTypeUnsignedInt:
+  case V_SgTypeUnsignedLong:
+  case V_SgTypeUnsignedLongLong:
+  case V_SgTypeUnsignedShort:
+  case V_SgTypeVoid:
+  case V_SgTypeWchar:
+    t = new PrologAtom(prologize(stype->class_name()));
+    break;
+  default: {
     PrologCompTerm* ct  = new PrologCompTerm
       ("not_yet_implemented", /*1,*/ new PrologAtom(stype->class_name()));
     t = ct;
+    }
   }
   /*we should have created some type info here*/
   ROSE_ASSERT(t != NULL);
@@ -1567,4 +1565,19 @@ RoseToTerm::getAttributeSpecificationStatementSpecific(SgAttributeSpecificationS
      traverseSingleNode( ass->get_parameter_list() ),
      traverseSingleNode( ass->get_bind_list() ),
      PPI(ass));
+}
+
+PrologCompTerm* 
+RoseToTerm::getTypeComplexSpecific(SgTypeComplex *tc) {
+  return new PrologCompTerm("type_complex", getTypeSpecific(tc->get_base_type()));
+}
+
+PrologCompTerm*
+RoseToTerm::getIfStmtSpecific(SgIfStmt* ifstmt) {
+  return new PrologCompTerm
+    ("if_stmt_annotation",
+     makeFlag(ifstmt->get_has_end_statement(), "has_end_statement"),
+     makeFlag(ifstmt->get_use_then_keyword(), "use_then_keyword"),
+     makeFlag(ifstmt->get_is_else_if_statement(), "is_else_if_statement"),
+     PPI(ifstmt));
 }

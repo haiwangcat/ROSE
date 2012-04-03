@@ -2,7 +2,12 @@ program complex
   complex :: x 
   x = cmplx(0.0,1.0) 
   call func(x)               
-  contains 
+
+contains 
+  subroutine exit(status)
+    integer, value :: status
+  end subroutine exit
+
   subroutine func(x) 
     complex, value :: x 
     if (abs(imag(x) - 1.0) .ge. 0.1) then
@@ -10,5 +15,5 @@ program complex
     else
        call exit(0)
     endif
-  end subroutine func             
+  end subroutine func
 end program complex
