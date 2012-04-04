@@ -605,9 +605,16 @@ RoseToTerm::getTypeSpecific(SgType* stype) {
   case V_SgTypeUnsignedLongLong:
   case V_SgTypeUnsignedShort:
   case V_SgTypeVoid:
-  case V_SgTypeWchar:
-    t = new PrologAtom(prologize(stype->class_name()));
+  case V_SgTypeWchar: {
+    // I haven't decided what the best way to include the fortran type kind is yet
+    SgExpression *kind = stype->get_type_kind();
+    if (kind) {
+      t = new PrologCompTerm("fortran_type_with_kind",
+			     new PrologAtom(prologize(stype->class_name())),
+			     traverseSingleNode(kind));
+    } t = new PrologAtom(prologize(stype->class_name()));
     break;
+  }
   default: {
     PrologCompTerm* ct  = new PrologCompTerm
       ("not_yet_implemented", /*1,*/ new PrologAtom(stype->class_name()));
