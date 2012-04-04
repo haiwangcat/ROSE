@@ -1061,10 +1061,10 @@ TermToRose::createType(PrologTerm* t) {
     } else if (tname == "type_complex") {
       type = new SgTypeComplex(createType(c->at(0)));
     } else if (tname == "type_fortran_string") {
-      type = new SgTypeString(reinterpret_cast<SgExpression*>(toRose(c->at(1))));
+      type = new SgTypeString(static_cast<SgExpression*>(toRose(c->at(1))));
     } else if (tname == "fortrtan_type_with_kind") {
       type = createType(c->at(0));
-      type->set_type_kind(reinterpret_cast<SgExpression*>(toRose(c->at(1))));
+      type->set_type_kind(static_cast<SgExpression*>(toRose(c->at(1))));
     } else TERM_ASSERT(t, false && "Unknown type enountered");
   }
   if (PrologAtom* a = isPrologAtom(t)) {
@@ -1945,7 +1945,7 @@ TermToRose::createTemplateInstantiationFunctionDecl(Sg_File_Info* fi, SgNode* pa
   deque<PrologTerm*>::iterator it = succs->begin();
   SgTemplateArgumentPtrList args;
   while (it != succs->end()) {
-    args.push_back(reinterpret_cast<SgTemplateArgument*>(toRose(*it)));
+    args.push_back(static_cast<SgTemplateArgument*>(toRose(*it)));
     it++;
   }
 
@@ -1974,7 +1974,7 @@ TermToRose::createTemplateArgument(PrologCompTerm* t) {
      (SgTemplateArgument::template_argument_enum)createEnum(annot->at(0), re.template_argument),
      getFlag(annot->at(1)),
      createType(annot->at(2)),
-     reinterpret_cast<SgExpression*>(toRose(annot->at(3))),
+     static_cast<SgExpression*>(toRose(annot->at(3))),
      lookupTemplateDecl(templ_decl_name),
      getFlag(annot->at(5)));
 }
@@ -1989,8 +1989,8 @@ TermToRose::createTemplateParameter(Sg_File_Info* fi, PrologCompTerm* t) {
 				 createEnum(annot->at(0), re.template_parameter),
 				 createType(annot->at(1)),
 				 createType(annot->at(2)),
-				 reinterpret_cast<SgExpression*>(toRose(annot->at(3))),
-				 reinterpret_cast<SgExpression*>(toRose(annot->at(4))),
+				 static_cast<SgExpression*>(toRose(annot->at(3))),
+				 static_cast<SgExpression*>(toRose(annot->at(4))),
 				 lookupTemplateDecl(templ_decl_name),
 				 lookupTemplateDecl(default_param));
 }
@@ -2007,7 +2007,7 @@ TermToRose::createTemplateDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
   deque<PrologTerm*>::iterator it = succs->begin();
   SgTemplateParameterPtrList params;
   while (it != succs->end()) {
-    params.push_back(reinterpret_cast<SgTemplateParameter*>(toRose(*it)));
+    params.push_back(static_cast<SgTemplateParameter*>(toRose(*it)));
     it++;
   }
 
@@ -2070,7 +2070,7 @@ TermToRose::createTypedefSeq(Sg_File_Info* fi, PrologCompTerm* t) {
   deque<PrologTerm*>* succs = l->getSuccs();
   deque<PrologTerm*>::iterator it = succs->begin();
   while (it != succs->end()) {
-    seq->append_typedef(reinterpret_cast<SgType*>(toRose(*it)));
+    seq->append_typedef(static_cast<SgType*>(toRose(*it)));
     it++;
   }
 

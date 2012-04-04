@@ -38,6 +38,8 @@ class PrologTerm {
   virtual std::string getName() = 0;
   /// the actual prolog term that is represented by this object
   virtual std::string getRepresentation() = 0;
+  /// shorthand for getRepresenation()
+  std::string repr() { return getRepresenation(); }
 
   /// Properly quote and escape an atom if necessary
   static std::string quote(const std::string atom) {
