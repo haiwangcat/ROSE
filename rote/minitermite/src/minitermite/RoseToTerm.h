@@ -95,6 +95,7 @@ private:
   PrologTerm*     getTypeStringSpecific(SgTypeString*);
   PrologCompTerm* getCommonBlockObjectSpecific(SgCommonBlockObject* cbo);
   PrologCompTerm* getIfStmtSpecific(SgIfStmt*);
+  PrologCompTerm* getFortranDoSpecific(SgFortranDo*);
 		
   template <class A> PrologList* traverseList(const A& list) {
     PrologList* alist = new PrologList();		

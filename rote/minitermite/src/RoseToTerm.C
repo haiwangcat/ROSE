@@ -91,6 +91,7 @@ RoseToTerm::getSpecific(SgNode* astNode) {
   case V_SgPragma:	      return getPragmaSpecific(isSgPragma(astNode));
   case V_SgImplicitStatement: return getImplicitStatementSpecific(isSgImplicitStatement(astNode));
   case V_SgIfStmt:            return getIfStmtSpecific(isSgIfStmt(astNode));
+  case V_SgFortranDo:         return getFortranDoSpecific(isSgFortranDo(astNode));
 
   case V_SgVarArgOp:                
   case V_SgVarArgCopyOp:            
@@ -1564,7 +1565,6 @@ PrologCompTerm*
 RoseToTerm::getCommonBlockObjectSpecific(SgCommonBlockObject* cbo) {
   return new PrologCompTerm("common_block_object_annotation", 
 			    new PrologAtom(cbo->get_block_name()),
-			    //traverseSingleNode( cbo->get_variable_reference_list() ),
 			    PPI(cbo));
 }
 
@@ -1590,4 +1590,13 @@ RoseToTerm::getIfStmtSpecific(SgIfStmt* ifstmt) {
      makeFlag(ifstmt->get_use_then_keyword(), "use_then_keyword"),
      makeFlag(ifstmt->get_is_else_if_statement(), "is_else_if_statement"),
      PPI(ifstmt));
+}
+
+PrologCompTerm*
+RoseToTerm::getFortranDoSpecific(SgFortranDo* dostmt) {
+  return new PrologCompTerm
+    ("fortran_do_annotation",
+     makeFlag(dostmt->get_old_style(), "old_style"),
+     makeFlag(dostmt->get_has_end_statement(), "has_end_statement"),
+     PPI(dostmt));
 }

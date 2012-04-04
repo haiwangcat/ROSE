@@ -2709,11 +2709,17 @@ TermToRose::createForStatement(Sg_File_Info* fi, SgNode* child1, SgNode* child2,
 /** create SgFortranDo*/
 SgFortranDo*
 TermToRose::createFortranDo(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, SgNode* child4,PrologCompTerm* t) {
-  return new SgFortranDo(fi,
-			 isSgExpression(child1), 
-			 isSgExpression(child2),
-			 isSgExpression(child3),
-			 isSgBasicBlock(child4));
+  // get annotation
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  TERM_ASSERT(t, annot != NULL);
+
+  SgFortranDo* fdo = new SgFortranDo(fi,
+				     isSgExpression(child1), 
+				     isSgExpression(child2),
+				     isSgExpression(child3),
+				     isSgBasicBlock(child4));
+  fdo->set_old_style(getFlag(annot->at(0)));
+  fdo->set_has_end_statement(getFlag(annot->at(1)));
 }
 
 /**
