@@ -39,91 +39,73 @@ RoseToTerm::makeFlag(bool val, std::string name) {
 PrologTerm*
 RoseToTerm::getSpecific(SgNode* astNode) {
   string cname = astNode->class_name();
-  if (SgValueExp* n = dynamic_cast<SgValueExp*>(astNode)) {
-    return getValueExpSpecific(n);
-  } else if (SgUnaryOp* n = dynamic_cast<SgUnaryOp*>(astNode)) {
-    return getUnaryOpSpecific(n);
-  } else if (SgBinaryOp* n = dynamic_cast<SgBinaryOp*>(astNode)) {
-    return getBinaryOpSpecific(n);
-    /*be careful with order: SgMemberFunctionDeclaration is a subtype of SgFunctionDeclaration*/
-  } else if (SgMemberFunctionDeclaration* n = dynamic_cast<SgMemberFunctionDeclaration*>(astNode)) {
-    return getMemberFunctionDeclarationSpecific(n);
-  } else if (SgProcedureHeaderStatement* n = dynamic_cast<SgProcedureHeaderStatement*>(astNode)) {
-    return getProcedureHeaderStatementSpecific(n);
-  } else if (SgTemplateInstantiationFunctionDecl* n = isSgTemplateInstantiationFunctionDecl(astNode)){
-    return getTemplateInstantiationFunctionDeclSpecific(n);
-  } else if (SgTemplateDeclaration* n = isSgTemplateDeclaration(astNode)) {
-    return getTemplateDeclarationSpecific(n);
-  } else if (SgTemplateParameter* n = isSgTemplateParameter(astNode)) {
-    return getTemplateParameterSpecific(n);
-  } else if (SgTypedefSeq* n = isSgTypedefSeq(astNode)) {
-    return getTypedefSeqSpecific(n);
-  } else if (SgFunctionDeclaration* n = dynamic_cast<SgFunctionDeclaration*>(astNode)) {
-    return getFunctionDeclarationSpecific(n);
-  } else if (SgInitializedName* n = dynamic_cast<SgInitializedName*>(astNode)) {
-    return getInitializedNameSpecific(n);
-  } else if (SgVarRefExp* n = dynamic_cast<SgVarRefExp*>(astNode)) {
-    return getVarRefExpSpecific(n);
-  } else if (SgAssignInitializer* n = dynamic_cast<SgAssignInitializer*>(astNode)) {
-    return getAssignInitializerSpecific(n);
-  } else if (SgClassDeclaration* n = isSgClassDeclaration(astNode)) {
-    return getClassDeclarationSpecific(n);
-  } else if (SgClassDefinition* n = isSgClassDefinition(astNode)) {
-    return getClassDefinitionSpecific(n);
-  } else if (SgLabelStatement* n = isSgLabelStatement(astNode)) {
-    return getLabelStatementSpecific(n);
-  } else if (SgGotoStatement* n = isSgGotoStatement(astNode)) {
-    return getGotoStatementSpecific(n);
-  } else if (SgConditionalExp* n = isSgConditionalExp(astNode)) {
-    return getConditionalExpSpecific(n);
-  } else if (SgEnumDeclaration* n = isSgEnumDeclaration(astNode)) {
-    return getEnumDeclarationSpecific(n);
-  } else if (SgDeleteExp* n = isSgDeleteExp(astNode)) {
-    return getDeleteExpSpecific(n);
-  } else if (SgRefExp* n = isSgRefExp(astNode)) {
-    return getRefExpSpecific(n);
-  } else if (SgExpression* n = isSgVarArgOp(astNode)) {
-    return getVarArgSpecific(n);
-  } else if (SgExpression* n = isSgVarArgCopyOp(astNode)) {
-    return getVarArgSpecific(n);
-  } else if (SgExpression* n = isSgVarArgEndOp(astNode)) {
-    return getVarArgSpecific(n);
-  } else if (SgExpression* n = isSgVarArgStartOp(astNode)) {
-    return getVarArgSpecific(n);
-  } else if (SgExpression* n = isSgVarArgStartOneOperandOp(astNode)) {
-    return getVarArgSpecific(n);
-  } else if (SgTemplateArgument* n = isSgTemplateArgument(astNode)) {
-    return getTemplateArgumentSpecific(n);
-  } else if (SgFunctionRefExp* n = isSgFunctionRefExp(astNode)) {
-    return getFunctionRefExpSpecific(n);
-  } else if (SgFunctionCallExp* n = isSgFunctionCallExp(astNode)) {
-    return getFunctionCallExpSpecific(n);
-  } else if (SgMemberFunctionSymbol* n = isSgMemberFunctionSymbol(astNode)) {
-    return getMemberFunctionSymbolSpecific(n);
-  } else if (SgMemberFunctionRefExp* n = isSgMemberFunctionRefExp(astNode)) {
-    return getMemberFunctionRefExpSpecific(n);
-  } else if (SgNamespaceDeclarationStatement* n = isSgNamespaceDeclarationStatement(astNode)) {
-    return getNamespaceDeclarationStatementSpecific(n);
-  } else if (SgVariableDeclaration* n = isSgVariableDeclaration(astNode)) {
-    return getVariableDeclarationSpecific(n);
-  } else if (SgTypedefDeclaration* n = isSgTypedefDeclaration(astNode)) {
-    return getTypedefDeclarationSpecific(n);
-  } else if (SgSizeOfOp* n = isSgSizeOfOp(astNode)) {
-    return getSizeOfOpSpecific(n);
-  } else if (SgConstructorInitializer* n = isSgConstructorInitializer(astNode)) {
-    return getConstructorInitializerSpecific(n);
-  } else if (SgNewExp* n = isSgNewExp(astNode)) {
-    return getNewExpSpecific(n);
-  } else if (SgPragma* n = isSgPragma(astNode)) {
-    return getPragmaSpecific(n);
-  } else if (SgImplicitStatement* n = isSgImplicitStatement(astNode)) {
-    return getImplicitStatementSpecific(n);
-  } else if (SgAttributeSpecificationStatement* n = isSgAttributeSpecificationStatement(astNode)) {
-    return getAttributeSpecificationStatementSpecific(n);
-  } else if (SgIfStmt* n = isSgIfStmt(astNode)) {
-    return getIfStmtSpecific(n);
-  } else {
-    if (SgLocatedNode* n = dynamic_cast<SgLocatedNode*>(astNode)) {
+  VariantT v = astNode->variantT();
+  switch (v) {
+  case V_SgTemplateDeclaration: return getTemplateDeclarationSpecific(isSgTemplateDeclaration(astNode));
+  case V_SgTemplateParameter:   return getTemplateParameterSpecific(isSgTemplateParameter(astNode));
+  case V_SgTypedefSeq:          return getTypedefSeqSpecific(isSgTypedefSeq(astNode));
+  case V_SgProgramHeaderStatement:
+  case V_SgFunctionDeclaration: return getFunctionDeclarationSpecific(isSgFunctionDeclaration(astNode));
+  case V_SgInitializedName:     return getInitializedNameSpecific(isSgInitializedName(astNode));
+  case V_SgVarRefExp:           return getVarRefExpSpecific(isSgVarRefExp(astNode));
+  case V_SgAssignInitializer:   return getAssignInitializerSpecific(isSgAssignInitializer(astNode));
+  case V_SgClassDeclaration:    return getClassDeclarationSpecific(isSgClassDeclaration(astNode));
+  case V_SgClassDefinition:     return getClassDefinitionSpecific(isSgClassDefinition(astNode));
+  case V_SgLabelStatement:      return getLabelStatementSpecific(isSgLabelStatement(astNode));
+  case V_SgGotoStatement:       return getGotoStatementSpecific(isSgGotoStatement(astNode));
+  case V_SgConditionalExp:      return getConditionalExpSpecific(isSgConditionalExp(astNode));
+  case V_SgEnumDeclaration:     return getEnumDeclarationSpecific(isSgEnumDeclaration(astNode));
+  case V_SgDeleteExp:           return getDeleteExpSpecific(isSgDeleteExp(astNode));
+  case V_SgRefExp:              return getRefExpSpecific(isSgRefExp(astNode));
+
+  case V_SgTemplateArgument:    return getTemplateArgumentSpecific(isSgTemplateArgument(astNode));
+  case V_SgFunctionRefExp:      return getFunctionRefExpSpecific(isSgFunctionRefExp(astNode));
+  case V_SgFunctionCallExp:     return getFunctionCallExpSpecific(isSgFunctionCallExp(astNode));
+
+  case V_SgMemberFunctionDeclaration: 
+    return getMemberFunctionDeclarationSpecific(isSgMemberFunctionDeclaration(astNode));
+  case V_SgProcedureHeaderStatement: 
+    return getProcedureHeaderStatementSpecific(isSgProcedureHeaderStatement(astNode));
+  case V_SgTemplateInstantiationFunctionDecl:
+    return getTemplateInstantiationFunctionDeclSpecific(isSgTemplateInstantiationFunctionDecl(astNode));
+
+  case V_SgMemberFunctionSymbol: 
+    return getMemberFunctionSymbolSpecific(isSgMemberFunctionSymbol(astNode));
+  case V_SgMemberFunctionRefExp: 
+    return getMemberFunctionRefExpSpecific(isSgMemberFunctionRefExp(astNode));
+  case V_SgNamespaceDeclarationStatement: 
+    return getNamespaceDeclarationStatementSpecific(isSgNamespaceDeclarationStatement(astNode));
+  case V_SgVariableDeclaration: 
+    return getVariableDeclarationSpecific(isSgVariableDeclaration(astNode));
+  case V_SgTypedefDeclaration: 
+    return getTypedefDeclarationSpecific(isSgTypedefDeclaration(astNode));
+  case V_SgSizeOfOp: 
+    return getSizeOfOpSpecific(isSgSizeOfOp(astNode));
+  case V_SgConstructorInitializer: 
+    return getConstructorInitializerSpecific(isSgConstructorInitializer(astNode));
+  case V_SgAttributeSpecificationStatement:
+    return getAttributeSpecificationStatementSpecific(isSgAttributeSpecificationStatement(astNode));
+
+  case V_SgNewExp:	      return getNewExpSpecific(isSgNewExp(astNode));
+  case V_SgPragma:	      return getPragmaSpecific(isSgPragma(astNode));
+  case V_SgImplicitStatement: return getImplicitStatementSpecific(isSgImplicitStatement(astNode));
+  case V_SgIfStmt:            return getIfStmtSpecific(isSgIfStmt(astNode));
+
+  case V_SgVarArgOp:                
+  case V_SgVarArgCopyOp:            
+  case V_SgVarArgEndOp:             
+  case V_SgVarArgStartOp:           
+  case V_SgVarArgStartOneOperandOp: return getVarArgSpecific(isSgExpression(astNode));
+
+  default:
+    // here we are matching generic base classes
+    if (SgValueExp* n = dynamic_cast<SgValueExp*>(astNode)) {
+      return getValueExpSpecific(n);
+    } else if (SgUnaryOp* n = dynamic_cast<SgUnaryOp*>(astNode)) {
+      return getUnaryOpSpecific(n);
+    } else if (SgBinaryOp* n = dynamic_cast<SgBinaryOp*>(astNode)) {
+      return getBinaryOpSpecific(n);
+    } else if (SgLocatedNode* n = dynamic_cast<SgLocatedNode*>(astNode)) {
       // add preprocessing info
       return new PrologCompTerm("default_annotation", //2,
 			     new PrologAtom("null"),

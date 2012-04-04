@@ -459,6 +459,7 @@ type ::=
   | named_type
   | type_complex(basic_type)
   | type_default
+  | type_fortran_string(expression)
   | pointer_type(type).
 
 function_type ::= function_type(type /* return */, todo /* ellipses */, [type] /* args */).
