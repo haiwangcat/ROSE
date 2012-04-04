@@ -57,6 +57,7 @@ RoseToTerm::getSpecific(SgNode* astNode) {
   case V_SgEnumDeclaration:     return getEnumDeclarationSpecific(isSgEnumDeclaration(astNode));
   case V_SgDeleteExp:           return getDeleteExpSpecific(isSgDeleteExp(astNode));
   case V_SgRefExp:              return getRefExpSpecific(isSgRefExp(astNode));
+  case V_SgCommonBlockObject:   return getCommonBlockObjectSpecific(isSgCommonBlockObject(astNode));
 
   case V_SgTemplateArgument:    return getTemplateArgumentSpecific(isSgTemplateArgument(astNode));
   case V_SgFunctionRefExp:      return getFunctionRefExpSpecific(isSgFunctionRefExp(astNode));
@@ -1557,6 +1558,16 @@ RoseToTerm::getAttributeSpecificationStatementSpecific(SgAttributeSpecificationS
      traverseSingleNode( ass->get_bind_list() ),
      PPI(ass));
 }
+
+
+PrologCompTerm*
+RoseToTerm::getCommonBlockObjectSpecific(SgCommonBlockObject* cbo) {
+  return new PrologCompTerm("common_block_object_annotation", 
+			    new PrologAtom(cbo->get_block_name()),
+			    //traverseSingleNode( cbo->get_variable_reference_list() ),
+			    PPI(cbo));
+}
+
 
 PrologCompTerm* 
 RoseToTerm::getTypeComplexSpecific(SgTypeComplex *tc) {

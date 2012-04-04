@@ -93,6 +93,7 @@ private:
   PrologCompTerm* getTypedefSeqSpecific(SgTypedefSeq*);
   PrologCompTerm* getTypeComplexSpecific(SgTypeComplex*);
   PrologTerm*     getTypeStringSpecific(SgTypeString*);
+  PrologCompTerm* getCommonBlockObjectSpecific(SgCommonBlockObject* cbo);
   PrologCompTerm* getIfStmtSpecific(SgIfStmt*);
 		
   template <class A> PrologList* traverseList(const A& list) {

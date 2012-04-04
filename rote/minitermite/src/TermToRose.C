@@ -456,6 +456,8 @@ TermToRose::unaryToRose(PrologCompTerm* t,std::string tname) {
     s = createPragmaDeclaration(fi,child1,t);
   } else if (tname == "typedef_declaration") {
     s = createTypedefDeclaration(fi,t);
+  } else if (tname == "common_block_object") {
+    s = createCommonBlockObject(fi,child1,t);
   } else cerr<<"**WARNING: unhandled Unary Node: "<<tname<<endl;
 
   TERM_ASSERT_UPGRADE(t, s != NULL);
@@ -712,6 +714,8 @@ TermToRose::listToRose(PrologCompTerm* t,std::string tname) {
     s = createFunctionParameterList(fi,succs);
   } else if (tname == "basic_block") {
     s = createBasicBlock(fi,succs);
+  } else if (tname == "common_block") {
+    s = createCommonBlock(fi,succs);
   } else if (tname == "variable_declaration") {
     s = createVariableDeclaration(fi,succs,t,varDeclBaseTypeDecl);
   } else if (tname == "for_init_statement") {
@@ -4207,3 +4211,45 @@ TermToRose::createAttributeSpecificationStatement(Sg_File_Info* fi, PrologCompTe
 }
 
 
+/**
+ * create SgCommonBlockObject
+ */
+SgCommonBlockObject*
+TermToRose::createCommonBlockObject(Sg_File_Info* fi, SgNode* child, PrologCompTerm* t) {
+  /* retrieve annotation */
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  /* create the SgCommonBlockObject */
+  SgExprListExp* le = isSgExprListExp(child);
+  ROSE_ASSERT(le);
+  SgCommonBlockObject* cbo = new SgCommonBlockObject(fi);
+  TERM_ASSERT(t, cbo != NULL);
+  EXPECT_ATOM(block_name, annot->at(0));
+  cbo->set_block_name(block_name);
+  cbo->set_variable_reference_list(le);
+  return cbo;
+}
+
+/**
+ * create SgCommonBlock
+ */
+SgCommonBlock*
+TermToRose::createCommonBlock(Sg_File_Info* fi, std::deque<SgNode*>* succs)
+{
+  /* create the SgCommonBlock */
+  SgCommonBlock* cb = new SgCommonBlock(fi);
+  ROSE_ASSERT(cb);
+  SgCommonBlockObjectPtrList& l = cb->get_block_list();
+
+  deque<SgNode*>::iterator it = succs->begin();
+  while(it != succs->end()) {
+    if (*it != NULL) {
+      EXPECT_NODE(SgStatement*, stmt, *it);
+      SgCommonBlockObject* cbo = isSgCommonBlockObject(*it);
+      ROSE_ASSERT(cbo);
+      l.push_back(cbo);
+      cbo->set_parent(cb);
+    }
+    it++;
+  }
+  return cb;
+}

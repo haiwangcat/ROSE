@@ -184,8 +184,8 @@ private:
   SgTemplateParameter* createTemplateParameter(Sg_File_Info*, PrologCompTerm*);
   SgTemplateDeclaration* createTemplateDeclaration(Sg_File_Info*, PrologCompTerm*);
   SgTypedefSeq* createTypedefSeq(Sg_File_Info*, PrologCompTerm*);
-
-
+  SgCommonBlockObject* createCommonBlockObject(Sg_File_Info*, SgNode*, PrologCompTerm*);
+  SgCommonBlock* createCommonBlock(Sg_File_Info*, std::deque<SgNode*>*);
 
   void register_func_decl(SgName, SgFunctionDeclaration*, PrologTerm*);
 
