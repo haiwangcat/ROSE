@@ -637,6 +637,8 @@ TermToRose::quaternaryToRose(PrologCompTerm* t,std::string tname) {
 
   if(tname == "for_statement") {
     s = createForStatement(fi,child1,child2,child3,child4,t);
+  } else if (tname == "fortran_do") {
+    s = createFortranDo(fi,child1,child2,child3,child4,t);
   } else if (tname == "member_function_declaration" ||
 	     tname == "procedure_header_statement") {
     /* function declaration: created above, needs a fixup here */
@@ -2702,6 +2704,16 @@ TermToRose::createForStatement(Sg_File_Info* fi, SgNode* child1, SgNode* child2,
   }
   //f->append_init_stmt(ini_stmt);
   return f;
+}
+
+/** create SgFortranDo*/
+SgFortranDo*
+TermToRose::createFortranDo(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, SgNode* child4,PrologCompTerm* t) {
+  return new SgFortranDo(fi,
+			 isSgExpression(child1), 
+			 isSgExpression(child2),
+			 isSgExpression(child3),
+			 isSgBasicBlock(child4));
 }
 
 /**

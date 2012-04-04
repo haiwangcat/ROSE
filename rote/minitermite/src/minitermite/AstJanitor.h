@@ -69,7 +69,9 @@ public:
 	  && v != V_SgImplicitStatement
 	  && v != V_SgAttributeSpecificationStatement
 	  && v != V_SgMemberFunctionDeclaration
-	  && v != V_SgContainsStatement) {
+	  && v != V_SgContainsStatement
+	  && v != V_SgCommonBlock
+	) {
 	ROSE_ASSERT(scope != NULL);
 	decl->set_scope(scope);
       }
