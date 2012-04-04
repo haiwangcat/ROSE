@@ -580,6 +580,9 @@ RoseToTerm::getTypeSpecific(SgType* stype) {
   case V_SgTypeComplex:        
     t = getTypeComplexSpecific(isSgTypeComplex(stype));        
     break;
+  case V_SgTypeString:
+    t = getTypeStringSpecific(isSgTypeString(stype));
+    break;
   /* simple types */
   case V_SgTypeBool:
   case V_SgTypeChar:
@@ -597,7 +600,6 @@ RoseToTerm::getTypeSpecific(SgType* stype) {
   case V_SgTypeSignedInt:
   case V_SgTypeSignedLong:
   case V_SgTypeSignedShort:
-  case V_SgTypeString:
   case V_SgTypeUnknown:
   case V_SgTypeUnsignedChar:
   case V_SgTypeUnsignedInt:
@@ -1577,6 +1579,14 @@ RoseToTerm::getAttributeSpecificationStatementSpecific(SgAttributeSpecificationS
 PrologCompTerm* 
 RoseToTerm::getTypeComplexSpecific(SgTypeComplex *tc) {
   return new PrologCompTerm("type_complex", getTypeSpecific(tc->get_base_type()));
+}
+
+PrologTerm* 
+RoseToTerm::getTypeStringSpecific(SgTypeString *ts) {
+  SgExpression* length = ts->get_lengthExpression();
+  if (length)
+    return new PrologCompTerm("type_fortran_string", traverseSingleNode(length));
+  else return new PrologAtom("type_string");
 }
 
 PrologCompTerm*

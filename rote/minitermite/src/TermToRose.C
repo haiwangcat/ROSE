@@ -1060,6 +1060,11 @@ TermToRose::createType(PrologTerm* t) {
       type = createTypedefType(t);
     } else if (tname == "type_complex") {
       type = new SgTypeComplex(createType(c->at(0)));
+    } else if (tname == "type_fortran_string") {
+      type = new SgTypeString(reinterpret_cast<SgExpression*>(toRose(c->at(1))));
+    } else if (tname == "fortrtan_type_with_kind") {
+      type = createType(c->at(0));
+      type->set_type_kind(reinterpret_cast<SgExpression*>(toRose(c->at(1))));
     } else TERM_ASSERT(t, false && "Unknown type enountered");
   }
   if (PrologAtom* a = isPrologAtom(t)) {

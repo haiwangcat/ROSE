@@ -92,6 +92,7 @@ private:
   PrologCompTerm* getProcedureHeaderStatementSpecific(SgProcedureHeaderStatement*);
   PrologCompTerm* getTypedefSeqSpecific(SgTypedefSeq*);
   PrologCompTerm* getTypeComplexSpecific(SgTypeComplex*);
+  PrologTerm*     getTypeStringSpecific(SgTypeString*);
   PrologCompTerm* getIfStmtSpecific(SgIfStmt*);
 		
   template <class A> PrologList* traverseList(const A& list) {
