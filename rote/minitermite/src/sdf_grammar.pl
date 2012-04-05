@@ -42,17 +42,18 @@ main :-
    print_rule(Start).
 
 print_nonterm(Nonterminal, A|B) :- !,
-   format_rule(A, Terminals),
-   format('~w -> ~w {cons("~w")}~n', [Terminals, Nonterminal, Nonterminal]),
-   print_rule(Nonterminal, B).
+   format_rule(A, Af),
+   print_rule(Nonterminal, B),
+   format('~w -> ~w {cons("~w")}~n', [Af, Nonterminal, Nonterminal]).
+
 
 print_nonterm(Nonterminal, A) :- !,
    format_rule(A, Terminals),
    format('~w -> ~w {cons("~w")}~n', [Terminals, Nonterminal, Nonterminal]).
 
-format_rule({_}) :- !.
+print_rule({_}) :- !.
 
-format_rule(Nonterminal) :-
+print_rule(Nonterminal) :-
    atom(Nonterminal), !,
    ( Nonterminal ::= Rhs ),
    print_nonterm(Nonterminal, Rhs).
