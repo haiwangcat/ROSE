@@ -36,60 +36,53 @@ RoseToTerm::makeFlag(bool val, std::string name) {
  * This function, depending on the type of the node, uses private helper functions.
  * No actual work is done here.
  */
+
+#define CASE_SPECIFIC(SAGETYPE) \
+  case V_Sg ## SAGETYPE: return get ## SAGETYPE ## Specific(isSg ## SAGETYPE(astNode));
+
 PrologTerm*
 RoseToTerm::getSpecific(SgNode* astNode) {
   string cname = astNode->class_name();
   VariantT v = astNode->variantT();
-  switch (v) {
-  case V_SgAssignInitializer:   return getAssignInitializerSpecific(isSgAssignInitializer(astNode));
-  case V_SgClassDeclaration:    return getClassDeclarationSpecific(isSgClassDeclaration(astNode));
-  case V_SgClassDefinition:     return getClassDefinitionSpecific(isSgClassDefinition(astNode));
-  case V_SgCommonBlockObject:   return getCommonBlockObjectSpecific(isSgCommonBlockObject(astNode));
-  case V_SgConditionalExp:      return getConditionalExpSpecific(isSgConditionalExp(astNode));
-  case V_SgDeleteExp:           return getDeleteExpSpecific(isSgDeleteExp(astNode));
-  case V_SgEnumDeclaration:     return getEnumDeclarationSpecific(isSgEnumDeclaration(astNode));
-  case V_SgFortranDo:           return getFortranDoSpecific(isSgFortranDo(astNode));
-  case V_SgFortranIncludeLine:  return getFortranIncludeLineSpecific(isSgFortranIncludeLine(astNode));
-  case V_SgFunctionCallExp:     return getFunctionCallExpSpecific(isSgFunctionCallExp(astNode));
-  case V_SgFunctionRefExp:      return getFunctionRefExpSpecific(isSgFunctionRefExp(astNode));
-  case V_SgGotoStatement:       return getGotoStatementSpecific(isSgGotoStatement(astNode));
-  case V_SgIfStmt:              return getIfStmtSpecific(isSgIfStmt(astNode));
-  case V_SgImplicitStatement:   return getImplicitStatementSpecific(isSgImplicitStatement(astNode));
-  case V_SgInitializedName:     return getInitializedNameSpecific(isSgInitializedName(astNode));
-  case V_SgLabelStatement:      return getLabelStatementSpecific(isSgLabelStatement(astNode));
-  case V_SgNewExp:	        return getNewExpSpecific(isSgNewExp(astNode));
-  case V_SgPragma:	        return getPragmaSpecific(isSgPragma(astNode));
-  case V_SgRefExp:              return getRefExpSpecific(isSgRefExp(astNode));
-  case V_SgTemplateArgument:    return getTemplateArgumentSpecific(isSgTemplateArgument(astNode));
-  case V_SgTemplateParameter:   return getTemplateParameterSpecific(isSgTemplateParameter(astNode));
-  case V_SgTypedefSeq:          return getTypedefSeqSpecific(isSgTypedefSeq(astNode));
-  case V_SgVarRefExp:           return getVarRefExpSpecific(isSgVarRefExp(astNode));
 
-  case V_SgAttributeSpecificationStatement: 
-    return getAttributeSpecificationStatementSpecific(isSgAttributeSpecificationStatement(astNode));
-  case V_SgConstructorInitializer: 
-    return getConstructorInitializerSpecific(isSgConstructorInitializer(astNode));
-  case V_SgMemberFunctionDeclaration: 
-    return getMemberFunctionDeclarationSpecific(isSgMemberFunctionDeclaration(astNode));
-  case V_SgMemberFunctionRefExp: 
-    return getMemberFunctionRefExpSpecific(isSgMemberFunctionRefExp(astNode));
-  case V_SgMemberFunctionSymbol: 
-    return getMemberFunctionSymbolSpecific(isSgMemberFunctionSymbol(astNode));
-  case V_SgNamespaceDeclarationStatement: 
-    return getNamespaceDeclarationStatementSpecific(isSgNamespaceDeclarationStatement(astNode));
-  case V_SgProcedureHeaderStatement: 
-    return getProcedureHeaderStatementSpecific(isSgProcedureHeaderStatement(astNode));
-  case V_SgSizeOfOp: 
-    return getSizeOfOpSpecific(isSgSizeOfOp(astNode));
-  case V_SgTemplateDeclaration:  
-    return getTemplateDeclarationSpecific(isSgTemplateDeclaration(astNode));
-  case V_SgTemplateInstantiationFunctionDecl: 
-    return getTemplateInstantiationFunctionDeclSpecific
-      (isSgTemplateInstantiationFunctionDecl(astNode));
-  case V_SgTypedefDeclaration: 
-    return getTypedefDeclarationSpecific(isSgTypedefDeclaration(astNode));
-  case V_SgVariableDeclaration: 
-    return getVariableDeclarationSpecific(isSgVariableDeclaration(astNode));
+  switch (v) {
+
+  CASE_SPECIFIC(AssignInitializer)
+  CASE_SPECIFIC(AsteriskShapeExp)
+  CASE_SPECIFIC(AttributeSpecificationStatement)
+  CASE_SPECIFIC(ClassDeclaration)
+  CASE_SPECIFIC(ClassDefinition)
+  CASE_SPECIFIC(CommonBlockObject)
+  CASE_SPECIFIC(ConditionalExp)
+  CASE_SPECIFIC(ConstructorInitializer)
+  CASE_SPECIFIC(DeleteExp)
+  CASE_SPECIFIC(EnumDeclaration)
+  CASE_SPECIFIC(FortranDo)
+  CASE_SPECIFIC(FortranIncludeLine)
+  CASE_SPECIFIC(FunctionCallExp)
+  CASE_SPECIFIC(FunctionRefExp)
+  CASE_SPECIFIC(GotoStatement)
+  CASE_SPECIFIC(IfStmt)
+  CASE_SPECIFIC(ImplicitStatement)
+  CASE_SPECIFIC(InitializedName)
+  CASE_SPECIFIC(LabelStatement)
+  CASE_SPECIFIC(MemberFunctionDeclaration)
+  CASE_SPECIFIC(MemberFunctionRefExp)
+  CASE_SPECIFIC(MemberFunctionSymbol)
+  CASE_SPECIFIC(NamespaceDeclarationStatement)
+  CASE_SPECIFIC(NewExp)
+  CASE_SPECIFIC(Pragma)
+  CASE_SPECIFIC(ProcedureHeaderStatement)
+  CASE_SPECIFIC(RefExp)
+  CASE_SPECIFIC(SizeOfOp)
+  CASE_SPECIFIC(TemplateArgument)
+  CASE_SPECIFIC(TemplateDeclaration)
+  CASE_SPECIFIC(TemplateInstantiationFunctionDecl)
+  CASE_SPECIFIC(TemplateParameter)
+  CASE_SPECIFIC(TypedefDeclaration)
+  CASE_SPECIFIC(TypedefSeq)
+  CASE_SPECIFIC(VarRefExp)
+  CASE_SPECIFIC(VariableDeclaration)
 
   case V_SgProgramHeaderStatement:
   case V_SgFunctionDeclaration: 
@@ -1610,4 +1603,12 @@ RoseToTerm::getFortranIncludeLineSpecific(SgFortranIncludeLine* includeline) {
     ("fortran_include_line_annotation",
      new PrologAtom(includeline->get_filename()),
      PPI(includeline));
+}
+
+PrologCompTerm*
+RoseToTerm::getAsteriskShapeExpSpecific(SgAsteriskShapeExp* e) {
+  return new PrologCompTerm
+    ("asterisk_shape_exp_annotation",
+     getTypeSpecific(e->get_type()),
+     PPI(e));
 }

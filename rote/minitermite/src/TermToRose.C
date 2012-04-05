@@ -769,6 +769,7 @@ TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
   
     /* regular leaf nodes*/
   else if (isValueExp(tname))                  s = createValueExp(fi,NULL,t);
+  else if (tname == "asterisk_shape_exp")      s = createAsteriskShapeExp(fi, t);
   else if (tname == "attribute_specification_statement")  
     s = createAttributeSpecificationStatement(fi,t);
   else if (tname == "break_stmt")              s = createBreakStmt(fi,t);
@@ -4236,4 +4237,15 @@ TermToRose::createFortranIncludeLine(Sg_File_Info* fi, PrologCompTerm* t) {
   EXPECT_ATOM(filename, annot->at(0));
   fil->set_filename(filename);
   return fil;
+}
+
+/**
+ * create SgAsteriskShapeExp
+ */
+SgAsteriskShapeExp*
+TermToRose::createAsteriskShapeExp(Sg_File_Info* fi, PrologCompTerm* t) {
+  //PrologCompTerm* annot = retrieveAnnotation(t);
+  SgAsteriskShapeExp* n = new SgAsteriskShapeExp(fi);
+  //n->set_type(createType(annot->at(0)));
+  return n;
 }
