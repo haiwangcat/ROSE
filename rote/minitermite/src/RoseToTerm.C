@@ -41,63 +41,66 @@ RoseToTerm::getSpecific(SgNode* astNode) {
   string cname = astNode->class_name();
   VariantT v = astNode->variantT();
   switch (v) {
-  case V_SgTemplateDeclaration: return getTemplateDeclarationSpecific(isSgTemplateDeclaration(astNode));
-  case V_SgTemplateParameter:   return getTemplateParameterSpecific(isSgTemplateParameter(astNode));
-  case V_SgTypedefSeq:          return getTypedefSeqSpecific(isSgTypedefSeq(astNode));
-  case V_SgProgramHeaderStatement:
-  case V_SgFunctionDeclaration: return getFunctionDeclarationSpecific(isSgFunctionDeclaration(astNode));
-  case V_SgInitializedName:     return getInitializedNameSpecific(isSgInitializedName(astNode));
-  case V_SgVarRefExp:           return getVarRefExpSpecific(isSgVarRefExp(astNode));
   case V_SgAssignInitializer:   return getAssignInitializerSpecific(isSgAssignInitializer(astNode));
   case V_SgClassDeclaration:    return getClassDeclarationSpecific(isSgClassDeclaration(astNode));
   case V_SgClassDefinition:     return getClassDefinitionSpecific(isSgClassDefinition(astNode));
-  case V_SgLabelStatement:      return getLabelStatementSpecific(isSgLabelStatement(astNode));
-  case V_SgGotoStatement:       return getGotoStatementSpecific(isSgGotoStatement(astNode));
-  case V_SgConditionalExp:      return getConditionalExpSpecific(isSgConditionalExp(astNode));
-  case V_SgEnumDeclaration:     return getEnumDeclarationSpecific(isSgEnumDeclaration(astNode));
-  case V_SgDeleteExp:           return getDeleteExpSpecific(isSgDeleteExp(astNode));
-  case V_SgRefExp:              return getRefExpSpecific(isSgRefExp(astNode));
   case V_SgCommonBlockObject:   return getCommonBlockObjectSpecific(isSgCommonBlockObject(astNode));
-
-  case V_SgTemplateArgument:    return getTemplateArgumentSpecific(isSgTemplateArgument(astNode));
-  case V_SgFunctionRefExp:      return getFunctionRefExpSpecific(isSgFunctionRefExp(astNode));
+  case V_SgConditionalExp:      return getConditionalExpSpecific(isSgConditionalExp(astNode));
+  case V_SgDeleteExp:           return getDeleteExpSpecific(isSgDeleteExp(astNode));
+  case V_SgEnumDeclaration:     return getEnumDeclarationSpecific(isSgEnumDeclaration(astNode));
+  case V_SgFortranDo:           return getFortranDoSpecific(isSgFortranDo(astNode));
+  case V_SgFortranIncludeLine:  return getFortranIncludeLineSpecific(isSgFortranIncludeLine(astNode));
   case V_SgFunctionCallExp:     return getFunctionCallExpSpecific(isSgFunctionCallExp(astNode));
+  case V_SgFunctionRefExp:      return getFunctionRefExpSpecific(isSgFunctionRefExp(astNode));
+  case V_SgGotoStatement:       return getGotoStatementSpecific(isSgGotoStatement(astNode));
+  case V_SgIfStmt:              return getIfStmtSpecific(isSgIfStmt(astNode));
+  case V_SgImplicitStatement:   return getImplicitStatementSpecific(isSgImplicitStatement(astNode));
+  case V_SgInitializedName:     return getInitializedNameSpecific(isSgInitializedName(astNode));
+  case V_SgLabelStatement:      return getLabelStatementSpecific(isSgLabelStatement(astNode));
+  case V_SgNewExp:	        return getNewExpSpecific(isSgNewExp(astNode));
+  case V_SgPragma:	        return getPragmaSpecific(isSgPragma(astNode));
+  case V_SgRefExp:              return getRefExpSpecific(isSgRefExp(astNode));
+  case V_SgTemplateArgument:    return getTemplateArgumentSpecific(isSgTemplateArgument(astNode));
+  case V_SgTemplateParameter:   return getTemplateParameterSpecific(isSgTemplateParameter(astNode));
+  case V_SgTypedefSeq:          return getTypedefSeqSpecific(isSgTypedefSeq(astNode));
+  case V_SgVarRefExp:           return getVarRefExpSpecific(isSgVarRefExp(astNode));
 
-  case V_SgMemberFunctionDeclaration: 
-    return getMemberFunctionDeclarationSpecific(isSgMemberFunctionDeclaration(astNode));
-  case V_SgProcedureHeaderStatement: 
-    return getProcedureHeaderStatementSpecific(isSgProcedureHeaderStatement(astNode));
-  case V_SgTemplateInstantiationFunctionDecl:
-    return getTemplateInstantiationFunctionDeclSpecific(isSgTemplateInstantiationFunctionDecl(astNode));
-
-  case V_SgMemberFunctionSymbol: 
-    return getMemberFunctionSymbolSpecific(isSgMemberFunctionSymbol(astNode));
-  case V_SgMemberFunctionRefExp: 
-    return getMemberFunctionRefExpSpecific(isSgMemberFunctionRefExp(astNode));
-  case V_SgNamespaceDeclarationStatement: 
-    return getNamespaceDeclarationStatementSpecific(isSgNamespaceDeclarationStatement(astNode));
-  case V_SgVariableDeclaration: 
-    return getVariableDeclarationSpecific(isSgVariableDeclaration(astNode));
-  case V_SgTypedefDeclaration: 
-    return getTypedefDeclarationSpecific(isSgTypedefDeclaration(astNode));
-  case V_SgSizeOfOp: 
-    return getSizeOfOpSpecific(isSgSizeOfOp(astNode));
+  case V_SgAttributeSpecificationStatement: 
+    return getAttributeSpecificationStatementSpecific(isSgAttributeSpecificationStatement(astNode));
   case V_SgConstructorInitializer: 
     return getConstructorInitializerSpecific(isSgConstructorInitializer(astNode));
-  case V_SgAttributeSpecificationStatement:
-    return getAttributeSpecificationStatementSpecific(isSgAttributeSpecificationStatement(astNode));
+  case V_SgMemberFunctionDeclaration: 
+    return getMemberFunctionDeclarationSpecific(isSgMemberFunctionDeclaration(astNode));
+  case V_SgMemberFunctionRefExp: 
+    return getMemberFunctionRefExpSpecific(isSgMemberFunctionRefExp(astNode));
+  case V_SgMemberFunctionSymbol: 
+    return getMemberFunctionSymbolSpecific(isSgMemberFunctionSymbol(astNode));
+  case V_SgNamespaceDeclarationStatement: 
+    return getNamespaceDeclarationStatementSpecific(isSgNamespaceDeclarationStatement(astNode));
+  case V_SgProcedureHeaderStatement: 
+    return getProcedureHeaderStatementSpecific(isSgProcedureHeaderStatement(astNode));
+  case V_SgSizeOfOp: 
+    return getSizeOfOpSpecific(isSgSizeOfOp(astNode));
+  case V_SgTemplateDeclaration:  
+    return getTemplateDeclarationSpecific(isSgTemplateDeclaration(astNode));
+  case V_SgTemplateInstantiationFunctionDecl: 
+    return getTemplateInstantiationFunctionDeclSpecific
+      (isSgTemplateInstantiationFunctionDecl(astNode));
+  case V_SgTypedefDeclaration: 
+    return getTypedefDeclarationSpecific(isSgTypedefDeclaration(astNode));
+  case V_SgVariableDeclaration: 
+    return getVariableDeclarationSpecific(isSgVariableDeclaration(astNode));
 
-  case V_SgNewExp:	      return getNewExpSpecific(isSgNewExp(astNode));
-  case V_SgPragma:	      return getPragmaSpecific(isSgPragma(astNode));
-  case V_SgImplicitStatement: return getImplicitStatementSpecific(isSgImplicitStatement(astNode));
-  case V_SgIfStmt:            return getIfStmtSpecific(isSgIfStmt(astNode));
-  case V_SgFortranDo:         return getFortranDoSpecific(isSgFortranDo(astNode));
+  case V_SgProgramHeaderStatement:
+  case V_SgFunctionDeclaration: 
+    return getFunctionDeclarationSpecific(isSgFunctionDeclaration(astNode));
 
   case V_SgVarArgOp:                
   case V_SgVarArgCopyOp:            
   case V_SgVarArgEndOp:             
   case V_SgVarArgStartOp:           
-  case V_SgVarArgStartOneOperandOp: return getVarArgSpecific(isSgExpression(astNode));
+  case V_SgVarArgStartOneOperandOp: 
+    return getVarArgSpecific(isSgExpression(astNode));
 
   default:
     // here we are matching generic base classes
@@ -1599,4 +1602,12 @@ RoseToTerm::getFortranDoSpecific(SgFortranDo* dostmt) {
      makeFlag(dostmt->get_old_style(), "old_style"),
      makeFlag(dostmt->get_has_end_statement(), "has_end_statement"),
      PPI(dostmt));
+}
+
+PrologCompTerm*
+RoseToTerm::getFortranIncludeLineSpecific(SgFortranIncludeLine* includeline) {
+  return new PrologCompTerm
+    ("fortran_include_line_annotation",
+     new PrologAtom(includeline->get_filename()),
+     PPI(includeline));
 }

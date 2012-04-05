@@ -25,7 +25,7 @@ nobase_include_HEADERS = \
 ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) \
             -L$(BOOST_LIB_DIR) -Wl,-rpath $(BOOST_LIB_DIR)
 
-CLEANFILES = termpretty.c++ src/termite_lint src/cime3_signatures src/sdf_grammar
+CLEANFILES = termpretty.c++
 
 bin_PROGRAMS = src/termpretty src/src2term src/term2src
 
@@ -33,7 +33,8 @@ if WITH_SWI_PROLOG
 bin_SCRIPTS = src/termite_lint src/cime3_signatures src/sdf_grammar
 
 BUILT_SOURCES += $(builddir)/PP_termite_spec.pl
-CLEANFILES += $(builddir)/PP_termite_spec.pl
+CLEANFILES += $(builddir)/PP_termite_spec.pl \
+              src/termite_lint src/cime3_signatures src/sdf_grammar
 
 $(builddir)/PP_termite_spec.pl: src/termite/termite_spec.pl Makefile
 if WITH_ANALYSIS_RESULTS
