@@ -47,6 +47,7 @@ initialized_name ::=
 % --- statements ---
 statement ::=
     break_stmt
+  | common_block
   | case_option_stmt
   | continue_stmt
   | contains_statement
@@ -68,6 +69,14 @@ break_stmt ::=
 case_option_stmt ::=
     case_option_stmt(expression, statement, expression? /* key_range_end */,
                      default_annotation, analysis_info, file_info).
+
+common_block ::=
+    common_block([common_block_object], default_annotation, analysis_info, file_info).
+
+common_block_object ::=
+    common_block_object(expr_list_exp, common_block_object_annotation, analysis_info, file_info).
+
+common_block_object_annotation ::= common_block_object_annotation(todo, preprocessing_info).
 
 continue_stmt ::=
     continue_stmt(default_annotation, analysis_info, file_info).
@@ -182,6 +191,7 @@ scope_statement ::=
   | class_definition
   | do_while_stmt
   | for_statement
+  | fortran_do
   | function_definition
   | global
   | if_stmt
@@ -206,6 +216,12 @@ for_statement ::=
     for_statement(for_init_statement, statement /* test */,
                   expression /* increment */, statement /* body */,
                   default_annotation, analysis_info, file_info).
+
+fortran_do ::=
+    fortran_do(expression, expression, expression, statement /* body */,
+	       fortran_do_annotation, analysis_info, file_info).
+
+fortran_do_annotation ::= fortran_do_annotation(todo, todo, preprocessing_info).
 
 function_definition ::=
     function_definition(basic_block,
