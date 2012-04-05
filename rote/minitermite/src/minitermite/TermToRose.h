@@ -187,6 +187,7 @@ private:
   SgCommonBlockObject* createCommonBlockObject(Sg_File_Info*, SgNode*, PrologCompTerm*);
   SgCommonBlock* createCommonBlock(Sg_File_Info*, std::deque<SgNode*>*);
   SgFortranDo* createFortranDo(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
+  SgFortranIncludeLine* createFortranIncludeLine(Sg_File_Info* fi, PrologCompTerm* t);
   void register_func_decl(SgName, SgFunctionDeclaration*, PrologTerm*);
 
   char unescape_char(std::string s);

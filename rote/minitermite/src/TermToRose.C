@@ -758,69 +758,38 @@ TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
   SgNode* s = NULL;
   /* some list nodes become leaf nodes when the list is empty
    * -> create dummy list and call corresponding factory methods*/
-  if (tname == "function_parameter_list") {
-    deque<SgNode*>* adummy = new deque<SgNode*>;
-    s = createFunctionParameterList(fi,adummy);
-  } else if (tname == "basic_block") {
-    deque<SgNode*>* adummy = new deque<SgNode*>;
-    s = createBasicBlock(fi,adummy);
-  } else if (tname == "class_definition") {
-    deque<SgNode*>* adummy = new deque<SgNode*>;
-    s = createClassDefinition(fi,adummy,t);
-  } else if (tname == "ctor_initializer_list") {
-    deque<SgNode*>* adummy = new deque<SgNode*>;
-    s = createCtorInitializerList(fi,adummy);
-  } else if (tname == "expr_list_exp") {
-    deque<SgNode*>* adummy = new deque<SgNode*>;
-    s = createExprListExp(fi,adummy);
-  } else if (tname == "namespace_definition_statement") {
-    deque<SgNode*>* adummy = new deque<SgNode*>;
-    s = createNamespaceDefinitionStatement(fi,adummy);
-  } else if (tname == "for_init_statement") {
-    deque<SgNode*>* adummy = new deque<SgNode*>;
-    s = createForInitStatement(fi,adummy);
+  if (tname == "function_parameter_list")     s = createFunctionParameterList(fi, new deque<SgNode*>);
+  else if (tname == "basic_block")            s = createBasicBlock(fi, new deque<SgNode*>);
+  else if (tname == "class_definition")       s = createClassDefinition(fi, new deque<SgNode*>,t);
+  else if (tname == "for_init_statement")     s = createForInitStatement(fi, new deque<SgNode*>);
+  else if (tname == "ctor_initializer_list")  s = createCtorInitializerList(fi, new deque<SgNode*>);
+  else if (tname == "expr_list_exp")          s = createExprListExp(fi, new deque<SgNode*>);
+  else if (tname == "namespace_definition_statement") 
+    s = createNamespaceDefinitionStatement(fi, new deque<SgNode*>);
+  
     /* regular leaf nodes*/
-  } else if(isValueExp(tname)) {
-    s = createValueExp(fi,NULL,t);
-  } else if (tname == "var_ref_exp") {
-    s = createVarRefExp(fi,t);
-  } else if (tname == "break_stmt") {
-    s = createBreakStmt(fi,t);
-  } else if (tname == "continue_stmt") {
-    s = createContinueStmt(fi,t);
-  } else if (tname == "label_statement") {
-    s = createLabelStatement(fi,t);
-  } else if (tname == "goto_statement") {
-    s = createGotoStatement(fi,t);
-  } else if (tname == "ref_exp") {
-    s = createRefExp(fi,t);
-  } else if (tname == "function_ref_exp") {
-    s = createFunctionRefExp(fi,t);
-  } else if (tname == "member_function_ref_exp") {
-    s = createMemberFunctionRefExp(fi,t);
-  } else if (tname == "this_exp") {
-    s = createThisExp(fi,t);
-  } else if(tname == "pragma") {
-    s = createPragma(fi,t);
-  } else if(tname == "implicit_statement") {
-    s = createImplicitStatement(fi,t);
-  } else if(tname == "attribute_specification_statement") {
+  else if (isValueExp(tname))                  s = createValueExp(fi,NULL,t);
+  else if (tname == "attribute_specification_statement")  
     s = createAttributeSpecificationStatement(fi,t);
-  } else if(tname == "template_argument") {
-    s = createTemplateArgument(t);
-  } else if(tname == "template_parameter") {
-    s = createTemplateParameter(fi, t);
-  } else if(tname == "template_declaration") {
-    s = createTemplateDeclaration(fi, t);
-  } else if(tname == "typedef_seq") {
-    s = createTypedefSeq(fi, t);
-  } else if (tname == "contains_statement") {
-    s = new SgContainsStatement(fi);
-  } else if (tname == "null_statement") {
-    s = new SgNullStatement(fi);
-  } else if (tname == "null_expression") {
-    s = new SgNullExpression(fi);
-  }
+  else if (tname == "break_stmt")              s = createBreakStmt(fi,t);
+  else if (tname == "contains_statement")      s = new SgContainsStatement(fi);
+  else if (tname == "continue_stmt")           s = createContinueStmt(fi,t);
+  else if (tname == "fortran_include_line")    s = createFortranIncludeLine(fi, t);
+  else if (tname == "function_ref_exp")        s = createFunctionRefExp(fi,t);
+  else if (tname == "goto_statement")          s = createGotoStatement(fi,t);
+  else if (tname == "implicit_statement")      s = createImplicitStatement(fi,t);
+  else if (tname == "label_statement")         s = createLabelStatement(fi,t);
+  else if (tname == "member_function_ref_exp") s = createMemberFunctionRefExp(fi,t);
+  else if (tname == "null_expression")         s = new SgNullExpression(fi);
+  else if (tname == "null_statement")          s = new SgNullStatement(fi);
+  else if (tname == "pragma")                  s = createPragma(fi,t);
+  else if (tname == "ref_exp")                 s = createRefExp(fi,t);
+  else if (tname == "template_argument")       s = createTemplateArgument(t);
+  else if (tname == "template_declaration")    s = createTemplateDeclaration(fi, t);
+  else if (tname == "template_parameter")      s = createTemplateParameter(fi, t);
+  else if (tname == "this_exp")                s = createThisExp(fi,t);
+  else if (tname == "typedef_seq")             s = createTypedefSeq(fi, t);
+  else if (tname == "var_ref_exp")             s = createVarRefExp(fi,t);
   TERM_ASSERT_UPGRADE(t, s != NULL);
   return s;
 }
@@ -1119,40 +1088,23 @@ TermToRose::createType(PrologTerm* t) {
  * is this string the name of a SgValueExp?*/
 bool
 TermToRose::isValueExp(std::string tname) {
-  if(tname == "bool_val_exp")
-    return true;
-  if(tname == "string_val")
-    return true;
-  if(tname == "short_val")
-    return true;
-  if(tname == "char_val")
-    return true;
-  if(tname == "unsigned_char_val")
-    return true;
-  if(tname == "wchar_val")
-    return true;
-  if(tname == "unsigned_short_val")
-    return true;
-  if(tname == "int_val")
-    return true;
-  if(tname == "enum_val")
-    return true;
-  if(tname == "unsigned_int_val")
-    return true;
-  if(tname == "long_int_val")
-    return true;
-  if(tname == "long_long_int_val")
-    return true;
-  if(tname == "unsigned_long_long_int_val")
-    return true;
-  if(tname == "unsigned_long_val")
-    return true;
-  if(tname == "float_val")
-    return true;
-  if(tname == "double_val")
-    return true;
-  if(tname == "long_double_val")
-    return true;
+  if (tname == "bool_val_exp")               return true;
+  if (tname == "char_val")                   return true;
+  if (tname == "double_val")                 return true;
+  if (tname == "enum_val")                   return true;
+  if (tname == "float_val")                  return true;
+  if (tname == "int_val")                    return true;
+  if (tname == "long_double_val")            return true;
+  if (tname == "long_int_val")               return true;
+  if (tname == "long_long_int_val")          return true;
+  if (tname == "short_val")                  return true;
+  if (tname == "string_val")                 return true;
+  if (tname == "unsigned_char_val")          return true;
+  if (tname == "unsigned_int_val")           return true;
+  if (tname == "unsigned_long_long_int_val") return true;
+  if (tname == "unsigned_long_val")          return true;
+  if (tname == "unsigned_short_val")         return true;
+  if (tname == "wchar_val")                  return true;
   return false;
 }
 
@@ -4270,4 +4222,18 @@ TermToRose::createCommonBlock(Sg_File_Info* fi, std::deque<SgNode*>* succs)
     it++;
   }
   return cb;
+}
+
+/**
+ * create SgFortranIncludeLine
+ */
+SgFortranIncludeLine*
+TermToRose::createFortranIncludeLine(Sg_File_Info* fi, PrologCompTerm* t) {
+  /* retrieve annotation */
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  /* create the SgFortranIncludeLine */
+  SgFortranIncludeLine* fil = new SgFortranIncludeLine(fi);
+  EXPECT_ATOM(filename, annot->at(0));
+  fil->set_filename(filename);
+  return fil;
 }
