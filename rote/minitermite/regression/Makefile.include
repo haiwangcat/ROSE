@@ -80,6 +80,7 @@ TERMITE_TESTS = \
     regression/fortran/simple_ccsd_t2.f \
     regression/fortran/complex.f03 \
     regression/fortran/icsd.f \
+    regression/fortran/icsd_T2.f \
     regression/mrtc/failure/des.c \
     regression/mrtc/success/adpcm.c \
     regression/mrtc/success/bs.c \
@@ -137,7 +138,7 @@ noinst_SCRIPTS = \
   regression/f03_driver.sh \
   regression/f77_driver.sh
 
-TEST_EXTENSIONS = .cxx .c .f90 .f03 .f
+TEST_EXTENSIONS = .cxx .c .f90 .f03 .f .F
 C_LOG_COMPILER = sh $(builddir)/regression/c_driver.sh
 AM_C_LOG_FLAGS = 
 CXX_LOG_COMPILER = sh $(builddir)/regression/cxx_driver.sh
