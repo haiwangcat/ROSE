@@ -1261,7 +1261,10 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
     PrologCompTerm* annot = retrieveAnnotation(t);
     TERM_ASSERT(t, annot != NULL);
     EXPECT_TERM(PrologAtom*, s, annot->at(0));
-    ve = new SgStringVal(fi,s->getName());
+    SgStringVal* sv = new SgStringVal(fi,s->getName());
+    sv->set_usesSingleQuotes(getFlag(annot->at(1)));
+    sv->set_usesDoubleQuotes(getFlag(annot->at(2)));
+    ve = sv;
   }
 
   if(ve != NULL) {

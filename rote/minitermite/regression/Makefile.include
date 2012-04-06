@@ -80,7 +80,7 @@ TERMITE_TESTS = \
     regression/fortran/simple_ccsd_t2.f \
     regression/fortran/complex.f03 \
     regression/fortran/icsd.f \
-    regression/fortran/icsd_T2.f \
+    regression/fortran/icsd_t2.f \
     regression/mrtc/failure/des.c \
     regression/mrtc/success/adpcm.c \
     regression/mrtc/success/bs.c \

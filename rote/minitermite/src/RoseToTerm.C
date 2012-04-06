@@ -750,7 +750,12 @@ RoseToTerm::getValueExpSpecific(SgValueExp* astNode) {
     string s = o.str();
     val = new PrologAtom(s);
   } else if (SgStringVal* n = dynamic_cast<SgStringVal*>(astNode)) {
-    val = new PrologAtom(n->get_value());
+    return new PrologCompTerm
+      ("value_annotation", 
+       new PrologAtom(n->get_value()),
+       makeFlag(n->get_usesSingleQuotes(), "usesSingleQuotes"),
+       makeFlag(n->get_usesDoubleQuotes(), "usesDoubleQuotes"),
+       PPI(astNode));
   } else {
     val = new PrologAtom("null");
   }
