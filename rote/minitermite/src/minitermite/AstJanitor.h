@@ -62,16 +62,17 @@ public:
     // These nodes don't have a scope associated
     if (SgDeclarationStatement* decl = isSgDeclarationStatement(n)) {
       VariantT v = decl->variantT();
-      if (   v != V_SgVariableDeclaration
-	  && v != V_SgFunctionParameterList
-	  && v != V_SgPragmaDeclaration
-	  && v != V_SgCtorInitializerList
-	  && v != V_SgImplicitStatement
-	  && v != V_SgAttributeSpecificationStatement
-	  && v != V_SgMemberFunctionDeclaration
-	  && v != V_SgContainsStatement
+      if (v != V_SgAttributeSpecificationStatement
 	  && v != V_SgCommonBlock
-	) {
+	  && v != V_SgContainsStatement
+	  && v != V_SgCtorInitializerList
+	  && v != V_SgFormatStatement
+	  && v != V_SgFunctionParameterList
+	  && v != V_SgImplicitStatement
+	  && v != V_SgMemberFunctionDeclaration
+	  && v != V_SgPragmaDeclaration
+	  && v != V_SgVariableDeclaration
+	  ) {
 	ROSE_ASSERT(scope != NULL);
 	decl->set_scope(scope);
       }

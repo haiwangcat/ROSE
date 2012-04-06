@@ -2334,7 +2334,6 @@ TermToRose::createBinaryOp(Sg_File_Info* fi,SgNode* lnode,SgNode* rnode,PrologCo
   else if (op_name == "scope_op")            cur_op = new SgScopeOp(fi,lhs,rhs,op_type);
   else if (op_name == "subtract_op")         cur_op = new SgSubtractOp(fi,lhs,rhs,op_type);
   else if (op_name == "xor_assign_op")       cur_op = new SgXorAssignOp(fi,lhs,rhs,op_type);
-  }
   TERM_ASSERT(t, cur_op != NULL);
   debug("created binary op");
   return cur_op;
@@ -2345,83 +2344,47 @@ TermToRose::createBinaryOp(Sg_File_Info* fi,SgNode* lnode,SgNode* rnode,PrologCo
  */
 bool
 TermToRose::isBinaryOp(std::string tname) {
-  if (tname == "arrow_exp") {
-    return true;
-  } else if (tname == "dot_exp") {
-    return true;
-  } else if (tname == "dot_star_op") {
-    return true;
-  } else if (tname == "arrow_star_op") {
-    return true;
-  } else if (tname == "equality_op") {
-    return true;
-  } else if (tname == "less_than_op") {
-    return true;
-  } else if (tname == "greater_than_op") {
-    return true;
-  } else if (tname == "not_equal_op") {
-    return true;
-  } else if (tname == "less_or_equal_op") {
-    return true;
-  } else if (tname == "greater_or_equal_op") {
-    return true;
-  } else if (tname == "add_op") {
-    return true;
-  } else if (tname == "subtract_op") {
-    return true;
-  } else if (tname == "multiply_op") {
-    return true;
-  } else if (tname == "divide_op") {
-    return true;
-  } else if (tname == "integer_divide_op") {
-    return true;
-  } else if (tname == "mod_op") {
-    return true;
-  } else if (tname == "and_op") {
-    return true;
-  } else if (tname == "or_op") {
-    return true;
-  } else if (tname == "bit_xor_op") {
-    return true;
-  } else if (tname == "bit_and_op") {
-    return true;
-  } else if (tname == "bit_or_op") {
-    return true;
-  } else if (tname == "comma_op_exp") {
-    return true;
-  } else if (tname == "lshift_op") {
-    return true;
-  } else if (tname == "rshift_op") {
-    return true;
-  } else if (tname == "pntr_arr_ref_exp") {
-    return true;
-  } else if (tname == "scope_op") {
-    return true;
-  } else if (tname == "assign_op") {
-    return true;
-  } else if (tname == "plus_assign_op") {
-    return true;
-  } else if (tname == "minus_assign_op") {
-    return true;
-  } else if (tname == "and_assign_op") {
-    return true;
-  } else if (tname == "ior_assign_op") {
-    return true;
-  } else if (tname == "mult_assign_op") {
-    return true;
-  } else if (tname == "div_assign_op") {
-    return true;
-  } else if (tname == "mod_assign_op") {
-    return true;
-  } else if (tname == "xor_assign_op") {
-    return true;
-  } else if (tname == "lshift_assign_op") {
-    return true;
-  } else if (tname == "rshift_assign_op") {
-    return true;
-  } else if (tname == "arrow_exp") {
-    return true;
-  } else return false;
+  // FIXME: replace this with a hashmap or a regex
+  if (tname == "arrow_exp")                return true;
+  else if (tname == "add_op")              return true;
+  else if (tname == "and_assign_op")	   return true;
+  else if (tname == "and_op")		   return true;
+  else if (tname == "arrow_exp")	   return true;
+  else if (tname == "arrow_star_op")       return true;
+  else if (tname == "assign_op")	   return true;
+  else if (tname == "bit_and_op")	   return true;
+  else if (tname == "bit_or_op")	   return true;
+  else if (tname == "bit_xor_op")	   return true;
+  else if (tname == "comma_op_exp")	   return true;
+  else if (tname == "div_assign_op")	   return true;
+  else if (tname == "divide_op")           return true;
+  else if (tname == "dot_exp")             return true;
+  else if (tname == "dot_star_op")         return true;
+  else if (tname == "equality_op")         return true;
+  else if (tname == "exponentiation_op")   return true;
+  else if (tname == "greater_or_equal_op") return true;
+  else if (tname == "greater_than_op")     return true;
+  else if (tname == "integer_divide_op")   return true;
+  else if (tname == "ior_assign_op")	   return true;
+  else if (tname == "less_or_equal_op")    return true;
+  else if (tname == "less_than_op")        return true;
+  else if (tname == "lshift_assign_op")	   return true;
+  else if (tname == "lshift_op")	   return true;
+  else if (tname == "minus_assign_op")	   return true;
+  else if (tname == "mod_assign_op")	   return true;
+  else if (tname == "mod_op")		   return true;
+  else if (tname == "mult_assign_op")	   return true;
+  else if (tname == "multiply_op")         return true;
+  else if (tname == "not_equal_op")        return true;
+  else if (tname == "or_op")		   return true;
+  else if (tname == "plus_assign_op")	   return true;
+  else if (tname == "pntr_arr_ref_exp")	   return true;
+  else if (tname == "rshift_assign_op")	   return true;
+  else if (tname == "rshift_op")	   return true;
+  else if (tname == "scope_op")		   return true;
+  else if (tname == "subtract_op")         return true;
+  else if (tname == "xor_assign_op")	   return true;
+  else return false;
 }
 
 /**

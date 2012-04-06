@@ -57,7 +57,6 @@ RoseToTerm::getSpecific(SgNode* astNode) {
   CASE_SPECIFIC(ConstructorInitializer)
   CASE_SPECIFIC(DeleteExp)
   CASE_SPECIFIC(EnumDeclaration)
-  CASE_SPECIFIC(ExponentiationOp)
   CASE_SPECIFIC(FormatItem)
   CASE_SPECIFIC(FormatStatement)
   CASE_SPECIFIC(FortranDo)
@@ -1666,5 +1665,4 @@ RoseToTerm::getFormatStatementSpecific(SgFormatStatement* n) {
      getFormatItemList(n->get_format_item_list()),
      PPI(n));
 }
-
 
