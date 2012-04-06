@@ -57,6 +57,8 @@ RoseToTerm::getSpecific(SgNode* astNode) {
   CASE_SPECIFIC(ConstructorInitializer)
   CASE_SPECIFIC(DeleteExp)
   CASE_SPECIFIC(EnumDeclaration)
+  CASE_SPECIFIC(FormatItem)
+  CASE_SPECIFIC(FormatStatement)
   CASE_SPECIFIC(FortranDo)
   CASE_SPECIFIC(FortranIncludeLine)
   CASE_SPECIFIC(FunctionCallExp)
@@ -1632,3 +1634,35 @@ RoseToTerm::getWriteStatementSpecific(SgWriteStatement* n) {
      traverseSingleNode( n->get_asynchronous() ),
      PPI(n));
 }
+
+
+static PrologList* getFormatItemList(SgFormatItemList* itemlist) {
+  if (itemlist == NULL) 
+    return new PrologList();
+
+  SgFormatItemPtrList& items = itemlist->get_format_item_list();
+  SgFormatItemPtrList::iterator it;
+  PrologList* l = new PrologList();
+  for (it = items.begin(); it != items.end(); ++it) {
+    l->addElement(RoseToTerm::traverseSingleNode(*it));
+  }
+  return l;
+}
+
+PrologCompTerm*
+RoseToTerm::getFormatItemSpecific(SgFormatItem* n) {
+  return new PrologCompTerm
+    ("format_item_annotation",
+     new PrologInt(n->get_repeat_specification()),
+     traverseSingleNode(n->get_data()),
+     getFormatItemList(n->get_format_item_list()));
+}
+
+PrologCompTerm*
+RoseToTerm::getFormatStatementSpecific(SgFormatStatement* n) {
+  return new PrologCompTerm
+    ("format_statement_annotation", 
+     getFormatItemList(n->get_format_item_list()),
+     PPI(n));
+}
+

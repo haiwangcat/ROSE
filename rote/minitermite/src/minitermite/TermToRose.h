@@ -193,6 +193,8 @@ private:
   SgFortranIncludeLine* createFortranIncludeLine(Sg_File_Info*, PrologCompTerm*);
   SgAsteriskShapeExp* createAsteriskShapeExp(Sg_File_Info*, PrologCompTerm*);
   SgWriteStatement* createWriteStatement(Sg_File_Info*, std::deque<SgNode*>*, PrologCompTerm*);
+  SgFormatStatement* createFormatStatement(Sg_File_Info*, PrologCompTerm*);
+  SgFormatItem* createFormatItem(Sg_File_Info*, PrologCompTerm*);
 
   void register_func_decl(SgName, SgFunctionDeclaration*, PrologTerm*);
   char unescape_char(std::string s);

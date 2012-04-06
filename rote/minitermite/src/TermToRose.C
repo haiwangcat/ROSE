@@ -778,6 +778,8 @@ TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
   else if (tname == "break_stmt")              s = createBreakStmt(fi,t);
   else if (tname == "contains_statement")      s = new SgContainsStatement(fi);
   else if (tname == "continue_stmt")           s = createContinueStmt(fi,t);
+  else if (tname == "format_item")             s = createFormatItem(fi,t);
+  else if (tname == "format_statement")        s = createFormatStatement(fi,t);
   else if (tname == "fortran_include_line")    s = createFortranIncludeLine(fi, t);
   else if (tname == "function_ref_exp")        s = createFunctionRefExp(fi,t);
   else if (tname == "goto_statement")          s = createGotoStatement(fi,t);
@@ -4275,5 +4277,50 @@ TermToRose::createWriteStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, P
   n->set_namelist(      isSgExpression(toRose(annot->at(6))) );
   n->set_advance(       isSgExpression(toRose(annot->at(7))) );
   n->set_asynchronous(  isSgExpression(toRose(annot->at(8))) );
+  return n;
+}
+
+/**
+ * create SgFormatItem
+ */
+SgFormatItem*
+TermToRose::createFormatItem(Sg_File_Info* fi, PrologCompTerm* t) {
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  SgFormatItem* n = new SgFormatItem();
+
+  EXPECT_TERM(PrologList*, items, annot->at(2));
+  deque<PrologTerm*>* succs = items->getSuccs();
+  deque<PrologTerm*>::iterator it;
+  SgFormatItemList* sgitems = new SgFormatItemList();
+  for (it = succs->begin(); it != succs->end(); ++it) {
+    sgitems->get_format_item_list().push_back(isSgFormatItem(toRose(*it)));
+    it++;
+  }
+
+  EXPECT_TERM(PrologInt*, rs, annot->at(0));
+  n->set_repeat_specification( rs->getValue() );
+  n->set_data( isSgExpression(toRose(annot->at(1))) );
+  n->set_format_item_list(sgitems);
+  return n;
+}
+
+
+/**
+ * create SgFormatStatement
+ */
+SgFormatStatement*
+TermToRose::createFormatStatement(Sg_File_Info* fi, PrologCompTerm* t) {
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  SgFormatStatement* n = new SgFormatStatement(fi);
+
+  EXPECT_TERM(PrologList*, items, annot->at(0));
+  SgFormatItemList* sgitems = new SgFormatItemList();
+  deque<PrologTerm*>* succs = items->getSuccs();
+  deque<PrologTerm*>::iterator it;
+  for (it = succs->begin(); it != succs->end(); ++it) {
+    sgitems->get_format_item_list().push_back(isSgFormatItem(toRose(*it)));
+  }
+
+  n->set_format_item_list(sgitems);
   return n;
 }

@@ -99,6 +99,8 @@ private:
   PrologCompTerm* getFortranIncludeLineSpecific(SgFortranIncludeLine*);
   PrologCompTerm* getAsteriskShapeExpSpecific(SgAsteriskShapeExp*);
   PrologCompTerm* getWriteStatementSpecific(SgWriteStatement*);
+  PrologCompTerm* getFormatStatementSpecific(SgFormatStatement*);
+  PrologCompTerm* getFormatItemSpecific(SgFormatItem*);
 
 		
   template <class A> PrologList* traverseList(const A& list) {
