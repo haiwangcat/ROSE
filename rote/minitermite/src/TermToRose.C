@@ -1351,17 +1351,17 @@ TermToRose::createUnaryOp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
   SgType* sgtype = createType(annot->at(1));
   ROSE_ASSERT(sgtype != NULL);
   /*nothing special with these*/
-  if (opname == "address_of_op") return new SgAddressOfOp(fi,sgexp,sgtype);
+  if (opname == "address_of_op")          return new SgAddressOfOp(fi,sgexp,sgtype);
   else if (opname == "bit_complement_op") return new SgBitComplementOp(fi,sgexp,sgtype);
+  else if (opname == "minus_op")          return new SgMinusOp(fi,sgexp,sgtype);
+  else if (opname == "not_op")            return new SgNotOp(fi,sgexp,sgtype);
+  else if (opname == "pointer_deref_exp") return new SgPointerDerefExp(fi,sgexp,sgtype);
+  else if (opname == "unary_add_op")      return new SgUnaryAddOp(fi,sgexp,sgtype);
   else if (opname == "expression_root") {
     SgExpressionRoot* er = new SgExpressionRoot(fi,sgexp,sgtype);
     debug("Exp Root: " + er->unparseToString());
     return er;
   }
-  else if (opname == "minus_op") return new SgMinusOp(fi,sgexp,sgtype);
-  else if (opname == "not_op") return new SgNotOp(fi,sgexp,sgtype);
-  else if (opname == "pointer_deref_exp") return new SgPointerDerefExp(fi,sgexp,sgtype);
-  else if (opname == "unary_add_op") return new SgUnaryAddOp(fi,sgexp,sgtype);
   /* chose wether to use ++ and -- as prefix or postfix via set_mode*/
   else if (opname == "minus_minus_op") {
     SgMinusMinusOp* m = new SgMinusMinusOp(fi,sgexp,sgtype);
@@ -2296,80 +2296,44 @@ TermToRose::createBinaryOp(Sg_File_Info* fi,SgNode* lnode,SgNode* rnode,PrologCo
   SgType* op_type = createType(annot->at(0));
   /* depending on the type, call constructor*/
   SgBinaryOp* cur_op = NULL;
-  if (op_name == "arrow_exp") {
-    cur_op = new SgArrowExp(fi,lhs,rhs,op_type);
-  } else if (op_name == "dot_exp") {
-    cur_op = new SgDotExp(fi,lhs,rhs,op_type);
-  } else if (op_name == "dot_star_op") {
-    cur_op = new SgDotStarOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "arrow_star_op") {
-    cur_op = new SgArrowStarOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "equality_op") {
-    cur_op = new SgEqualityOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "less_than_op") {
-    cur_op = new SgLessThanOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "greater_than_op") {
-    cur_op = new SgGreaterThanOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "not_equal_op") {
-    cur_op = new SgNotEqualOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "less_or_equal_op") {
-    cur_op = new SgLessOrEqualOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "greater_or_equal_op") {
-    cur_op = new SgGreaterOrEqualOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "add_op") {
-    cur_op = new SgAddOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "subtract_op") {
-    cur_op = new SgSubtractOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "multiply_op") {
-    cur_op = new SgMultiplyOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "divide_op") {
-    cur_op = new SgDivideOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "integer_divide_op") {
-    cur_op = new SgIntegerDivideOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "mod_op") {
-    cur_op = new SgModOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "and_op") {
-    cur_op = new SgAndOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "or_op") {
-    cur_op = new SgOrOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "bit_xor_op") {
-    cur_op = new SgBitXorOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "bit_and_op") {
-    cur_op = new SgBitAndOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "bit_or_op") {
-    cur_op = new SgBitOrOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "comma_op_exp") {
-    cur_op = new SgCommaOpExp(fi,lhs,rhs,op_type);
-  } else if (op_name == "lshift_op") {
-    cur_op = new SgLshiftOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "rshift_op") {
-    cur_op = new SgRshiftOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "pntr_arr_ref_exp") {
-    cur_op = new SgPntrArrRefExp(fi,lhs,rhs,op_type);
-  } else if (op_name == "scope_op") {
-    cur_op = new SgScopeOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "assign_op") {
-    cur_op = new SgAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "plus_assign_op") {
-    cur_op = new SgPlusAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "minus_assign_op") {
-    cur_op = new SgMinusAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "and_assign_op") {
-    cur_op = new SgAndAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "ior_assign_op") {
-    cur_op = new SgIorAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "mult_assign_op") {
-    cur_op = new SgMultAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "div_assign_op") {
-    cur_op = new SgDivAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "mod_assign_op") {
-    cur_op = new SgModAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "xor_assign_op") {
-    cur_op = new SgXorAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "lshift_assign_op") {
-    cur_op = new SgLshiftAssignOp(fi,lhs,rhs,op_type);
-  } else if (op_name == "rshift_assign_op") {
-    cur_op = new SgRshiftAssignOp(fi,lhs,rhs,op_type);
+  if (op_name == "arrow_exp")                cur_op = new SgArrowExp(fi,lhs,rhs,op_type);
+  else if (op_name == "add_op")              cur_op = new SgAddOp(fi,lhs,rhs,op_type);
+  else if (op_name == "and_assign_op")       cur_op = new SgAndAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "and_op")              cur_op = new SgAndOp(fi,lhs,rhs,op_type);
+  else if (op_name == "arrow_star_op")       cur_op = new SgArrowStarOp(fi,lhs,rhs,op_type);
+  else if (op_name == "assign_op")           cur_op = new SgAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "bit_and_op")          cur_op = new SgBitAndOp(fi,lhs,rhs,op_type);
+  else if (op_name == "bit_or_op")           cur_op = new SgBitOrOp(fi,lhs,rhs,op_type);
+  else if (op_name == "bit_xor_op")          cur_op = new SgBitXorOp(fi,lhs,rhs,op_type);
+  else if (op_name == "comma_op_exp")        cur_op = new SgCommaOpExp(fi,lhs,rhs,op_type);
+  else if (op_name == "div_assign_op")       cur_op = new SgDivAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "divide_op")           cur_op = new SgDivideOp(fi,lhs,rhs,op_type);
+  else if (op_name == "dot_exp")             cur_op = new SgDotExp(fi,lhs,rhs,op_type);
+  else if (op_name == "dot_star_op")         cur_op = new SgDotStarOp(fi,lhs,rhs,op_type);
+  else if (op_name == "equality_op")         cur_op = new SgEqualityOp(fi,lhs,rhs,op_type);
+  else if (op_name == "exponentiation_op")   cur_op = new SgExponentiationOp(fi,lhs,rhs,op_type);
+  else if (op_name == "greater_or_equal_op") cur_op = new SgGreaterOrEqualOp(fi,lhs,rhs,op_type);
+  else if (op_name == "greater_than_op")     cur_op = new SgGreaterThanOp(fi,lhs,rhs,op_type);
+  else if (op_name == "integer_divide_op")   cur_op = new SgIntegerDivideOp(fi,lhs,rhs,op_type);
+  else if (op_name == "ior_assign_op")       cur_op = new SgIorAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "less_or_equal_op")    cur_op = new SgLessOrEqualOp(fi,lhs,rhs,op_type);
+  else if (op_name == "less_than_op")        cur_op = new SgLessThanOp(fi,lhs,rhs,op_type);
+  else if (op_name == "lshift_assign_op")    cur_op = new SgLshiftAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "lshift_op")           cur_op = new SgLshiftOp(fi,lhs,rhs,op_type);
+  else if (op_name == "minus_assign_op")     cur_op = new SgMinusAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "mod_assign_op")       cur_op = new SgModAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "mod_op")              cur_op = new SgModOp(fi,lhs,rhs,op_type);
+  else if (op_name == "mult_assign_op")      cur_op = new SgMultAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "multiply_op")         cur_op = new SgMultiplyOp(fi,lhs,rhs,op_type);
+  else if (op_name == "not_equal_op")        cur_op = new SgNotEqualOp(fi,lhs,rhs,op_type);
+  else if (op_name == "or_op")               cur_op = new SgOrOp(fi,lhs,rhs,op_type);
+  else if (op_name == "plus_assign_op")      cur_op = new SgPlusAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "pntr_arr_ref_exp")    cur_op = new SgPntrArrRefExp(fi,lhs,rhs,op_type);
+  else if (op_name == "rshift_assign_op")    cur_op = new SgRshiftAssignOp(fi,lhs,rhs,op_type);
+  else if (op_name == "rshift_op")           cur_op = new SgRshiftOp(fi,lhs,rhs,op_type);
+  else if (op_name == "scope_op")            cur_op = new SgScopeOp(fi,lhs,rhs,op_type);
+  else if (op_name == "subtract_op")         cur_op = new SgSubtractOp(fi,lhs,rhs,op_type);
+  else if (op_name == "xor_assign_op")       cur_op = new SgXorAssignOp(fi,lhs,rhs,op_type);
   }
   TERM_ASSERT(t, cur_op != NULL);
   debug("created binary op");
