@@ -415,50 +415,33 @@ TermToRose::unaryToRose(PrologCompTerm* t,std::string tname) {
   SgNode* child1 = toRose(t->at(0));
 
   /* depending on the node type: create it*/
-  if(tname == "class_declaration") {
+  if (tname == "class_declaration") {
     /* class declaration: created above, needs fixup here */
     s = setClassDeclarationBody(isSgClassDeclaration(s),child1);
-  } else if(isValueExp(tname)) {
-    s = createValueExp(fi,child1,t);
-  } else if(isUnaryOp(tname)) {
-    s = createUnaryOp(fi,child1,t);
-  } else if(tname == "source_file") {
-    s = createFile(fi,child1,t);
-  } else if(tname == "return_stmt") {
-    s = createReturnStmt(fi,child1,t);
-  } else if(tname == "function_definition") {
-    s = createFunctionDefinition(fi,child1,t);
-  } else if(tname == "initialized_name") {
-    s = createInitializedName(fi,child1,t);
-  } else if(tname == "assign_initializer") {
-    s = createAssignInitializer(fi,child1,t);
-  } else if(tname == "expr_statement") {
-    s = createExprStatement(fi,child1,t);
-  } else if(tname == "default_option_stmt") {
-    s = createDefaultOptionStmt(fi,child1,t);
-  } else if(tname == "delete_exp") {
-    s = createDeleteExp(fi,child1,t);
-  } else if(tname == "var_arg_op") {
-    s = createVarArgOp(fi,child1,t);
-  } else if(tname == "var_arg_end_op") {
-    s = createVarArgEndOp(fi,child1,t);
-  } else if(tname == "var_arg_start_one_operand_op") {
-    s = createVarArgStartOneOperandOp(fi,child1,t);
-  } else if(tname == "aggregate_initializer") {
-    s = createAggregateInitializer(fi,child1,t);
-  } else if(tname == "namespace_declaration_statement") {
+  }
+  else if(isValueExp(tname)) s = createValueExp(fi,child1,t);
+  else if(isUnaryOp(tname)) s = createUnaryOp(fi,child1,t);
+  else if (tname == "aggregate_initializer")        s = createAggregateInitializer(fi,child1,t);
+  else if (tname == "assign_initializer")           s = createAssignInitializer(fi,child1,t);
+  else if (tname == "common_block_object")          s = createCommonBlockObject(fi,child1,t);
+  else if (tname == "constructor_initializer")      s = createConstructorInitializer(fi,child1,t);
+  else if (tname == "default_option_stmt")          s = createDefaultOptionStmt(fi,child1,t);
+  else if (tname == "delete_exp")                   s = createDeleteExp(fi,child1,t);
+  else if (tname == "expr_statement")               s = createExprStatement(fi,child1,t);
+  else if (tname == "function_definition")          s = createFunctionDefinition(fi,child1,t);
+  else if (tname == "initialized_name")             s = createInitializedName(fi,child1,t);
+  else if (tname == "label_symbol")                 s = createLabelSymbol(fi,child1,t);
+  else if (tname == "namespace_declaration_statement") 
     s = createNamespaceDeclarationStatement(fi,child1,t);
-  } else if(tname == "size_of_op") {
-    s = createSizeOfOp(fi,child1,t);
-  } else if(tname == "constructor_initializer") {
-    s = createConstructorInitializer(fi,child1,t);
-  } else if(tname == "pragma_declaration") {
-    s = createPragmaDeclaration(fi,child1,t);
-  } else if (tname == "typedef_declaration") {
-    s = createTypedefDeclaration(fi,t);
-  } else if (tname == "common_block_object") {
-    s = createCommonBlockObject(fi,child1,t);
-  } else cerr<<"**WARNING: unhandled Unary Node: "<<tname<<endl;
+  else if (tname == "pragma_declaration")           s = createPragmaDeclaration(fi,child1,t);
+  else if (tname == "return_stmt")                  s = createReturnStmt(fi,child1,t);
+  else if (tname == "size_of_op")                   s = createSizeOfOp(fi,child1,t);
+  else if (tname == "source_file")                  s = createFile(fi,child1,t);
+  else if (tname == "typedef_declaration")          s = createTypedefDeclaration(fi,t);
+  else if (tname == "var_arg_end_op")               s = createVarArgEndOp(fi,child1,t);
+  else if (tname == "var_arg_op")                   s = createVarArgOp(fi,child1,t);
+  else if (tname == "var_arg_start_one_operand_op") s = createVarArgStartOneOperandOp(fi,child1,t);
+  else cerr<<"**WARNING: unhandled Unary Node: "<<tname<<endl;
 
   TERM_ASSERT_UPGRADE(t, s != NULL);
 
@@ -620,7 +603,6 @@ TermToRose::quaternaryToRose(PrologCompTerm* t,std::string tname) {
   /*get child nodes (prefix traversal step)*/
   SgNode* child1 = toRose(t->at(0));
   SgNode* child2 = toRose(t->at(1));
-  SgNode* child3 = toRose(t->at(2));
   SgNode* child4 = toRose(t->at(3));
 
   if (tname == "member_function_declaration") {
@@ -628,38 +610,29 @@ TermToRose::quaternaryToRose(PrologCompTerm* t,std::string tname) {
      * declaration before traversing the body; this is necessary for
      * recursive functions */
     s = createMemberFunctionDeclaration(fi,child1,child2,child4,t);
-  } else if (tname == "procedure_header_statement") {
-    /* function declarations are special: we create an incomplete
-     * declaration before traversing the body; this is necessary for
-     * recursive functions */
-    s = createProcedureHeaderStatement(fi,child1,child2,child3,child4,t);
   }
 
-  if(tname == "for_statement") {
-    s = createForStatement(fi,child1,child2,child3,child4,t);
-  } else if (tname == "fortran_do") {
-    s = createFortranDo(fi,child1,child2,child3,child4,t);
-  } else if (tname == "member_function_declaration" ||
-	     tname == "procedure_header_statement") {
+  // now do the body
+  SgNode* child3 = toRose(t->at(2));
+
+  if (tname == "member_function_declaration") {
     /* function declaration: created above, needs a fixup here */
-    /* child2 is the decorator now */
     s = setFunctionDeclarationBody(isSgFunctionDeclaration(s),child3);
-  } else cerr<<"**WARNING: unhandled Quarternary Node: "<<tname<<endl;
-  /*set s to be the parent of its child nodes*/
-  if (s != NULL) {
-    if(child1 != NULL) {
-      child1->set_parent(s);
-    }
-    if(child2 != NULL) {
-      child2->set_parent(s);
-    }
-    if(child3 != NULL) {
-      child3->set_parent(s);
-    }
-    if(child4 != NULL) {
-      child4->set_parent(s);
-    }
   }
+  else if (tname == "for_statement") s = createForStatement(fi,child1,child2,child3,child4,t);
+  else if (tname == "fortran_do")    s = createFortranDo(fi,child1,child2,child3,child4,t);
+  else if (tname == "procedure_header_statement") {
+    // don't think they can be recursive!?
+    s = createProcedureHeaderStatement(fi,child1,child2,child3,child4,t);
+  } else cerr<<"**WARNING: unhandled Quarternary Node: "<<tname<<endl;
+
+  TERM_ASSERT(t, s != NULL);
+
+  /*set s to be the parent of its child nodes*/
+  if (child1 != NULL) child1->set_parent(s);
+  if (child2 != NULL) child2->set_parent(s);
+  if (child3 != NULL) child3->set_parent(s);
+  if (child4 != NULL) child4->set_parent(s);
   return s;
 }
 
@@ -785,6 +758,7 @@ TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
   else if (tname == "goto_statement")          s = createGotoStatement(fi,t);
   else if (tname == "implicit_statement")      s = createImplicitStatement(fi,t);
   else if (tname == "label_statement")         s = createLabelStatement(fi,t);
+  else if (tname == "label_ref_exp")           s = createLabelRefExp(fi,t);
   else if (tname == "member_function_ref_exp") s = createMemberFunctionRefExp(fi,t);
   else if (tname == "null_expression")         s = new SgNullExpression(fi);
   else if (tname == "null_statement")          s = new SgNullStatement(fi);
@@ -2153,7 +2127,7 @@ TermToRose::createProcedureHeaderStatement(Sg_File_Info* fi, SgNode* par_list_u,
     result_name->set_scope(func_def);
   }
   proc_header_stmt->set_isModified(false);
-  debug(proc_header_stmt->get_qualified_name().getString());
+  //debug(proc_header_stmt->get_qualified_name().getString());
 
   /*set declaration modifier*/
   setDeclarationModifier(annot->at(2),&proc_header_stmt->get_declarationModifier());
@@ -2605,6 +2579,7 @@ TermToRose::createFortranDo(Sg_File_Info* fi, SgNode* child1, SgNode* child2, Sg
 				     isSgBasicBlock(child4));
   fdo->set_old_style(getFlag(annot->at(0)));
   fdo->set_has_end_statement(getFlag(annot->at(1)));
+  return fdo;
 }
 
 /**
@@ -4249,5 +4224,40 @@ TermToRose::createFormatStatement(Sg_File_Info* fi, PrologCompTerm* t) {
   }
 
   n->set_format_item_list(sgitems);
+
+  EXPECT_ATOM(label, annot->at(1));
+  n->set_binding_label(label);
+
+  SgLabelRefExp* label_refexp = isSgLabelRefExp(toRose(annot->at(2)));
+  if (label_refexp) {
+    label_refexp->get_symbol()->set_fortran_statement(n);
+    label_refexp->get_symbol()->set_parent(n);
+  }
+  n->set_numeric_label(label_refexp);
+  return n;
+}
+
+/**
+ * create SgLabelRefExp
+ */
+SgLabelRefExp*
+TermToRose::createLabelRefExp(Sg_File_Info* fi, PrologCompTerm* t) {
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  SgLabelRefExp* n = new SgLabelRefExp(fi, isSgLabelSymbol(toRose(annot->at(0))));
+  return n;
+}
+
+/**
+ * create SgLabelSymbol
+ */
+SgLabelSymbol*
+TermToRose::createLabelSymbol(Sg_File_Info* fi, SgNode* child1, PrologCompTerm* t) {
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  SgLabelSymbol* n = new SgLabelSymbol(isSgLabelStatement(child1));
+
+  EXPECT_TERM(PrologInt*, val, annot->at(0));
+  n->set_numeric_label_value(val->getValue());
+  n->set_label_type((SgLabelSymbol::label_type_enum)
+    createEnum(annot->at(1), re.label_type));
   return n;
 }

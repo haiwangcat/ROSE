@@ -330,6 +330,15 @@ static const char* e_template_parameter[] = {
   "template_parameter", //  = 3  /*!< template parameter */
 };
 
+static const char* e_label_type[] = {
+  "unknown_label_type",
+  "non_numeric_label_type",
+  "start_label_type",
+  "else_label_type",
+  "end_label_type",
+  "alternative_return_type",
+  "last_label_type"
+};
 
 /////////////////////////////////////////////////////////////////////////
 // Statement.code
@@ -409,5 +418,6 @@ RoseEnums::RoseEnums() {
   INIT(template_argument)
   INIT(template_instantiation)
   INIT(template_parameter)
+  INIT(label_type)
 }
 

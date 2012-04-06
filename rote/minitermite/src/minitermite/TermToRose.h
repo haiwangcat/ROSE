@@ -195,6 +195,8 @@ private:
   SgWriteStatement* createWriteStatement(Sg_File_Info*, std::deque<SgNode*>*, PrologCompTerm*);
   SgFormatStatement* createFormatStatement(Sg_File_Info*, PrologCompTerm*);
   SgFormatItem* createFormatItem(Sg_File_Info*, PrologCompTerm*);
+  SgLabelRefExp* createLabelRefExp(Sg_File_Info*, PrologCompTerm*);
+  SgLabelSymbol* createLabelSymbol(Sg_File_Info*, SgNode*, PrologCompTerm*);
 
   void register_func_decl(SgName, SgFunctionDeclaration*, PrologTerm*);
   char unescape_char(std::string s);

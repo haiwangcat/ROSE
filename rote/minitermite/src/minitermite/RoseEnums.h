@@ -41,6 +41,7 @@ class RoseEnums {
   ROSEENUMS_DECLARE(template_instantiation)
   ROSEENUMS_DECLARE(template_argument)
   ROSEENUMS_DECLARE(template_parameter)
+  ROSEENUMS_DECLARE(label_type)
 };
 
 #endif

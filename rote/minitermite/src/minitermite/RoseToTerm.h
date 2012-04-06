@@ -101,6 +101,8 @@ private:
   PrologCompTerm* getWriteStatementSpecific(SgWriteStatement*);
   PrologCompTerm* getFormatStatementSpecific(SgFormatStatement*);
   PrologCompTerm* getFormatItemSpecific(SgFormatItem*);
+  PrologCompTerm* getLabelRefExpSpecific(SgLabelRefExp*);
+  PrologCompTerm* getLabelSymbolSpecific(SgLabelSymbol*);
 
 		
   template <class A> PrologList* traverseList(const A& list) {

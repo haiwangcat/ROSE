@@ -68,6 +68,8 @@ RoseToTerm::getSpecific(SgNode* astNode) {
   CASE_SPECIFIC(ImplicitStatement)
   CASE_SPECIFIC(InitializedName)
   CASE_SPECIFIC(LabelStatement)
+  CASE_SPECIFIC(LabelRefExp)
+  CASE_SPECIFIC(LabelSymbol)
   CASE_SPECIFIC(MemberFunctionDeclaration)
   CASE_SPECIFIC(MemberFunctionRefExp)
   CASE_SPECIFIC(MemberFunctionSymbol)
@@ -1663,6 +1665,26 @@ RoseToTerm::getFormatStatementSpecific(SgFormatStatement* n) {
   return new PrologCompTerm
     ("format_statement_annotation", 
      getFormatItemList(n->get_format_item_list()),
+     // From DeclarationStmt
+     new PrologAtom(n->get_binding_label()),
+     // From Statement
+     // FIXME: we should probably add numeric labels to the file_info
+     traverseSingleNode(n->get_numeric_label()),
      PPI(n));
 }
 
+PrologCompTerm*
+RoseToTerm::getLabelRefExpSpecific(SgLabelRefExp* n) {
+  return new PrologCompTerm
+    ("label_ref_exp_annotation",
+     traverseSingleNode(n->get_symbol()));
+}
+
+PrologCompTerm*
+RoseToTerm::getLabelSymbolSpecific(SgLabelSymbol* n) {
+  return new PrologCompTerm
+    ("label_symbol_annotation",
+     new PrologInt(n->get_numeric_label_value()),
+     getEnum(n->get_label_type(), re.label_types)
+     );
+}
