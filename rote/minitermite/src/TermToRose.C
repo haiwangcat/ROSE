@@ -890,6 +890,8 @@ TermToRose::createArrayType(PrologTerm* t) {
   int rank = val->getValue();
 
   at->set_rank( rank );
+  //cerr<<c->at(3)->repr()<<endl;
+  //cerr<<toRose(c->at(3))->class_name()<<endl;
   at->set_dim_info( isSgExprListExp(toRose(c->at(3))) );
 
   return at;
@@ -4182,6 +4184,8 @@ TermToRose::createWriteStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, P
   n->set_namelist(      isSgExpression(toRose(annot->at(6))) );
   n->set_advance(       isSgExpression(toRose(annot->at(7))) );
   n->set_asynchronous(  isSgExpression(toRose(annot->at(8))) );
+
+  n->set_io_statement(SgIOStatement::e_write);
   return n;
 }
 
