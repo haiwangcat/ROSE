@@ -734,6 +734,8 @@ TermToRose::listToRose(PrologCompTerm* t,std::string tname) {
     s = createNamespaceDefinitionStatement(fi,succs);
   } else if (tname == "catch_statement_seq") {
     s = createCatchStatementSeq(fi,succs);
+  } else if (tname == "write_statement") {
+    s = createWriteStatement(fi,succs,t);
   }
   TERM_ASSERT_UPGRADE(t, s != NULL);
 
@@ -768,10 +770,11 @@ TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
     s = createNamespaceDefinitionStatement(fi, new deque<SgNode*>);
   
     /* regular leaf nodes*/
-  else if (isValueExp(tname))                  s = createValueExp(fi,NULL,t);
-  else if (tname == "asterisk_shape_exp")      s = createAsteriskShapeExp(fi, t);
   else if (tname == "attribute_specification_statement")  
     s = createAttributeSpecificationStatement(fi,t);
+
+  else if (isValueExp(tname))                  s = createValueExp(fi,NULL,t);
+  else if (tname == "asterisk_shape_exp")      s = createAsteriskShapeExp(fi, t);
   else if (tname == "break_stmt")              s = createBreakStmt(fi,t);
   else if (tname == "contains_statement")      s = new SgContainsStatement(fi);
   else if (tname == "continue_stmt")           s = createContinueStmt(fi,t);
@@ -4247,5 +4250,30 @@ TermToRose::createAsteriskShapeExp(Sg_File_Info* fi, PrologCompTerm* t) {
   //PrologCompTerm* annot = retrieveAnnotation(t);
   SgAsteriskShapeExp* n = new SgAsteriskShapeExp(fi);
   //n->set_type(createType(annot->at(0)));
+  return n;
+}
+
+/**
+ * create SgWriteStatement
+ */
+SgWriteStatement*
+TermToRose::createWriteStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, PrologCompTerm* t) {
+  /* retrieve annotation */
+  PrologCompTerm* annot = retrieveAnnotation(t);
+  ARITY_ASSERT(annot, 10);
+  /* create the SgWriteStatement */
+  SgWriteStatement* n = new SgWriteStatement(fi);
+  // from IOStatement
+  n->set_io_stmt_list(  createExprListExp(fi, succs ));
+  n->set_unit(          isSgExpression(toRose(annot->at(0))) );
+  n->set_iostat(        isSgExpression(toRose(annot->at(1))) );
+  n->set_err(           isSgExpression(toRose(annot->at(2))) );
+  n->set_iomsg(         isSgExpression(toRose(annot->at(3))) );
+  // from WriteStatement
+  n->set_format(        isSgExpression(toRose(annot->at(4))) );
+  n->set_rec(           isSgExpression(toRose(annot->at(5))) );
+  n->set_namelist(      isSgExpression(toRose(annot->at(6))) );
+  n->set_advance(       isSgExpression(toRose(annot->at(7))) );
+  n->set_asynchronous(  isSgExpression(toRose(annot->at(8))) );
   return n;
 }

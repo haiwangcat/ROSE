@@ -177,9 +177,12 @@ private:
   SgTypedefDeclaration* createTypedefDeclaration(Sg_File_Info*, PrologCompTerm*);
   SgPragma* createPragma(Sg_File_Info*, PrologCompTerm*);
   SgImplicitStatement* createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t);
-  SgAttributeSpecificationStatement* createAttributeSpecificationStatement(Sg_File_Info*, PrologCompTerm*);
-  SgProcedureHeaderStatement* createProcedureHeaderStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
-  SgFunctionDeclaration* createTemplateInstantiationFunctionDecl(Sg_File_Info*, SgNode*, PrologCompTerm*);
+  SgAttributeSpecificationStatement* 
+  createAttributeSpecificationStatement(Sg_File_Info*, PrologCompTerm*);
+  SgProcedureHeaderStatement* 
+  createProcedureHeaderStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
+  SgFunctionDeclaration* 
+  createTemplateInstantiationFunctionDecl(Sg_File_Info*, SgNode*, PrologCompTerm*);
   SgTemplateArgument* createTemplateArgument(PrologCompTerm*);
   SgTemplateParameter* createTemplateParameter(Sg_File_Info*, PrologCompTerm*);
   SgTemplateDeclaration* createTemplateDeclaration(Sg_File_Info*, PrologCompTerm*);
@@ -189,7 +192,7 @@ private:
   SgFortranDo* createFortranDo(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
   SgFortranIncludeLine* createFortranIncludeLine(Sg_File_Info*, PrologCompTerm*);
   SgAsteriskShapeExp* createAsteriskShapeExp(Sg_File_Info*, PrologCompTerm*);
-
+  SgWriteStatement* createWriteStatement(Sg_File_Info*, std::deque<SgNode*>*, PrologCompTerm*);
 
   void register_func_decl(SgName, SgFunctionDeclaration*, PrologTerm*);
   char unescape_char(std::string s);

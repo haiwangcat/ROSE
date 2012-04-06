@@ -82,6 +82,7 @@ RoseToTerm::getSpecific(SgNode* astNode) {
   CASE_SPECIFIC(TypedefDeclaration)
   CASE_SPECIFIC(TypedefSeq)
   CASE_SPECIFIC(VarRefExp)
+  CASE_SPECIFIC(WriteStatement)
   CASE_SPECIFIC(VariableDeclaration)
 
   case V_SgProgramHeaderStatement:
@@ -1611,4 +1612,23 @@ RoseToTerm::getAsteriskShapeExpSpecific(SgAsteriskShapeExp* e) {
     ("asterisk_shape_exp_annotation",
      getTypeSpecific(e->get_type()),
      PPI(e));
+}
+
+PrologCompTerm*
+RoseToTerm::getWriteStatementSpecific(SgWriteStatement* n) {
+  return new PrologCompTerm
+    ("write_statement_annotation",
+     // from IOStatement
+     //get_io_stmt_list() traversal successor
+     traverseSingleNode( n->get_unit()         ),
+     traverseSingleNode( n->get_iostat()       ),
+     traverseSingleNode( n->get_err()          ),
+     traverseSingleNode( n->get_iomsg()        ),
+     // from WriteStatement
+     traverseSingleNode( n->get_format()       ),
+     traverseSingleNode( n->get_rec()          ),
+     traverseSingleNode( n->get_namelist()     ),
+     traverseSingleNode( n->get_advance()      ),
+     traverseSingleNode( n->get_asynchronous() ),
+     PPI(n));
 }

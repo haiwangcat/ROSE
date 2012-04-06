@@ -93,7 +93,8 @@ public:
 
   PrologCompTerm(std::string name, 
 		 PrologTerm* t1, PrologTerm* t2, PrologTerm* t3, 
-		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, PrologTerm* t7)
+		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, 
+		 PrologTerm* t7)
   : mName(name)
   {
     mSubterms.push_back(t1);
@@ -104,7 +105,59 @@ public:
     mSubterms.push_back(t6);
     mSubterms.push_back(t7);
   }
+
+  PrologCompTerm(std::string name, 
+		 PrologTerm* t1, PrologTerm* t2, PrologTerm* t3, 
+		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, 
+		 PrologTerm* t7, PrologTerm* t8)
+  : mName(name)
+  {
+    mSubterms.push_back(t1);
+    mSubterms.push_back(t2);
+    mSubterms.push_back(t3);
+    mSubterms.push_back(t4);
+    mSubterms.push_back(t5);
+    mSubterms.push_back(t6);
+    mSubterms.push_back(t7);
+    mSubterms.push_back(t8);
+  }
+
+  PrologCompTerm(std::string name, 
+		 PrologTerm* t1, PrologTerm* t2, PrologTerm* t3, 
+		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, 
+		 PrologTerm* t7, PrologTerm* t8, PrologTerm* t9)
+  : mName(name)
+  {
+    mSubterms.push_back(t1);
+    mSubterms.push_back(t2);
+    mSubterms.push_back(t3);
+    mSubterms.push_back(t4);
+    mSubterms.push_back(t5);
+    mSubterms.push_back(t6);
+    mSubterms.push_back(t7);
+    mSubterms.push_back(t8);
+    mSubterms.push_back(t9);
+  }
   
+  PrologCompTerm(std::string name, 
+		 PrologTerm* t1, PrologTerm* t2, PrologTerm* t3, 
+		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, 
+		 PrologTerm* t7, PrologTerm* t8, PrologTerm* t9,
+		 PrologTerm* t10)
+  : mName(name)
+  {
+    mSubterms.push_back(t1);
+    mSubterms.push_back(t2);
+    mSubterms.push_back(t3);
+    mSubterms.push_back(t4);
+    mSubterms.push_back(t5);
+    mSubterms.push_back(t6);
+    mSubterms.push_back(t7);
+    mSubterms.push_back(t8);
+    mSubterms.push_back(t9);
+    mSubterms.push_back(t10);
+  }
+
   int getArity() { return mSubterms.size(); };
   bool isGround() {
     bool ground = true;
@@ -306,7 +359,8 @@ public:
 
   PrologCompTerm(std::string name, 
 		 PrologTerm* t1, PrologTerm* t2, PrologTerm* t3, 
-		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, PrologTerm* t7)
+		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, 
+		 PrologTerm* t7)
   : PrologTerm()
   {
     COMPTERM_CONSTRUCTOR(7);
@@ -324,6 +378,88 @@ public:
     subterms.push_back(t5);
     subterms.push_back(t6);
     subterms.push_back(t7);
+  }
+
+  PrologCompTerm(std::string name, 
+		 PrologTerm* t1, PrologTerm* t2, PrologTerm* t3, 
+		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, 
+		 PrologTerm* t7, PrologTerm* t8)
+  : PrologTerm()
+  {
+    COMPTERM_CONSTRUCTOR(8);
+    ignored=PL_unify_arg(1, term, t1->getTerm());
+    ignored=PL_unify_arg(2, term, t2->getTerm());
+    ignored=PL_unify_arg(3, term, t3->getTerm());
+    ignored=PL_unify_arg(4, term, t4->getTerm());
+    ignored=PL_unify_arg(5, term, t5->getTerm());
+    ignored=PL_unify_arg(6, term, t6->getTerm());
+    ignored=PL_unify_arg(7, term, t7->getTerm());
+    ignored=PL_unify_arg(8, term, t8->getTerm());
+    subterms.push_back(t1);
+    subterms.push_back(t2);
+    subterms.push_back(t3);
+    subterms.push_back(t4);
+    subterms.push_back(t5);
+    subterms.push_back(t6);
+    subterms.push_back(t7);
+    subterms.push_back(t8);
+  }
+
+  PrologCompTerm(std::string name, 
+		 PrologTerm* t1, PrologTerm* t2, PrologTerm* t3, 
+		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, 
+		 PrologTerm* t7, PrologTerm* t8, PrologTerm* t9)
+  : PrologTerm()
+  {
+    COMPTERM_CONSTRUCTOR(9);
+    ignored=PL_unify_arg(1, term, t1->getTerm());
+    ignored=PL_unify_arg(2, term, t2->getTerm());
+    ignored=PL_unify_arg(3, term, t3->getTerm());
+    ignored=PL_unify_arg(4, term, t4->getTerm());
+    ignored=PL_unify_arg(5, term, t5->getTerm());
+    ignored=PL_unify_arg(6, term, t6->getTerm());
+    ignored=PL_unify_arg(7, term, t7->getTerm());
+    ignored=PL_unify_arg(8, term, t8->getTerm());
+    ignored=PL_unify_arg(9, term, t9->getTerm());
+    subterms.push_back(t1);
+    subterms.push_back(t2);
+    subterms.push_back(t3);
+    subterms.push_back(t4);
+    subterms.push_back(t5);
+    subterms.push_back(t6);
+    subterms.push_back(t7);
+    subterms.push_back(t8);
+    subterms.push_back(t9);
+  }
+
+  PrologCompTerm(std::string name, 
+		 PrologTerm* t1, PrologTerm* t2, PrologTerm* t3, 
+		 PrologTerm* t4, PrologTerm* t5, PrologTerm* t6, 
+		 PrologTerm* t7, PrologTerm* t8, PrologTerm* t9,
+		 PrologTerm* t10)
+  : PrologTerm()
+  {
+    COMPTERM_CONSTRUCTOR(10);
+    ignored=PL_unify_arg(1, term, t1->getTerm());
+    ignored=PL_unify_arg(2, term, t2->getTerm());
+    ignored=PL_unify_arg(3, term, t3->getTerm());
+    ignored=PL_unify_arg(4, term, t4->getTerm());
+    ignored=PL_unify_arg(5, term, t5->getTerm());
+    ignored=PL_unify_arg(6, term, t6->getTerm());
+    ignored=PL_unify_arg(7, term, t7->getTerm());
+    ignored=PL_unify_arg(8, term, t8->getTerm());
+    ignored=PL_unify_arg(9, term, t9->getTerm());
+    ignored=PL_unify_arg(10, term, t10->getTerm());
+    subterms.push_back(t1);
+    subterms.push_back(t2);
+    subterms.push_back(t3);
+    subterms.push_back(t4);
+    subterms.push_back(t5);
+    subterms.push_back(t6);
+    subterms.push_back(t7);
+    subterms.push_back(t8);
+    subterms.push_back(t9);
+    subterms.push_back(t10);
   }
 
 
