@@ -229,7 +229,7 @@ RoseToTerm::getProcedureHeaderStatementSpecific(SgProcedureHeaderStatement* decl
     ("procedure_header_statement_annotation", /*4,*/
      /* add type and name*/
      getTypeSpecific(decl->get_type()),
-     new PrologAtom(decl->get_name().getString()),
+     new PrologString(decl->get_name().getString()),
      getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
      getEnum(decl->get_subprogram_kind(), re.subprogram_kinds),
      new PrologAtom("null"), //FIXME decl->get_end_numeric_label(),
@@ -248,7 +248,7 @@ RoseToTerm::getTemplateInstantiationFunctionDeclSpecific(SgTemplateInstantiation
     ("template_instantiation_function_decl_annotation", /*6,*/
      /* add type and name*/
      getTypeSpecific(decl->get_type()),
-     new PrologAtom(decl->get_name().getString()),
+     new PrologString(decl->get_name().getString()),
      getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
      getSpecialFunctionModifierSpecific(&(decl->get_specialFunctionModifier())),
      traverseList(decl->get_templateArguments()),
@@ -274,7 +274,7 @@ PrologCompTerm*
 RoseToTerm::getTemplateDeclarationSpecific(SgTemplateDeclaration* decl) {
   return new PrologCompTerm
     ("template_declaration_annotation", 
-     new PrologAtom(decl->get_name().getString()),
+     new PrologString(decl->get_name().getString()),
      new PrologAtom(decl->get_string().getString()),
      getEnum(decl->get_template_kind(), re.template_instantiations),
      traverseList(decl->get_templateParameters()));
@@ -289,8 +289,8 @@ RoseToTerm::getTemplateParameterSpecific(SgTemplateParameter *p) {
      getTypeSpecific(p->get_defaultTypeParameter()),
      traverseSingleNode(p->get_expression()),
      traverseSingleNode(p->get_defaultExpressionParameter()),
-     new PrologAtom(p->get_templateDeclaration()->get_name().getString()),
-     new PrologAtom(p->get_defaultTemplateDeclarationParameter()->get_name().getString()));
+     new PrologString(p->get_templateDeclaration()->get_name().getString()),
+     new PrologString(p->get_defaultTemplateDeclarationParameter()->get_name().getString()));
 }
 
 PrologCompTerm*  
@@ -314,7 +314,7 @@ RoseToTerm::getFunctionDeclarationSpecific(SgFunctionDeclaration* decl) {
     ("function_declaration_annotation", /*4,*/
      /* add type and name*/
      getTypeSpecific(decl->get_type()),
-     new PrologAtom(decl->get_name().getString()),
+     new PrologString(decl->get_name().getString()),
      getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
      getSpecialFunctionModifierSpecific(&(decl->get_specialFunctionModifier())),
      PPI(decl));
@@ -459,7 +459,7 @@ RoseToTerm::getTypedefTypeSpecific(SgType* mtype) {
   /* create term and add name*/
   return new PrologCompTerm
     ("typedef_type", //2,
-     new PrologAtom(tp->get_name().getString()),
+     new PrologString(tp->get_name().getString()),
      (tp->get_base_type() != NULL /* add base type */
       ? getTypeSpecific(tp->get_base_type())
       : new PrologAtom("null")));
@@ -704,14 +704,14 @@ RoseToTerm::getValueExpSpecific(SgValueExp* astNode) {
     /* value*/
     // val = new PrologInt(n->get_value());
     /* name of value*/
-    // val = new PrologAtom(n->get_name().getString());
+    // val = new PrologString(n->get_name().getString());
     /* name of declaration*/
     SgEnumType *type = isSgEnumDeclaration(n->get_declaration())->get_type();
     ROSE_ASSERT(type != NULL);
     // val = getEnumTypeSpecific(type);
     return new PrologCompTerm("value_annotation",
 			      new PrologInt(n->get_value()),
-			      new PrologAtom(n->get_name().getString()),
+			      new PrologString(n->get_name().getString()),
 			      getEnumTypeSpecific(type),
 			      PPI(astNode));
   }
@@ -829,7 +829,7 @@ RoseToTerm::getVarRefExpSpecific(SgVarRefExp* vr) {
   return new PrologCompTerm
     ("var_ref_exp_annotation", //5,
      typeSpecific,
-     /* name*/ new PrologAtom(n->get_name().getString()),
+     /* name*/ new PrologString(n->get_name().getString()),
      isStatic,
      scope,
      PPI(vr));
@@ -858,7 +858,7 @@ RoseToTerm::getInitializedNameSpecific(SgInitializedName* n) {
   return new PrologCompTerm
     ("initialized_name_annotation", //4,
      getTypeSpecific(n->get_typeptr()),
-     new PrologAtom(n->get_name().getString()),
+     new PrologString(n->get_name().getString()),
      /* static? (relevant for unparsing if scope is a class)*/
      getEnum(n->get_storageModifier().isStatic(), re.static_flags),
      scope,
@@ -923,7 +923,7 @@ RoseToTerm::getNamespaceDeclarationStatementSpecific
 (SgNamespaceDeclarationStatement* dec) {
   return new PrologCompTerm
     ("namespace_declaration_statement_annotation", //3,
-     /* name*/ new PrologAtom(dec->get_name().getString()),
+     /* name*/ new PrologString(dec->get_name().getString()),
      /* unnamed?*/ new PrologInt((int) dec->get_isUnnamedNamespace()),
      PPI(dec));
 }
@@ -1297,7 +1297,7 @@ RoseToTerm::getFunctionRefExpSpecific(SgFunctionRefExp* r) {
   ROSE_ASSERT(tpe != NULL);
   /*create Prolog Term*/
   return new PrologCompTerm("function_ref_exp_annotation", //3,
-			    new PrologAtom(s->get_name().getString()),
+			    new PrologString(s->get_name().getString()),
 			    getTypeSpecific(tpe),
 			    PPI(r));
 
@@ -1360,7 +1360,7 @@ RoseToTerm::getMemberFunctionDeclarationSpecific(SgMemberFunctionDeclaration* de
   return new PrologCompTerm
     ("member_function_declaration_annotation", //5,
      getTypeSpecific(decl->get_type()),
-     new PrologAtom(decl->get_name().getString()), /* add the node's name*/
+     new PrologString(decl->get_name().getString()), /* add the node's name*/
      /* we add the complete class scope name here */
      getClassScopeName(def),
      /* add declaration modifier specific*/
@@ -1496,7 +1496,7 @@ RoseToTerm::getTypedefDeclarationSpecific(SgTypedefDeclaration* d) {
 
   return new PrologCompTerm
     ("typedef_annotation", //3,
-     new PrologAtom(d->get_name().getString()),
+     new PrologString(d->get_name().getString()),
      /*get base type*/
      getTypeSpecific(d->get_base_type()),
      /* the base type declaration is no longer in the typedef

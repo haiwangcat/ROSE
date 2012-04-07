@@ -59,8 +59,8 @@ pterm:
 | comp_term OPERATOR { assert(((string)(*$2)) == "."); prote = $1; $$ = $1;}
 ;
 term:
-/*  STRING       { $$ = new PrologString(*$1);  } | */
-   ATOM       { $$ = new PrologAtom(*$1);    }
+  STRING      { $$ = new PrologString(*$1);  } 
+ | ATOM       { $$ = new PrologAtom(*$1);    }
  | OPERATOR   { $$ = new PrologAtom(*$1);    
    // The problem is, we can't really decide the difference between the 
    // string-atom '->' and the operator '->'

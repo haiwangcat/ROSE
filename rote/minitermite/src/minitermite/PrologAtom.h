@@ -32,7 +32,7 @@ public:
    // do not escape characters, but quote the whole string
       return "'" + mName + "'";
   }
-private:
+protected:
   /// the string
   std::string mName;
   /// flag indicating whether to quote the string when its representation is
@@ -40,9 +40,23 @@ private:
   bool mEscapedRepresentation;
 };
 
+// FIXME: quick hack for ajay:
+class PrologString : public PrologAtom {
+public:
+  PrologString(std::string name = "#ERROR") {
+      mName = name;
+      mEscapedRepresentation = true;
+  };
+  
+  std::string getRepresentation() {
+    return  "\"" + escape(mName) + "\"";
+  }
+};
 
 #else
 
+// FIXME quick hack for ajay:
+#define PrologString PrologAtom
 
 class PrologAtom : public PrologTerm {
 public:
