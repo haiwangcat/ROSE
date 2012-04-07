@@ -424,6 +424,7 @@ size_of_op_annotation ::=
 
 value_annotation ::=
     value_annotation(number_or_string, name, type, preprocessing_info) /* enum */
+    | value_annotation(number_or_string, todo, todo, preprocessing_info) /* string */
     | value_annotation(number_or_string, preprocessing_info).
 
 binary_op_annotation ::=
