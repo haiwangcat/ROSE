@@ -1295,10 +1295,27 @@ RoseToTerm::getFunctionRefExpSpecific(SgFunctionRefExp* r) {
   ROSE_ASSERT(s != NULL);
   SgType* tpe = s->get_type();
   ROSE_ASSERT(tpe != NULL);
+
+  // Fortran-specific: store subprogram kind (subroutine or procedure)
+  // cf. TermToRose::createDummyFunctionDeclaration()
+  // Note that the function declaration is explicitly marked and I think this is better than
+  // getting the return type.
+  SgFunctionSymbol* functionSymbol = r->get_symbol();
+  ROSE_ASSERT(functionSymbol != NULL);
+  SgFunctionDeclaration* functionDeclaration = functionSymbol->get_declaration();
+  ROSE_ASSERT(functionDeclaration != NULL);
+  SgProcedureHeaderStatement* procedureHeaderStatement = 
+    isSgProcedureHeaderStatement(functionDeclaration);
+  SgProcedureHeaderStatement::subprogram_kind_enum subprogram_kind = 
+    SgProcedureHeaderStatement::e_unknown_kind;
+  if (procedureHeaderStatement)
+    subprogram_kind = procedureHeaderStatement->get_subprogram_kind();
+
   /*create Prolog Term*/
   return new PrologCompTerm("function_ref_exp_annotation", //3,
 			    new PrologString(s->get_name().getString()),
 			    getTypeSpecific(tpe),
+			    getEnum(subprogram_kind, re.subprogram_kinds),
 			    PPI(r));
 
 }

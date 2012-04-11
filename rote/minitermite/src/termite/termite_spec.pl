@@ -442,7 +442,7 @@ typedef_annotation ::=
     typedef_annotation(name, type, preprocessing_info).
 
 function_ref_exp_annotation ::=
-    function_ref_exp_annotation(name, type, preprocessing_info).
+    function_ref_exp_annotation(name, type, todo, preprocessing_info).
 
 member_function_ref_exp_annotation ::=
     member_function_ref_exp_annotation(name, number_or_string, member_function_type,

@@ -101,8 +101,8 @@ private:
   SgDeclarationModifier* createDeclarationModifier(PrologTerm*);
   void setDeclarationModifier(PrologTerm*, SgDeclarationModifier*);
   SgModifierType* createModifierType(PrologTerm*);
-  SgFunctionDeclaration* createDummyFunctionDeclaration(std::string*, PrologTerm*);
-  SgFunctionSymbol* createDummyFunctionSymbol(std::string*, PrologTerm*);
+  SgFunctionDeclaration* createDummyFunctionDeclaration(std::string*, PrologTerm*, SgProcedureHeaderStatement::subprogram_kind_enum);
+  SgFunctionSymbol* createDummyFunctionSymbol(std::string*, PrologTerm*, SgProcedureHeaderStatement::subprogram_kind_enum);
   SgMemberFunctionSymbol* createDummyMemberFunctionSymbol(PrologTerm*);
   SgVariableSymbol* createVariableSymbol(SgInitializedName*);
   void storeVariableSymbolFromDeclaration(SgScopeStatement*,

@@ -3651,22 +3651,24 @@ TermToRose::createAggregateInitializer(Sg_File_Info* fi,SgNode* child1,PrologCom
  * Use this function only if there really is no other way (ie. forward declarations)
  */
 SgFunctionDeclaration*
-TermToRose::createDummyFunctionDeclaration(std::string* namestr, PrologTerm* type_term) {
+TermToRose::createDummyFunctionDeclaration(std::string* namestr, PrologTerm* type_term,
+					   SgProcedureHeaderStatement::subprogram_kind_enum kind) {
   //cerr<<"**WARNING: deprecated function "<<__FUNCTION__<<endl;
   ROSE_ASSERT(namestr != NULL);
   ROSE_ASSERT(type_term != NULL);
   /* create SgName and SgFunctionType from arguments*/
   SgName n = *(namestr);
   EXPECT_NODE(SgFunctionType*, tpe, createType(type_term));
-  /* create SgFunctionDeclaration*/
-  //SgFunctionDeclaration* d = new SgFunctionDeclaration(FI,n,tpe);
 
+  // create SgFunctionDeclaration
   // We ALWAYS create a SgProcedureHeaderStatement instead of an
   // SgFunctionDeclaration. Fortran expects it, and C/C++ will use
   // only the Funcdecl base class.
   SgProcedureHeaderStatement* d = new SgProcedureHeaderStatement(FI,n,tpe);
   ROSE_ASSERT(d != NULL);
-  //cerr<<tpe->get_return_type()->class_name()<< endl;
+  // cerr<<tpe->get_return_type()->class_name()<< endl;
+
+# if 0 // this does not work because ROSE assumes that all external functions are of type_int
   if (tpe->get_return_type()->variantT() == V_SgTypeVoid)
     if (fortranFunctionTypeMap.find(*namestr) != fortranFunctionTypeMap.end())
       d->set_subprogram_kind(SgProcedureHeaderStatement::e_function_subprogram_kind);
@@ -3674,6 +3676,9 @@ TermToRose::createDummyFunctionDeclaration(std::string* namestr, PrologTerm* typ
       d->set_subprogram_kind(SgProcedureHeaderStatement::e_subroutine_subprogram_kind);
   else
     d->set_subprogram_kind(SgProcedureHeaderStatement::e_function_subprogram_kind);
+#else
+  d->set_subprogram_kind(kind);
+#endif
 
   /* postprocessing to satisfy unparser*/
   d->setForward();
@@ -3688,12 +3693,13 @@ TermToRose::createDummyFunctionDeclaration(std::string* namestr, PrologTerm* typ
  * Use this function only if there really is no other way (ie. forward declarations)
  */
 SgFunctionSymbol*
-TermToRose::createDummyFunctionSymbol(std::string* namestr, PrologTerm* type_term) {
+TermToRose::createDummyFunctionSymbol(std::string* namestr, PrologTerm* type_term, 	 
+				      SgProcedureHeaderStatement::subprogram_kind_enum kind) {
   //cerr<<"**WARNING: deprecated function "<<__FUNCTION__<<endl;
   ROSE_ASSERT(namestr != NULL);
   ROSE_ASSERT(type_term != NULL);
   /* create dummy declaration*/
-  SgFunctionDeclaration* decl = createDummyFunctionDeclaration(namestr,type_term);
+  SgFunctionDeclaration* decl = createDummyFunctionDeclaration(namestr, type_term, kind);
   ROSE_ASSERT(decl != NULL);
   /* use declaration to create SgFunctionSymbol*/
   SgFunctionSymbol* sym = new SgFunctionSymbol(decl);
@@ -3742,7 +3748,7 @@ TermToRose::createFunctionRefExp(Sg_File_Info* fi, PrologCompTerm* ct) {
   TERM_ASSERT(ct, ct != NULL);
   PrologCompTerm* annot = retrieveAnnotation(ct);
   TERM_ASSERT(ct, annot != NULL);
-  ARITY_ASSERT(annot, 3);
+  ARITY_ASSERT(annot, 4);
   string* s = toStringP(annot->at(0));
   TERM_ASSERT(ct, s != NULL);
 
@@ -3757,7 +3763,10 @@ TermToRose::createFunctionRefExp(Sg_File_Info* fi, PrologCompTerm* ct) {
     //TERM_ASSERT(ct, false);
     /* create function symbol*/
     debug("symbol");
-    sym = createDummyFunctionSymbol(s,annot->at(1));
+
+    sym = createDummyFunctionSymbol(s,annot->at(1), 
+				    (SgProcedureHeaderStatement::subprogram_kind_enum)
+				    createEnum(annot->at(2), re.subprogram_kind));
     //SgFunctionRefExp* re = new SgFunctionRefExp(fi);
     //TERM_ASSERT(ct, re != NULL);
     //return re;
