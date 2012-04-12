@@ -881,8 +881,17 @@ TermToRose::createArrayType(PrologTerm* t) {
   TERM_ASSERT(t, base_type != NULL);
   /* second subterm is an expression*/
   SgExpression* e = isSgExpression(toRose(c->at(1)));
-  /* use factory method of SgArrayType*/
-  SgArrayType* at = SgArrayType::createType(base_type,e);
+  SgExprListExp* dim = isSgExprListExp(toRose(c->at(3)));
+  SgArrayType* at;
+  if (dim == NULL) {
+    /* use factory method of SgArrayType*/
+    at = SgArrayType::createType(base_type,e);
+  } else {
+    // not for Fortran, because we don't want the array type to be
+    // entered into the ROSE type table before we actually know the
+    // full type
+    at = new SgArrayType(base_type,e);
+  }
   TERM_ASSERT(t, at != NULL);
 
   PrologInt* val = isPrologInt(c->at(2));
@@ -892,7 +901,7 @@ TermToRose::createArrayType(PrologTerm* t) {
   at->set_rank( rank );
   //cerr<<c->at(3)->repr()<<endl;
   //cerr<<toRose(c->at(3))->class_name()<<endl;
-  at->set_dim_info( isSgExprListExp(toRose(c->at(3))) );
+  at->set_dim_info( dim );
 
   return at;
 }
@@ -997,27 +1006,17 @@ TermToRose::createType(PrologTerm* t) {
 
   if (PrologCompTerm* c = isPrologCompTerm(t)) {
     string tname = t->getName();
-    if (tname == "enum_type") {
-      type = createEnumType(t);
-    } else if (tname == "pointer_type") {
-      type = createPointerType(t);
-    } else if (tname == "reference_type") {
-      type = createReferenceType(t);
-    } else if (tname == "class_type") {
-      type = createClassType(t);
-    } else if (tname == "function_type") {
-      type = createFunctionType(t);
-    } else if (tname == "member_function_type") {
-      type = createMemberFunctionType(t);
-    } else if (tname == "array_type") {
-      type = createArrayType(t);
-    } else if (tname == "modifier_type") {
-      type = createModifierType(t);
-    } else if (tname == "typedef_type") {
-      type = createTypedefType(t);
-    } else if (tname == "type_complex") {
-      type = new SgTypeComplex(createType(c->at(0)));
-    } else if (tname == "type_fortran_string") {
+    if (tname == "enum_type")                 type = createEnumType(t);
+    else if (tname == "pointer_type")         type = createPointerType(t);
+    else if (tname == "reference_type")       type = createReferenceType(t);
+    else if (tname == "class_type")           type = createClassType(t);
+    else if (tname == "function_type")        type = createFunctionType(t);
+    else if (tname == "member_function_type") type = createMemberFunctionType(t);
+    else if (tname == "array_type")           type = createArrayType(t);
+    else if (tname == "modifier_type")        type = createModifierType(t);
+    else if (tname == "typedef_type")         type = createTypedefType(t);
+    else if (tname == "type_complex")         type = new SgTypeComplex(createType(c->at(0)));
+    else if (tname == "type_fortran_string") {
       SgExpression* length = dynamic_cast<SgExpression*>(toRose(c->at(0)));
       ROSE_ASSERT(length != NULL);
       type = new SgTypeString(length);
