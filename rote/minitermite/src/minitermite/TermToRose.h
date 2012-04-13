@@ -17,18 +17,19 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 /// Class for creating a ROSE-IR (made for unparsing) from its PROLOG term-representation
 class TermToRose {
 public:
-  TermToRose() {};
+  TermToRose(term::TermFactory& termFactory_) : termFactory(termFactory_) {};
   ~TermToRose() {};
   void unparse(std::string, std::string, std::string, SgNode*);
-  SgNode* toRose(PrologTerm*);
+  SgNode* toRose(term::Term*);
   SgNode* toRose(const char* filename);
 
   static void addSymbol(SgScopeStatement*, SgDeclarationStatement*);
 private:
+  term::TermFactory& termFactory;
   /* enum <-> atom conversion */
   RoseEnums re;
 
-  bool getFlag(PrologTerm*);
+  bool getFlag(term::Term*);
   
   /* fixups */
   std::vector<SgDeclarationStatement*> declarationStatementsWithoutScope;
@@ -36,7 +37,7 @@ private:
   std::multimap<std::string,SgGotoStatement*> gotoStatementsWithoutLabel;
   std::map<std::string,SgClassDefinition*> classDefinitionMap;
   /* our own little symbol tables */
-  std::deque<PrologTerm*>* globalDecls;
+  std::deque<term::Term*>* globalDecls;
   std::map<std::string,SgType*> typeMap;
   std::map<std::string,SgType*> fortranFunctionTypeMap;
   std::map<std::string,SgDeclarationStatement*> declarationMap;
@@ -46,159 +47,160 @@ private:
   std::map<std::string,SgTemplateDeclaration*> templateDeclMap;
 
   /* arity specific node generation*/
-  SgNode* leafToRose(PrologCompTerm*, std::string);
-  SgNode* unaryToRose(PrologCompTerm*, std::string);
-  SgNode* binaryToRose(PrologCompTerm*, std::string);
-  SgNode* ternaryToRose(PrologCompTerm*, std::string);
-  SgNode* quaternaryToRose(PrologCompTerm*, std::string);
-  SgNode* listToRose(PrologCompTerm*, std::string);
+  SgNode* leafToRose(term::CompTerm*, std::string);
+  SgNode* unaryToRose(term::CompTerm*, std::string);
+  SgNode* binaryToRose(term::CompTerm*, std::string);
+  SgNode* ternaryToRose(term::CompTerm*, std::string);
+  SgNode* quaternaryToRose(term::CompTerm*, std::string);
+  SgNode* listToRose(term::CompTerm*, std::string);
   /*helpers*/
+  term::Term* canonical_type(term::Term*);
   void unparseFile(SgSourceFile&, std::string, std::string, SgUnparse_Info*);
   void warn_msg(std::string);
-  Sg_File_Info* createFileInfo(PrologTerm*);
-  SgType* createType(PrologTerm*);
-  SgFunctionType* createFunctionType(PrologTerm*);
-  SgMemberFunctionType* createMemberFunctionType(PrologTerm*);
-  SgClassType* createClassType(PrologTerm*);
-  SgPointerType* createPointerType(PrologTerm*);
-  SgEnumType* createEnumType(PrologTerm*);
-  SgReferenceType* createReferenceType(PrologTerm*);
-  SgArrayType* createArrayType(PrologTerm*);
-  PrologCompTerm* retrieveAnnotation(PrologCompTerm*);
+  Sg_File_Info* createFileInfo(term::Term*);
+  SgType* createType(term::Term*);
+  SgFunctionType* createFunctionType(term::Term*);
+  SgMemberFunctionType* createMemberFunctionType(term::Term*);
+  SgClassType* createClassType(term::Term*);
+  SgPointerType* createPointerType(term::Term*);
+  SgEnumType* createEnumType(term::Term*);
+  SgReferenceType* createReferenceType(term::Term*);
+  SgArrayType* createArrayType(term::Term*);
+  term::CompTerm* retrieveAnnotation(term::CompTerm*);
   void abort_unless(bool, std::string);
   void debug(std::string);
   bool isValueExp(std::string);
   bool isUnaryOp(std::string);
   bool isBinaryOp(std::string);
-  SgInitializedName* inameFromAnnot(PrologCompTerm*);
+  SgInitializedName* inameFromAnnot(term::CompTerm*);
   void testFileInfo(Sg_File_Info*);
   SgClassDeclaration* createDummyClassDeclaration(std::string, int);
   SgMemberFunctionDeclaration* createDummyMemberFunctionDeclaration(std::string s,int c_type); /* TODO */
-  SgBitVector* createBitVector(PrologTerm*, std::map<std::string, int>);
-  int createEnum(PrologTerm*, std::map<std::string, int>);
+  SgBitVector* createBitVector(term::Term*, std::map<std::string, int>);
+  int createEnum(term::Term*, std::map<std::string, int>);
   SgFunctionDeclaration* setFunctionDeclarationBody(SgFunctionDeclaration*, SgNode*);
   SgClassDeclaration* setClassDeclarationBody(SgClassDeclaration*, SgNode*);
-  void setSpecialFunctionModifier(PrologTerm*, SgSpecialFunctionModifier*);
+  void setSpecialFunctionModifier(term::Term*, SgSpecialFunctionModifier*);
 
   SgLabelStatement* makeLabel(Sg_File_Info*, std::string);
-  std::string* toStringP(PrologTerm*);
-  int toInt(PrologTerm*);
-  void pciDeclarationStatement(SgDeclarationStatement*,PrologTerm*);
+  std::string* toStringP(term::Term*);
+  int toInt(term::Term*);
+  void pciDeclarationStatement(SgDeclarationStatement*,term::Term*);
   void fakeParentScope(SgDeclarationStatement*);
   void fakeClassScope(std::string, int, SgDeclarationStatement*);
-  SgAccessModifier* createAccessModifier(PrologTerm*);
-  SgBaseClassModifier* createBaseClassModifier(PrologTerm*);
-  SgFunctionModifier* createFunctionModifier(PrologTerm*);
-  SgSpecialFunctionModifier* createSpecialFunctionModifier(PrologTerm*);
+  SgAccessModifier* createAccessModifier(term::Term*);
+  SgBaseClassModifier* createBaseClassModifier(term::Term*);
+  SgFunctionModifier* createFunctionModifier(term::Term*);
+  SgSpecialFunctionModifier* createSpecialFunctionModifier(term::Term*);
 
-  SgStorageModifier* createStorageModifier(PrologTerm*);
-  SgLinkageModifier* createLinkageModifier(PrologTerm*);
-  SgElaboratedTypeModifier* createElaboratedTypeModifier(PrologTerm*);
-  SgConstVolatileModifier* createConstVolatileModifier(PrologTerm*);
-  SgUPC_AccessModifier* createUPC_AccessModifier(PrologTerm*);
-  SgTypeModifier* createTypeModifier(PrologTerm*);
-  void setTypeModifier(PrologTerm*, SgTypeModifier*);
-  SgDeclarationModifier* createDeclarationModifier(PrologTerm*);
-  void setDeclarationModifier(PrologTerm*, SgDeclarationModifier*);
-  SgModifierType* createModifierType(PrologTerm*);
-  SgFunctionDeclaration* createDummyFunctionDeclaration(std::string*, PrologTerm*, SgProcedureHeaderStatement::subprogram_kind_enum);
-  SgFunctionSymbol* createDummyFunctionSymbol(std::string*, PrologTerm*, SgProcedureHeaderStatement::subprogram_kind_enum);
-  SgMemberFunctionSymbol* createDummyMemberFunctionSymbol(PrologTerm*);
+  SgStorageModifier* createStorageModifier(term::Term*);
+  SgLinkageModifier* createLinkageModifier(term::Term*);
+  SgElaboratedTypeModifier* createElaboratedTypeModifier(term::Term*);
+  SgConstVolatileModifier* createConstVolatileModifier(term::Term*);
+  SgUPC_AccessModifier* createUPC_AccessModifier(term::Term*);
+  SgTypeModifier* createTypeModifier(term::Term*);
+  void setTypeModifier(term::Term*, SgTypeModifier*);
+  SgDeclarationModifier* createDeclarationModifier(term::Term*);
+  void setDeclarationModifier(term::Term*, SgDeclarationModifier*);
+  SgModifierType* createModifierType(term::Term*);
+  SgFunctionDeclaration* createDummyFunctionDeclaration(std::string*, term::Term*, SgProcedureHeaderStatement::subprogram_kind_enum);
+  SgFunctionSymbol* createDummyFunctionSymbol(std::string*, term::Term*, SgProcedureHeaderStatement::subprogram_kind_enum);
+  SgMemberFunctionSymbol* createDummyMemberFunctionSymbol(term::Term*);
   SgVariableSymbol* createVariableSymbol(SgInitializedName*);
   void storeVariableSymbolFromDeclaration(SgScopeStatement*,
                                           SgDeclarationStatement*);
   void fakeNamespaceScope(std::string, int, SgDeclarationStatement*);
-  SgTypedefType* createTypedefType(PrologTerm*);
+  SgTypedefType* createTypedefType(term::Term*);
   /* type specific node generation */
   /*unary nodes*/
-  SgExpression* createValueExp(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgUnaryOp* createUnaryOp(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgSourceFile* createFile(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgReturnStmt* createReturnStmt(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgFunctionDefinition* createFunctionDefinition(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgInitializedName* createInitializedName(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgAssignInitializer* createAssignInitializer(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgExprStatement* createExprStatement(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgDefaultOptionStmt* createDefaultOptionStmt(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgClassDeclaration* createClassDeclaration(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgDeleteExp* createDeleteExp(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgVarArgOp* createVarArgOp(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgVarArgStartOneOperandOp* createVarArgStartOneOperandOp(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgVarArgEndOp* createVarArgEndOp(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgAggregateInitializer* createAggregateInitializer(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgNamespaceDeclarationStatement* createNamespaceDeclarationStatement(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgSizeOfOp* createSizeOfOp(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgConstructorInitializer* createConstructorInitializer(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgPragmaDeclaration* createPragmaDeclaration(Sg_File_Info*, SgNode*, PrologCompTerm*);
+  SgExpression* createValueExp(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgUnaryOp* createUnaryOp(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgSourceFile* createFile(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgReturnStmt* createReturnStmt(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgFunctionDefinition* createFunctionDefinition(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgInitializedName* createInitializedName(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgAssignInitializer* createAssignInitializer(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgExprStatement* createExprStatement(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgDefaultOptionStmt* createDefaultOptionStmt(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgClassDeclaration* createClassDeclaration(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgDeleteExp* createDeleteExp(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgVarArgOp* createVarArgOp(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgVarArgStartOneOperandOp* createVarArgStartOneOperandOp(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgVarArgEndOp* createVarArgEndOp(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgAggregateInitializer* createAggregateInitializer(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgNamespaceDeclarationStatement* createNamespaceDeclarationStatement(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgSizeOfOp* createSizeOfOp(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgConstructorInitializer* createConstructorInitializer(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgPragmaDeclaration* createPragmaDeclaration(Sg_File_Info*, SgNode*, term::CompTerm*);
 
   /*binary nodes*/
-  SgFunctionDeclaration* createFunctionDeclaration(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgBinaryOp* createBinaryOp(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
-  SgSwitchStatement* createSwitchStatement(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
-  SgDoWhileStmt* createDoWhileStmt(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
-  SgWhileStmt* createWhileStmt(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
-  SgVarArgCopyOp* createVarArgCopyOp(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
-  SgVarArgStartOp* createVarArgStartOp(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
-  SgFunctionCallExp* createFunctionCallExp(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
-  SgTryStmt* createTryStmt(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
-  SgCatchOptionStmt* createCatchOptionStmt(Sg_File_Info*, SgNode*, SgNode*, PrologCompTerm*);
+  SgFunctionDeclaration* createFunctionDeclaration(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgBinaryOp* createBinaryOp(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
+  SgSwitchStatement* createSwitchStatement(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
+  SgDoWhileStmt* createDoWhileStmt(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
+  SgWhileStmt* createWhileStmt(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
+  SgVarArgCopyOp* createVarArgCopyOp(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
+  SgVarArgStartOp* createVarArgStartOp(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
+  SgFunctionCallExp* createFunctionCallExp(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
+  SgTryStmt* createTryStmt(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
+  SgCatchOptionStmt* createCatchOptionStmt(Sg_File_Info*, SgNode*, SgNode*, term::CompTerm*);
   /*ternary nodes*/
-  SgIfStmt* createIfStmt(Sg_File_Info*,  SgNode*,  SgNode*,  SgNode*,  PrologCompTerm*);
-  SgCaseOptionStmt* createCaseOptionStmt(Sg_File_Info*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
-  SgMemberFunctionDeclaration* createMemberFunctionDeclaration(Sg_File_Info*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
-  SgNewExp* createNewExp(Sg_File_Info*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
-  SgConditionalExp* createConditionalExp(Sg_File_Info*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
-  SgProgramHeaderStatement* createProgramHeaderStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
+  SgIfStmt* createIfStmt(Sg_File_Info*,  SgNode*,  SgNode*,  SgNode*,  term::CompTerm*);
+  SgCaseOptionStmt* createCaseOptionStmt(Sg_File_Info*, SgNode*, SgNode*, SgNode*, term::CompTerm*);
+  SgMemberFunctionDeclaration* createMemberFunctionDeclaration(Sg_File_Info*, SgNode*, SgNode*, SgNode*, term::CompTerm*);
+  SgNewExp* createNewExp(Sg_File_Info*, SgNode*, SgNode*, SgNode*, term::CompTerm*);
+  SgConditionalExp* createConditionalExp(Sg_File_Info*, SgNode*, SgNode*, SgNode*, term::CompTerm*);
+  SgProgramHeaderStatement* createProgramHeaderStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, term::CompTerm*);
   /*quaternary nodes*/
-  SgForStatement* createForStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
+  SgForStatement* createForStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, term::CompTerm*);
   /*list nodes*/
   SgFunctionParameterList* createFunctionParameterList(Sg_File_Info*,  std::deque<SgNode*>*);
   SgBasicBlock* createBasicBlock(Sg_File_Info*, std::deque<SgNode*>*);
   SgGlobal* createGlobal(Sg_File_Info*, std::deque<SgNode*>*);
   SgProject* createProject(Sg_File_Info*, std::deque<SgNode*>*);
-  SgVariableDeclaration* createVariableDeclaration(Sg_File_Info*, std::deque<SgNode*>*, PrologCompTerm*, SgDeclarationStatement*);
+  SgVariableDeclaration* createVariableDeclaration(Sg_File_Info*, std::deque<SgNode*>*, term::CompTerm*, SgDeclarationStatement*);
   SgForInitStatement* createForInitStatement(Sg_File_Info*, std::deque<SgNode*>*);
-  SgClassDefinition* createClassDefinition(Sg_File_Info*, std::deque<SgNode*>*, PrologCompTerm* t);
+  SgClassDefinition* createClassDefinition(Sg_File_Info*, std::deque<SgNode*>*, term::CompTerm* t);
   SgCtorInitializerList* createCtorInitializerList(Sg_File_Info*, std::deque<SgNode*>*);
-  SgEnumDeclaration* createEnumDeclaration(Sg_File_Info*, std::deque<SgNode*>*, PrologCompTerm*);
+  SgEnumDeclaration* createEnumDeclaration(Sg_File_Info*, std::deque<SgNode*>*, term::CompTerm*);
   SgExprListExp* createExprListExp(Sg_File_Info*, std::deque<SgNode*>*);
   SgNamespaceDefinitionStatement* createNamespaceDefinitionStatement(Sg_File_Info*, std::deque<SgNode*>*);
   SgCatchStatementSeq* createCatchStatementSeq(Sg_File_Info*, std::deque<SgNode*>*);
   /*leaf nodes*/
-  SgVarRefExp* createVarRefExp(Sg_File_Info*, PrologCompTerm*);
-  SgBreakStmt* createBreakStmt(Sg_File_Info*, PrologCompTerm*);
-  SgContinueStmt* createContinueStmt(Sg_File_Info*, PrologCompTerm*);
-  SgLabelStatement* createLabelStatement(Sg_File_Info*, PrologCompTerm*);
-  SgGotoStatement* createGotoStatement(Sg_File_Info*, PrologCompTerm*);
-  SgRefExp* createRefExp(Sg_File_Info*, PrologCompTerm*);
-  SgFunctionRefExp* createFunctionRefExp(Sg_File_Info*, PrologCompTerm*);
-  SgMemberFunctionRefExp* createMemberFunctionRefExp(Sg_File_Info*, PrologCompTerm*);
-  SgThisExp* createThisExp(Sg_File_Info*, PrologCompTerm*);
-  SgTypedefDeclaration* createTypedefDeclaration(Sg_File_Info*, PrologCompTerm*);
-  SgPragma* createPragma(Sg_File_Info*, PrologCompTerm*);
-  SgImplicitStatement* createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t);
+  SgVarRefExp* createVarRefExp(Sg_File_Info*, term::CompTerm*);
+  SgBreakStmt* createBreakStmt(Sg_File_Info*, term::CompTerm*);
+  SgContinueStmt* createContinueStmt(Sg_File_Info*, term::CompTerm*);
+  SgLabelStatement* createLabelStatement(Sg_File_Info*, term::CompTerm*);
+  SgGotoStatement* createGotoStatement(Sg_File_Info*, term::CompTerm*);
+  SgRefExp* createRefExp(Sg_File_Info*, term::CompTerm*);
+  SgFunctionRefExp* createFunctionRefExp(Sg_File_Info*, term::CompTerm*);
+  SgMemberFunctionRefExp* createMemberFunctionRefExp(Sg_File_Info*, term::CompTerm*);
+  SgThisExp* createThisExp(Sg_File_Info*, term::CompTerm*);
+  SgTypedefDeclaration* createTypedefDeclaration(Sg_File_Info*, term::CompTerm*);
+  SgPragma* createPragma(Sg_File_Info*, term::CompTerm*);
+  SgImplicitStatement* createImplicitStatement(Sg_File_Info* fi, term::CompTerm* t);
   SgAttributeSpecificationStatement* 
-  createAttributeSpecificationStatement(Sg_File_Info*, PrologCompTerm*);
+  createAttributeSpecificationStatement(Sg_File_Info*, term::CompTerm*);
   SgProcedureHeaderStatement* 
-  createProcedureHeaderStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
+  createProcedureHeaderStatement(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, term::CompTerm*);
   SgFunctionDeclaration* 
-  createTemplateInstantiationFunctionDecl(Sg_File_Info*, SgNode*, PrologCompTerm*);
-  SgTemplateArgument* createTemplateArgument(PrologCompTerm*);
-  SgTemplateParameter* createTemplateParameter(Sg_File_Info*, PrologCompTerm*);
-  SgTemplateDeclaration* createTemplateDeclaration(Sg_File_Info*, PrologCompTerm*);
-  SgTypedefSeq* createTypedefSeq(Sg_File_Info*, PrologCompTerm*);
-  SgCommonBlockObject* createCommonBlockObject(Sg_File_Info*, SgNode*, PrologCompTerm*);
+  createTemplateInstantiationFunctionDecl(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgTemplateArgument* createTemplateArgument(term::CompTerm*);
+  SgTemplateParameter* createTemplateParameter(Sg_File_Info*, term::CompTerm*);
+  SgTemplateDeclaration* createTemplateDeclaration(Sg_File_Info*, term::CompTerm*);
+  SgTypedefSeq* createTypedefSeq(Sg_File_Info*, term::CompTerm*);
+  SgCommonBlockObject* createCommonBlockObject(Sg_File_Info*, SgNode*, term::CompTerm*);
   SgCommonBlock* createCommonBlock(Sg_File_Info*, std::deque<SgNode*>*);
-  SgFortranDo* createFortranDo(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, PrologCompTerm*);
-  SgFortranIncludeLine* createFortranIncludeLine(Sg_File_Info*, PrologCompTerm*);
-  SgAsteriskShapeExp* createAsteriskShapeExp(Sg_File_Info*, PrologCompTerm*);
-  SgWriteStatement* createWriteStatement(Sg_File_Info*, std::deque<SgNode*>*, PrologCompTerm*);
-  SgFormatStatement* createFormatStatement(Sg_File_Info*, PrologCompTerm*);
-  SgFormatItem* createFormatItem(Sg_File_Info*, PrologCompTerm*);
-  SgLabelRefExp* createLabelRefExp(Sg_File_Info*, PrologCompTerm*);
-  SgLabelSymbol* createLabelSymbol(Sg_File_Info*, SgNode*, PrologCompTerm*);
+  SgFortranDo* createFortranDo(Sg_File_Info*, SgNode*, SgNode*, SgNode*, SgNode*, term::CompTerm*);
+  SgFortranIncludeLine* createFortranIncludeLine(Sg_File_Info*, term::CompTerm*);
+  SgAsteriskShapeExp* createAsteriskShapeExp(Sg_File_Info*, term::CompTerm*);
+  SgWriteStatement* createWriteStatement(Sg_File_Info*, std::deque<SgNode*>*, term::CompTerm*);
+  SgFormatStatement* createFormatStatement(Sg_File_Info*, term::CompTerm*);
+  SgFormatItem* createFormatItem(Sg_File_Info*, term::CompTerm*);
+  SgLabelRefExp* createLabelRefExp(Sg_File_Info*, term::CompTerm*);
+  SgLabelSymbol* createLabelSymbol(Sg_File_Info*, SgNode*, term::CompTerm*);
 
-  void register_func_decl(SgName, SgFunctionDeclaration*, PrologTerm*);
+  void register_func_decl(SgName, SgFunctionDeclaration*, term::Term*);
   char unescape_char(std::string s);
 
 public:
@@ -265,7 +267,7 @@ public:
   {
     *decl = NULL;
     if (globalDecls) {
-      for (std::deque<PrologTerm*>::iterator it = globalDecls->begin();
+      for (std::deque<term::Term*>::iterator it = globalDecls->begin();
 	   it != globalDecls->end(); ++it) {
 	if ((*it)->matches(pattern)) {
 	  //std::cerr<<pattern<<std::endl;
@@ -284,5 +286,8 @@ public:
       return NULL;
     else return templateDeclMap[name];
   }
+
+
+
 };
 #endif

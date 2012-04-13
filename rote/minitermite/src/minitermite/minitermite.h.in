@@ -72,18 +72,9 @@
 
 #define DEBUG_TERMITE 0
 
-#include "PrologTerm.h"
-#include "PrologCompTerm.h"
-#include "PrologList.h"
-#include "PrologAtom.h"
-#include "PrologInt.h"
-#include "PrologVariable.h"
+#include <stl-term.h++>
+#include <swipl-term.h++>
+#include <stratego-term.h++>
 
-PrologCompTerm* isPrologCompTerm(PrologTerm* t);
-PrologList* isPrologList(PrologTerm* t);
-PrologAtom* isPrologAtom(PrologTerm* t);
-PrologInt* isPrologInt(PrologTerm* t);
-PrologFloat* isPrologFloat(PrologTerm* t);
-PrologVariable* isPrologVariable(PrologTerm* t);
 
 #endif

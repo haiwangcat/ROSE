@@ -3,19 +3,39 @@
 #include <cstring>
 
 using namespace std;
+using namespace term;
+
+CompTerm* STLTerm::isCompTerm() { 
+  return dynamic_cast<CompTerm*>(this);
+}
+List* STLTerm::isList() { 
+  return dynamic_cast<List*>(this);
+}
+Atom* STLTerm::isAtom() { 
+  return dynamic_cast<Atom*>(this);
+}
+Int* STLTerm::isInt() { 
+  return dynamic_cast<Int*>(this);
+}
+Float* STLTerm::isFloat() { 
+  return dynamic_cast<Float*>(this);
+}
+Variable* STLTerm::isVariable() { 
+  return dynamic_cast<Variable*>(this);
+}
 
 #if HAVE_SWI_PROLOG
 
 
 // true if the pattern can be unified with the term
-bool PrologTerm::matches(std::string pattern) {
+bool SWIPLTerm::matches(std::string pattern) {
   fid_t fid = PL_open_foreign_frame();
   // FIXME: cache predicate
   term_t a0 = PL_new_term_refs(2);
   assert(PL_unify(a0, term));
   PL_put_variable(a0+1);
   PL_chars_to_term(pattern.c_str(), a0);
-  PrologTerm t(a0);
+  SWIPLTerm t(a0);
   //cerr<<t.getRepresentation()<<endl;
   //cerr<<getRepresentation()<<endl;
   bool b = PL_call_predicate(NULL, PL_Q_NORMAL,
@@ -25,32 +45,35 @@ bool PrologTerm::matches(std::string pattern) {
   return b;
 }
 
-// Create a new PrologTerm from a real Prolog Atom
-PrologTerm *PrologTerm::wrap_PL_Term(term_t t)
+// Create a new Term from a real  Atom
+SWIPLTerm *SWIPLTerm::wrap_PL_Term(term_t t)
 {
   //cerr<< "WRAPPING " << display(t) << endl;
 
-  PrologTerm *pt = 0;
+  SWIPLTerm *pt = 0;
   switch( PL_term_type(t) ) {
   case PL_VARIABLE: assert(false && "Encountered Variable!");
 
   case PL_ATOM:     
-    if (PL_get_nil(t)) pt = new PrologList(t);
-    else               pt = new PrologAtom(t); 
+    if (PL_get_nil(t)) pt = new SWIPLList(t);
+    else               pt = new SWIPLAtom(t); 
     break;
 
   case PL_INTEGER:  
     // Careful about overloading
-    pt = new PrologInt(); 
-    ((PrologInt*)pt)->createFromTerm(t);
+    pt = new SWIPLInt(); 
+    ((SWIPLInt*)pt)->createFromTerm(t);
     break;
 
-  case PL_FLOAT:    assert(false);
+  case PL_FLOAT:    
+    pt = new SWIPLFloat(); 
+    ((SWIPLFloat*)pt)->createFromTerm(t);
+    break;
   case PL_STRING:   assert(false);
   case PL_TERM: {
     term_t h = PL_new_term_ref();
-    if (PL_get_head(t, h)) pt = new PrologList(t);
-    else                   pt = new PrologCompTerm(t);
+    if (PL_get_head(t, h)) pt = new SWIPLList(t);
+    else                   pt = new SWIPLCompTerm(t);
     break;
   }
   default:          assert(false);
@@ -58,19 +81,19 @@ PrologTerm *PrologTerm::wrap_PL_Term(term_t t)
   return pt;
 }
 
-// Create a new PrologTerm from a real Prolog Atom
+// Create a new Term from a real  Atom
 // it will automatically be freed at the end of this object's lifetime
-PrologTerm* PrologTerm::newPrologTerm(term_t t)
+SWIPLTerm* SWIPLTerm::newSWIPLTerm(term_t t)
 {
-  PrologTerm *pt = wrap_PL_Term(t);
+  SWIPLTerm *pt = wrap_PL_Term(t);
   return pt;
 }
 
-// Create a real Prolog term from a PrologTerm
-// it will be garbage-collected by SWI-Prolog
-term_t PrologTerm::newTerm_t(PrologTerm* pt) 
+// Create a real  term from a Term
+// it will be garbage-collected by SWI-
+term_t SWIPLTerm::newTerm_t(SWIPLTerm* pt) 
 {
-  //if (PrologAtom *a = dynamic_cast<PrologAtom *>pt) {
+  //if (Atom *a = dynamic_cast<Atom *>pt) {
   assert(0 && "do we need this function at all???");
 }
 
@@ -78,7 +101,7 @@ void abort_termite() {
   PL_cleanup(0);
 }
 
-bool init_termite(int argc, char **argv, bool interactive)
+bool term::init_termite(int argc, char **argv, bool interactive)
 { 
   char *av[10];
   int ac = 0;
@@ -123,66 +146,12 @@ bool init_termite(int argc, char **argv, bool interactive)
   return PL_initialise(ac, av);
 }
 
-PrologCompTerm* isPrologCompTerm(PrologTerm* pt) { 
-  term_t t = pt->getTerm();
-  term_t h = PL_new_term_ref();
-  if (PL_term_type(t) == PL_TERM && !PL_get_head(t, h))
-    return (PrologCompTerm*)pt;
-  else return NULL;
-}
-PrologList* isPrologList(PrologTerm* pt)  { 
-  term_t t = pt->getTerm();
-  term_t h = PL_new_term_ref();
-  if ((PL_term_type(t) == PL_ATOM && PL_get_nil(t))
-      || (PL_term_type(t) == PL_TERM && PL_get_head(t, h)))
-    return (PrologList*)pt;
-  else return NULL;
-}
-PrologAtom* isPrologAtom(PrologTerm* pt) {
-  term_t t = pt->getTerm();
-  if (PL_term_type(t) == PL_ATOM && !PL_get_nil(t))
-  return (PrologAtom*)pt;
-    else return NULL;
-}
-PrologInt* isPrologInt(PrologTerm* pt) {
-  term_t t = pt->getTerm();
-  if (PL_term_type(t) == PL_INTEGER)
-    return (PrologInt*)pt;
-  else return NULL;
-}
-PrologFloat* isPrologFloat(PrologTerm* pt) {
-  term_t t = pt->getTerm();
-  if (PL_term_type(t) == PL_FLOAT)
-    return (PrologFloat*)pt;
-  else return NULL;
-}
-PrologVariable* isPrologVariable(PrologTerm* pt) {
-  term_t t = pt->getTerm();
-  if (PL_term_type(t) == PL_VARIABLE)
-    return (PrologVariable*)pt;
-  else return NULL;
-}
 
 #else //////////////////////////////////////////////////////////////////
 
-bool init_termite(int argc, char **argv, bool) {
+bool term::init_termite(int argc, char **argv, bool) {
   return true;
 }
 
-PrologCompTerm* isPrologCompTerm(PrologTerm* t) { 
-  return dynamic_cast<PrologCompTerm*>(t);
-}
-PrologList* isPrologList(PrologTerm* t) { 
-  return dynamic_cast<PrologList*>(t);
-}
-PrologAtom* isPrologAtom(PrologTerm* t) { 
-  return dynamic_cast<PrologAtom*>(t);
-}
-PrologInt* isPrologInt(PrologTerm* t) { 
-  return dynamic_cast<PrologInt*>(t);
-}
-PrologVariable* isPrologVariable(PrologTerm* t) { 
-  return dynamic_cast<PrologVariable*>(t);
-}
 
 #endif

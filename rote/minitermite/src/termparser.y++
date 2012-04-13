@@ -9,12 +9,13 @@ using namespace std;
 #include <string>
 #include <assert.h>
 #include "minitermite.h"
+using namespace term;
 
 extern int   yylex();
 extern char* yytext;
 extern int   yylineno;
 extern int   colno;
-PrologTerm*  prote;
+Term*  prote;
 
 void yyerror(const char *);
 
@@ -36,8 +37,8 @@ void yyerror(const char *);
 	std::string* strValue;
 	int intValue;
 	double floatValue;
-	PrologTerm* singleTerm;
-	std::vector<PrologTerm*>* termList;
+        term::STLTerm* singleTerm;
+        std::vector<term::Term*>* termList;
 }
 
 
@@ -59,25 +60,25 @@ pterm:
 | comp_term OPERATOR { assert(((string)(*$2)) == "."); prote = $1; $$ = $1;}
 ;
 term:
-  STRING      { $$ = new PrologString(*$1);  } 
- | ATOM       { $$ = new PrologAtom(*$1);    }
- | OPERATOR   { $$ = new PrologAtom(*$1);    
+  STRING      { $$ = new term::STLAtom(*$1);  } 
+ | ATOM       { $$ = new term::STLAtom(*$1);    }
+ | OPERATOR   { $$ = new term::STLAtom(*$1);    
    // The problem is, we can't really decide the difference between the 
    // string-atom '->' and the operator '->'
    }
- | VARIABLE   { $$ = new PrologVariable(*$1);}
+ | VARIABLE   { $$ = new term::STLVariable(*$1);}
  | comp_term  { $$ = $1;                     }
  | infix_pair { $$ = $1;                     }
  | plist      { $$ = $1;                     }
- | INT        { $$ = new PrologInt($1);      }
- | FLOAT      { $$ = new PrologFloat($1);   }
+ | INT        { $$ = new term::STLInt($1);      }
+ | FLOAT      { $$ = new term::STLFloat($1);   }
  | '(' term ')'{ $$ = $2;                    } 
 ;
 
 comp_term:
  ATOM '(' terms ')' {
-	PrologCompTerm *t = new PrologCompTerm(*$1);
-	vector<PrologTerm*>::iterator it;
+	STLCompTerm *t = new term::STLCompTerm(*$1);
+	vector<term::Term*>::iterator it;
 	it = $3->begin();
 	while(it != $3->end()) {
 		t->addSubterm(*it);
@@ -90,7 +91,7 @@ comp_term:
 /*TODO: no operator precedence yet*/
 infix_pair:
  term OPERATOR term {
-	PrologInfixOperator *ifx = new PrologInfixOperator(*$2);
+	STLInfixOperator *ifx = new term::STLInfixOperator(*$2);
 	ifx->addSubterm($1);
 	ifx->addSubterm($3);
 	$$ = ifx;
@@ -100,13 +101,13 @@ infix_pair:
 
 terms:
  terms ',' term {$1->push_back($3); $$=$1;} 
- | term {$$ = new vector<PrologTerm*>();$$->push_back($1);}
+ | term {$$ = new vector<term::Term*>(); $$->push_back($1);}
 ;
 
 plist:
  '[' terms ']' {
-	PrologList *t = new PrologList();
-	vector<PrologTerm*>::iterator it;
+	STLList *t = new term::STLList();
+	vector<term::Term*>::iterator it;
 	it = $2->begin();
 	while(it != $2->end()) {
 		t->addElement(*it);
@@ -114,7 +115,7 @@ plist:
 	}
 	$$ = t;
 	} |
- '[' ']' {PrologList* t = new PrologList(); $$ = t;}
+ '[' ']' {STLList* t = new term::STLList(); $$ = t;}
 ;
 
 

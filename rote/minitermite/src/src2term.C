@@ -19,6 +19,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include "TermPrinter.h"
 
 using namespace std;
+using namespace term;
 
 void usage(const char* me) 
 {
@@ -42,6 +43,12 @@ void usage(const char* me)
        << "  --pdf\n"
        << "    Create a PDF printout of the syntax tree.\n\n"
 
+       << "  --stratego\n"
+       << "    Create term output compatible with the Stratego/XT.\n\n"
+#if HAVE_SWI_PROLOG
+       << "  --stl-engine\n"
+       << "    Do not use SWI-Prolog to generate term output.\n\n"
+#endif
        << "This program was built against "<<PACKAGE_STRING<<",\n"
        << "please report bugs to <"<<PACKAGE_BUGREPORT<<">."
 
@@ -64,6 +71,12 @@ int main(int argc, char** argv) {
   const char* outfile = NULL;
   int dot_flag = 0;
   int pdf_flag = 0;
+  int stratego_flag = 0;
+#if HAVE_SWI_PROLOG
+  int stl_flag = 0;
+#else
+  int stl_flag = 1;
+#endif
   int version_flag = 0;
   int help_flag = 0;
   int rose_help_flag = 0;
@@ -75,6 +88,10 @@ int main(int argc, char** argv) {
     {"rose-help", no_argument, &rose_help_flag, 1},
     {"dot", no_argument, &dot_flag, 1},
     {"pdf", no_argument, &pdf_flag, 1},
+    {"stratego", no_argument, &stratego_flag, 1},
+#if HAVE_SWI_PROLOG
+    {"stl-engine", no_argument, &stl_flag, 1},
+#endif
     /* These don't */
     {"output", required_argument, 0, 'o'},
     {0, 0, 0, 0}
@@ -147,12 +164,23 @@ int main(int argc, char** argv) {
   }
 
   init_termite(argc, argv);
-  
+
+  // Choose the way to construct terms based on the options
+  TermFactory* termFactory;
+  if (stratego_flag)
+    termFactory = new StrategoTermFactory();
+  else 
+    if (stl_flag)
+      termFactory = new STLTermFactory();
+#if HAVE_SWI_PROLOG
+    else termFactory = new SWIPLTermFactory();
+#endif
+
   // Create prolog term
-  BasicTermPrinter tp;
+  BasicTermPrinter tp(*termFactory);
   tp.traverse(project); // With headers
 
-  PrologTerm* genTerm = tp.getTerm();
+  Term* genTerm = tp.getTerm();
   
   if (outfile) {
     ofstream ofile(outfile);

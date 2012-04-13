@@ -22,17 +22,16 @@ typedef long int                     longint;
 typedef long long int            longlongint;
 typedef unsigned long long int  ulonglongint;
 
-#if !HAVE_SWI_PROLOG
-#  include "termparser.tab.h++"
+#include "termparser.tab.h++"
 extern int yyparse();
 extern FILE* yyin;
-extern PrologTerm* prote;
-#endif
+extern term::Term* prote;
 
 static SgSourceFile* dummy_to_please_rose = NULL;
 
 using namespace std;
 using namespace boost;
+using namespace term;
 
 /** issue a warning*/
 void
@@ -47,18 +46,21 @@ TermToRose::warn_msg(std::string msg) {
     /*cerr << "TERMITE>>" << message << "\n";*/	\
 }
 
-static inline PrologTerm* canonical_type(PrologTerm* term) {
-  PrologCompTerm *t = isPrologCompTerm(term);
+Term* TermToRose::canonical_type(Term* term) {
+  CompTerm *t = term->isCompTerm();
   if (!t) return term;
   string n = t->getName();
 
   if (n == "pointer_type")
     // For iname lookup purposes, we treat array_type(X,null) and
     // pointer_type(X) as equivalent
-    return new PrologCompTerm("array_type", canonical_type(t->at(0)), new PrologAtom("null"));
+    return termFactory.makeCompTerm("array_type", 
+				    canonical_type(t->at(0)), 
+				    termFactory.makeAtom("null"));
 
   if (n == "array_type") // remove initializer
-    return new PrologCompTerm(n, canonical_type(t->at(0)), new PrologAtom("null"));
+    return termFactory.makeCompTerm(n, canonical_type(t->at(0)), 
+				    termFactory.makeAtom("null"));
 
   if (n == "typedef_type")      // actual type instead of typedef type
     return canonical_type(t->at(1));
@@ -71,10 +73,9 @@ static inline string makeFunctionID(const string& func_name,
                                     const string& func_type) {
   return func_name+'-'+func_type;
 }
-static inline string makeInameID(PrologCompTerm* annot) {
-  return annot->at(1)->getRepresentation() +
-    '-' + canonical_type(annot->at(0))->getRepresentation();
-}
+#define makeInameID(annot) \
+  (annot->at(1)->getRepresentation() + \
+   '-' + canonical_type(annot->at(0))->getRepresentation())
 
 /* Error handling. Macros are used to keep a useful line number. */
 #define TERM_ASSERT(t, assertion) do { \
@@ -98,6 +99,12 @@ static inline string makeInameID(PrologCompTerm* annot) {
            << endl;                                                     \
     ROSE_ASSERT(assertion);                                             \
   } while (0)
+
+#define isCompTerm(t) (t)->isCompTerm()
+#define isAtom(t) (t)->isAtom()
+#define isList(t) (t)->isList()
+#define isInt(t)  (t)->isInt()
+#define isFloat(t)  (t)->isFloat()
 
 #if !HAVE_ANALYSIS_RESULTS
 #  define AR 1
@@ -132,23 +139,23 @@ void expect_node(SgNode* n, NodeType **r) {
 }
 
 template< class TermType >
-void expect_term(PrologTerm* n, TermType **r) {
+void expect_term(Term* n, TermType **r) {
   *r = dynamic_cast<TermType*>(n);
   if (*r == NULL) {
-    TermType t;
+    //TermType t;
     std::cerr << "** ERROR: The term\n  "
               << n->getRepresentation() << "\nof type >>"
               << typeid(n).name() << "<< "
               << " does not have the expected type of >>"
-              << typeid(t).name()
+              << typeid(r).name()
               << "<<" << std::endl;
     ROSE_ASSERT(false && "Type Error");
   }
 }
 
-/* Special case for Prolog Terms, with check for name  */
+/* Special case for  Terms, with check for name  */
 template< class TermType >
-void expect_term(PrologTerm* n, TermType **r,
+void expect_term(Term* n, TermType **r,
                  std::string name) {
   expect_term(n, r);
   if ((*r)->getName() != name) {
@@ -161,9 +168,9 @@ void expect_term(PrologTerm* n, TermType **r,
   }
 }
 
-/* Special case for Prolog Terms, with check for arity and name  */
+/* Special case for  Terms, with check for arity and name  */
 template< class TermType >
-void expect_term(PrologTerm* n, TermType **r,
+void expect_term(Term* n, TermType **r,
                  std::string name, int arity) {
   expect_term(n, r, name);
   ARITY_ASSERT(*r, arity);
@@ -184,13 +191,13 @@ void expect_term(PrologTerm* n, TermType **r,
 #define EXPECT_ATOM(name, base)			\
   std::string name;				\
   {						\
-     EXPECT_TERM(PrologAtom*, a, base);		\
+     EXPECT_TERM(Atom*, a, base);		\
      name = a->getName();			\
   }
 
 /** reverse of makeFlag */
-bool TermToRose::getFlag(PrologTerm *t) {
-  EXPECT_TERM(PrologAtom*, atom, t);
+bool TermToRose::getFlag(Term *t) {
+  EXPECT_TERM(Atom*, atom, t);
   if (boost::starts_with(atom->getName(), "no_"))
     return false;
   else return true;
@@ -255,50 +262,55 @@ void TermToRose::unparse(std::string filename, std::string dir, std::string suff
 
 SgNode*
 TermToRose::toRose(const char* filename) {
-#if !HAVE_SWI_PROLOG
-  yyin = fopen( filename, "r" );
-  yyparse();
-#else
-  /*open('input.pl',read,_,[alias(rstrm)]),
-    read_term(rstrm,X,[double_quotes(string)]),
-    close(rstrm),*/
+#if HAVE_SWI_PROLOG
+  if (dynamic_cast<SWIPLInt*>(termFactory.makeInt(0)) == NULL)
+#endif
+  {
+    yyin = fopen( filename, "r" );
+    yyparse();
+#if HAVE_SWI_PROLOG
+  } else {
+    /*open('input.pl',read,_,[alias(rstrm)]),
+      read_term(rstrm,X,[double_quotes(string)]),
+      close(rstrm),*/
 
-  term_t a0 = PL_new_term_refs(10);
-  term_t fn        = a0 + 0;
-  term_t read      = a0 + 1;
-  term_t var       = a0 + 2;
-  term_t alias     = a0 + 3;
-  term_t open      = a0 + 4;
-  term_t r         = a0 + 5;
-  term_t term      = a0 + 6;
-  term_t flags     = a0 + 7;
-  term_t read_term = a0 + 8;
-  term_t close     = a0 + 9;
+    term_t a0 = PL_new_term_refs(10);
+    term_t fn        = a0 + 0;
+    term_t read      = a0 + 1;
+    term_t var       = a0 + 2;
+    term_t alias     = a0 + 3;
+    term_t open      = a0 + 4;
+    term_t r         = a0 + 5;
+    term_t term      = a0 + 6;
+    term_t flags     = a0 + 7;
+    term_t read_term = a0 + 8;
+    term_t close     = a0 + 9;
 
 
-  PL_put_atom_chars(fn, filename);
-  PL_put_atom_chars(read, "read");
-  PL_put_variable(var);
-  PL_chars_to_term("[alias(r)]", alias);
-  int ignored;
-  ignored=PL_cons_functor(open, PL_new_functor(PL_new_atom("open"), 4),
-                  fn, read, var, alias);
+    PL_put_atom_chars(fn, filename);
+    PL_put_atom_chars(read, "read");
+    PL_put_variable(var);
+    PL_chars_to_term("[alias(r)]", alias);
+    int ignored;
+    ignored=PL_cons_functor(open, PL_new_functor(PL_new_atom("open"), 4),
+			    fn, read, var, alias);
 
-  PL_put_atom_chars(r, "r");
-  PL_put_variable(term);
-  PL_chars_to_term("[double_quotes(string)]", flags);
-  ignored=PL_cons_functor(read_term, PL_new_functor(PL_new_atom("read_term"), 3),
-                  r, term, flags);
+    PL_put_atom_chars(r, "r");
+    PL_put_variable(term);
+    PL_chars_to_term("[double_quotes(string)]", flags);
+    ignored=PL_cons_functor(read_term, PL_new_functor(PL_new_atom("read_term"), 3),
+			    r, term, flags);
 
-  PL_chars_to_term("close(r)", close);
+    PL_chars_to_term("close(r)", close);
 
-  assert(PL_call(open, NULL) &&
-         PL_call(read_term, NULL) &&
-         PL_call(close, NULL));
+    assert(PL_call(open, NULL) &&
+	   PL_call(read_term, NULL) &&
+	   PL_call(close, NULL));
 
-  PrologTerm* prote = PrologTerm::wrap_PL_Term(term);
+    prote = SWIPLTerm::wrap_PL_Term(term);
 
 #endif
+  }
   // ROSE (late 2011) now goes through the memory pool to see what
   // source languages we are using when it is unparsing array type
   // expressions, and fails if there are no files yet.  We also use
@@ -319,17 +331,17 @@ TermToRose::toRose(const char* filename) {
  * create ROSE-IR for valid term representation
  */
 SgNode*
-TermToRose::toRose(PrologTerm* t) {
+TermToRose::toRose(Term* t) {
   SgNode* node;
-  if(PrologCompTerm* c = isPrologCompTerm(t)) {
+  if(CompTerm* c = isCompTerm(t)) {
 
     string tname = c->getName();
     debug("converting " + tname + "\n");
-    if (isPrologList(c->at(0))) {
+    if (isList(c->at(0))) {
       //cerr << "list"<<endl;
       node = listToRose(c,tname);
     } else {
-      switch (c->getSubTerms().size()) {
+      switch (c->getArity()) {
       case (3-AR): node = leafToRose(c,tname); break;
       case (4-AR): node = unaryToRose(c,tname); break;
       case (5-AR): node = binaryToRose(c,tname); break;
@@ -352,21 +364,18 @@ TermToRose::toRose(PrologTerm* t) {
 
   SgLocatedNode* ln = isSgLocatedNode(node);
   // Create the attached PreprocessingInfo
-  PrologCompTerm* ct = isPrologCompTerm(t);
+  CompTerm* ct = isCompTerm(t);
   if (ln != NULL && ct != NULL) {
-    PrologCompTerm* annot =
-      isPrologCompTerm(ct->at(ct->getArity()-(3-AR)));
+    CompTerm* annot = isCompTerm(ct->at(ct->getArity()-(3-AR)));
     TERM_ASSERT(t, annot);
 
-    PrologCompTerm* ppil =
-      isPrologCompTerm(annot->at(annot->getArity()-1));
+    CompTerm* ppil = isCompTerm(annot->at(annot->getArity()-1));
     if (ppil) {
-      PrologList* l = isPrologList(ppil->at(0));
+      List* l = isList(ppil->at(0));
       if (l) {
-        for (deque<PrologTerm*>::iterator it = l->getSuccs()->begin();
-             it != l->getSuccs()->end(); ++it) {
+        for (int i = 0; i < l->getArity(); ++i) {
 
-          EXPECT_TERM(PrologCompTerm*, ppi, *it);
+          EXPECT_TERM(CompTerm*, ppi, l->at(i));
 
           Sg_File_Info* fi = createFileInfo(ppi->at(ppi->getArity()-1));
           PreprocessingInfo::RelativePositionType locationInL =
@@ -394,7 +403,7 @@ TermToRose::toRose(PrologTerm* t) {
 
 /** create ROSE-IR for unary node*/
 SgNode*
-TermToRose::unaryToRose(PrologCompTerm* t,std::string tname) {
+TermToRose::unaryToRose(CompTerm* t,std::string tname) {
   debug("unparsing unary"); debug(t->getRepresentation());
   /* assert correct arity of term*/
   ARITY_ASSERT(t, 4-AR);
@@ -457,7 +466,7 @@ TermToRose::unaryToRose(PrologCompTerm* t,std::string tname) {
 
 /** create ROSE-IR for binary node*/
 SgNode*
-TermToRose::binaryToRose(PrologCompTerm* t,std::string tname) {
+TermToRose::binaryToRose(CompTerm* t,std::string tname) {
   debug("unparsing binary"); debug(t->getRepresentation());
   /* assert correct arity of term*/
   ARITY_ASSERT(t, 5-AR);
@@ -517,7 +526,7 @@ TermToRose::binaryToRose(PrologCompTerm* t,std::string tname) {
 
 /** create ROSE-IR for ternary node*/
 SgNode*
-TermToRose::ternaryToRose(PrologCompTerm* t,std::string tname) {
+TermToRose::ternaryToRose(CompTerm* t,std::string tname) {
   debug("unparsing ternary");
   // assert correct arity of term
   ARITY_ASSERT(t, 6-AR);
@@ -586,7 +595,7 @@ TermToRose::ternaryToRose(PrologCompTerm* t,std::string tname) {
 
 /** create ROSE-IR for quaternary node*/
 SgNode*
-TermToRose::quaternaryToRose(PrologCompTerm* t,std::string tname) {
+TermToRose::quaternaryToRose(CompTerm* t,std::string tname) {
   debug("unparsing quaternary");
   /* assert correct arity of term*/
   ARITY_ASSERT(t, 7-AR);
@@ -638,26 +647,26 @@ TermToRose::quaternaryToRose(PrologCompTerm* t,std::string tname) {
 
 /** create ROSE-IR for list node*/
 SgNode*
-TermToRose::listToRose(PrologCompTerm* t,std::string tname) {
+TermToRose::listToRose(CompTerm* t,std::string tname) {
   debug("unparsing list node");
   ARITY_ASSERT(t, 4-AR);
-  EXPECT_TERM(PrologList*, l, t->at(0));
+  EXPECT_TERM(List*, l, t->at(0));
   /*create file info and check it*/
   Sg_File_Info* fi = createFileInfo(t->at(t->getArity()-1));
   testFileInfo(fi);
   /*get child nodes (prefix traversal step)*/
   SgNode* cur = NULL;
   /* recursively, create ROSE-IR for list-members*/
-  deque<PrologTerm*>* succterms = l->getSuccs();
+  deque<Term*>* succterms = l->getSuccs();
 
   /* lookahead hack for variable declarations: the annotation term must be
    * traversed first because it may contain a type declaration */
   SgDeclarationStatement *varDeclBaseTypeDecl = NULL;
   if (tname == "variable_declaration") {
-    EXPECT_TERM_NAME_ARITY(PrologCompTerm*, annot, t->at(1),
+    EXPECT_TERM_NAME_ARITY(CompTerm*, annot, t->at(1),
                  "variable_declaration_specific", 3);
-    PrologTerm* typeDeclTerm = annot->at(1);
-    if (!(isPrologAtom(typeDeclTerm))) {
+    Term* typeDeclTerm = annot->at(1);
+    if (!(isAtom(typeDeclTerm))) {
       varDeclBaseTypeDecl = isSgDeclarationStatement(toRose(typeDeclTerm));
       declarationStatementsWithoutScope.push_back(varDeclBaseTypeDecl);
     }
@@ -668,12 +677,12 @@ TermToRose::listToRose(PrologCompTerm* t,std::string tname) {
     globalDecls = succterms;
 
   deque<SgNode*>* succs = new deque<SgNode*>();
-  deque<PrologTerm*>::iterator it = succterms->begin();
+  deque<Term*>::iterator it = succterms->begin();
   while (it != succterms->end()) {
     cur = toRose(*it);
     if(cur != (SgNode*) 0) {
       succs->push_back(cur);
-      debug("added successor of type " + isPrologCompTerm(*it)->at(0)->getName());
+      debug("added successor of type " + (isCompTerm(t))->at(0)->getName());
     } else {
       debug("did not add NULL successor");
     }
@@ -722,7 +731,7 @@ TermToRose::listToRose(PrologCompTerm* t,std::string tname) {
 
 /**create ROSE-IR from leaf terms*/
 SgNode*
-TermToRose::leafToRose(PrologCompTerm* t,std::string tname) {
+TermToRose::leafToRose(CompTerm* t,std::string tname) {
   debug("unparsing leaf");
   /* assert correct arity of term*/
   ARITY_ASSERT(t, 3-AR);
@@ -784,10 +793,10 @@ TermToRose::testFileInfo(Sg_File_Info* fi) {
 
 /** create Sg_File_Info from term*/
 Sg_File_Info*
-TermToRose::createFileInfo(PrologTerm* t) {
+TermToRose::createFileInfo(Term* t) {
   debug("unparsing file info");
   Sg_File_Info *fi = NULL;
-  if (PrologAtom *a = isPrologAtom(t)) {
+  if (Atom *a = isAtom(t)) {
     /*node new or file info removed during transformation*/
     /*=> only possible atom: null*/
     assert(a->getName() == "null");
@@ -795,7 +804,7 @@ TermToRose::createFileInfo(PrologTerm* t) {
   } else {
     /*file info was preserved*/
     /*=> the file info term should be named file_info and have an arity of 3*/
-    EXPECT_TERM_NAME_ARITY(PrologCompTerm*, u, t, "file_info", 3);
+    EXPECT_TERM_NAME_ARITY(CompTerm*, u, t, "file_info", 3);
     debug(u->getRepresentation());
     if ((u->at(0)->getName() == "compilerGenerated") ||
         (u->at(0)->getName() == "<invalid>")) {
@@ -807,13 +816,13 @@ TermToRose::createFileInfo(PrologTerm* t) {
     }
     else {
       /* a filename is present => retrieve data from term and generete node*/
-      EXPECT_TERM(PrologAtom*, filename, u->at(0));
-      EXPECT_TERM(PrologInt*, line, u->at(1));
-      EXPECT_TERM(PrologInt*, col, u->at(2));
+      EXPECT_TERM(Atom*, filename, u->at(0));
+      EXPECT_TERM(Int*, line, u->at(1));
+      EXPECT_TERM(Int*, col, u->at(2));
       /* filename must be a term representing a character string,
        * line and col are integers */
       assert(line->getValue() >= 0);
-      assert(col->getValue() >= 0);
+      assert( col->getValue() >= 0);
       fi = new Sg_File_Info(filename->getName(),
                             line->getValue(), col->getValue());
     }
@@ -825,10 +834,10 @@ TermToRose::createFileInfo(PrologTerm* t) {
 
 /**create enum type from annotation*/
 SgEnumType*
-TermToRose::createEnumType(PrologTerm* t) {
+TermToRose::createEnumType(Term* t) {
   /* first subterm is the name of the enum*/
   debug("creating enum type");
-  EXPECT_TERM_NAME(PrologCompTerm*, annot, t, "enum_type");
+  EXPECT_TERM_NAME(CompTerm*, annot, t, "enum_type");
   /*create dummy declaration*/
   string id = annot->at(0)->getRepresentation();
   SgEnumType* type = NULL;
@@ -847,8 +856,8 @@ TermToRose::createEnumType(PrologTerm* t) {
 
 /**create pointer type from annotation*/
 SgPointerType*
-TermToRose::createPointerType(PrologTerm* t) {
-  EXPECT_TERM_NAME(PrologCompTerm*, c, t, "pointer_type");
+TermToRose::createPointerType(Term* t) {
+  EXPECT_TERM_NAME(CompTerm*, c, t, "pointer_type");
   /* first subterm is the base type*/
   SgType* base_type = TermToRose::createType(c->at(0));
   TERM_ASSERT(t, base_type != NULL);
@@ -860,8 +869,8 @@ TermToRose::createPointerType(PrologTerm* t) {
 
 /**create reference type from annotation*/
 SgReferenceType*
-TermToRose::createReferenceType(PrologTerm* t) {
-  EXPECT_TERM_NAME(PrologCompTerm*, c, t, "reference_type");
+TermToRose::createReferenceType(Term* t) {
+  EXPECT_TERM_NAME(CompTerm*, c, t, "reference_type");
   /* first subterm is the base type*/
   SgType* base_type = TermToRose::createType(c->at(0));
   TERM_ASSERT(t, base_type != NULL);
@@ -873,8 +882,8 @@ TermToRose::createReferenceType(PrologTerm* t) {
 
 /** create array type from annotation*/
 SgArrayType*
-TermToRose::createArrayType(PrologTerm* t) {
-  EXPECT_TERM_NAME(PrologCompTerm*, c, t, "array_type");
+TermToRose::createArrayType(Term* t) {
+  EXPECT_TERM_NAME(CompTerm*, c, t, "array_type");
   /*first subterm is base type*/
   //cerr<<c->at(1)->getRepresentation()<<endl;
   SgType* base_type = createType(c->at(0));
@@ -894,7 +903,7 @@ TermToRose::createArrayType(PrologTerm* t) {
   }
   TERM_ASSERT(t, at != NULL);
 
-  PrologInt* val = isPrologInt(c->at(2));
+  Int* val = isInt(c->at(2));
   TERM_ASSERT(t, val != NULL);
   int rank = val->getValue();
 
@@ -910,8 +919,8 @@ TermToRose::createArrayType(PrologTerm* t) {
  * create SgModifierType
  */
 SgModifierType*
-TermToRose::createModifierType(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createModifierType(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   SgModifierType* mt = new SgModifierType(createType(c->at(0)));
   setTypeModifier(c->at(1),&(mt->get_typeModifier()));
@@ -922,9 +931,9 @@ TermToRose::createModifierType(PrologTerm* t) {
  * create SgTypedefType
  */
 SgTypedefType*
-TermToRose::createTypedefType(PrologTerm* t) {
+TermToRose::createTypedefType(Term* t) {
   /* extract declaration*/
-  PrologCompTerm* annot = isPrologCompTerm(t);
+  CompTerm* annot = isCompTerm(t);
   TERM_ASSERT(t, annot != NULL);
   /*make sure this is supposed to be a typedef type*/
   string tname = annot->getName();
@@ -937,7 +946,6 @@ TermToRose::createTypedefType(PrologTerm* t) {
   string id = t->getRepresentation();
   if (lookupDecl(&decl, id, false)) {
     tpe = decl->get_type(); //new SgTypedefType(decl);
-#if HAVE_SWI_PROLOG
   } else if (lookaheadDecl(&decl,
                            "typedef_declaration(_,typedef_annotation("
                            +annot->at(0)->getRepresentation()+",_,_),"
@@ -946,10 +954,6 @@ TermToRose::createTypedefType(PrologTerm* t) {
 #endif
                            "_)")) {
     tpe = decl->get_type();
-#else
- // FIXME: Implement a lookahead for the no-SWI case. Until that is done,
- // this will create spurious types, which is not nice.
-#endif
   } else {
     SgType* basetype = NULL;
     if (annot->at(1)->getName() != "typedef_type") {
@@ -958,16 +962,16 @@ TermToRose::createTypedefType(PrologTerm* t) {
       basetype = TermToRose::createTypedefType(annot->at(1));
     }
     decl = createTypedefDeclaration
-      (FI, new PrologCompTerm("typedef_declaration", //4,
-                              new PrologAtom("null"),
-                              new PrologCompTerm("typedef_annotation", //3,
+      (FI, termFactory.makeCompTerm("typedef_declaration", //4,
+                              termFactory.makeAtom("null"),
+                              termFactory.makeCompTerm("typedef_annotation", //3,
                                                  annot->at(0), annot->at(1),
-                                                 new PrologAtom("null"),
-                                                 new PrologAtom("null")),
+                                                 termFactory.makeAtom("null"),
+                                                 termFactory.makeAtom("null")),
 #if HAVE_ANALYSIS_RESULTS
-                              new PrologAtom("null"),
+                              termFactory.makeAtom("null"),
 #endif
-                              new PrologAtom("null")));
+                              termFactory.makeAtom("null")));
     TERM_ASSERT(t, decl != NULL);
     tpe = SgTypedefType::createType(decl);
     declarationStatementsWithoutScope.push_back(decl);
@@ -984,12 +988,12 @@ TermToRose::createTypedefType(PrologTerm* t) {
  * create SgType from term, possibly recursively
  */
 SgType*
-TermToRose::createType(PrologTerm* t) {
+TermToRose::createType(Term* t) {
   SgType* type = NULL;
   string id = t->getRepresentation();
 
   //cerr<<id<<endl;
-  PrologCompTerm* ct = dynamic_cast<PrologCompTerm*>(t);
+  CompTerm* ct = dynamic_cast<CompTerm*>(t);
   if (ct
       && t->getName() == "array_type"
       && ct->getArity() > 2
@@ -1004,7 +1008,7 @@ TermToRose::createType(PrologTerm* t) {
     return type;
   }
 
-  if (PrologCompTerm* c = isPrologCompTerm(t)) {
+  if (CompTerm* c = isCompTerm(t)) {
     string tname = t->getName();
     if (tname == "enum_type")                 type = createEnumType(t);
     else if (tname == "pointer_type")         type = createPointerType(t);
@@ -1027,7 +1031,7 @@ TermToRose::createType(PrologTerm* t) {
       type->set_type_kind(kind);
     } else TERM_ASSERT(t, false && "Unknown type enountered");
   }
-  if (PrologAtom* a = isPrologAtom(t)) {
+  if (Atom* a = isAtom(t)) {
     string tname = a->getName();
     if (tname == "null") {
       warn_msg("warning: no type created");
@@ -1127,7 +1131,7 @@ TermToRose::unescape_char(std::string s) {
     instr >> c;
     return c;
   }
-  case 5: { // Prolog-style Char Val
+  case 5: { // -style Char Val
     ROSE_ASSERT((s[0] == '\\') && (s[4] == '\\'));
     int c;
     istringstream instr(s.substr(1, 3));
@@ -1149,25 +1153,26 @@ TermToRose::unescape_char(std::string s) {
 }
 
 
-#define createValue(SGTYPE, TYPE, fi, fromTerm) \
-  do { \
-    debug("unparsing " + fromTerm->getName()); \
-    PrologCompTerm* annot = retrieveAnnotation(fromTerm); \
-    TERM_ASSERT(fromTerm, annot != NULL); \
-    PrologAtom* a = isPrologAtom(annot->at(0)); \
-    PrologInt* i = isPrologInt(annot->at(0)); \
-    TERM_ASSERT(fromTerm, (a != 0) || (i != 0)); \
-    TYPE value; \
-    if (a) { \
-      istringstream instr(a->getName()); \
-      instr >> value; \
-    } else value = i->getValue(); \
-    ve = new SGTYPE(fi, value); \
+#define createValue(SGTYPE, TYPE, fi, fromTerm)	    \
+  do {						    \
+    debug("unparsing " + fromTerm->getName());	    \
+    CompTerm* annot = retrieveAnnotation(fromTerm); \
+    TERM_ASSERT(fromTerm, annot != NULL);	    \
+    TYPE value;					    \
+    if (Atom* a = isAtom(annot->at(0))) {	    \
+      istringstream instr(a->getName());	    \
+      instr >> value;				    \
+    } else if (Int* i = isInt(annot->at(0)))	    \
+      value = i->getValue();			    \
+    else if (Float* f = isFloat(annot->at(0)))	    \
+      value = f->getValue();			    \
+    else TERM_ASSERT(fromTerm, false);		    \
+    ve = new SGTYPE(fi, value);			    \
   } while (false)
 
 /** create a SgValueExp*/
 SgExpression*
-TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
+TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   string vtype = t->getName();
   SgValueExp* ve = NULL;
   /*integer types */
@@ -1191,7 +1196,7 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
 
   else if (vtype == "enum_val") {
     debug("unparsing enum value");
-    PrologCompTerm* annot = retrieveAnnotation(t);
+    CompTerm* annot = retrieveAnnotation(t);
     TERM_ASSERT(t, annot != NULL);
     /* get value and name, find the declaration*/
     ARITY_ASSERT(annot, 4);
@@ -1201,7 +1206,7 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
     // Rather than faking a declaration like before, we look it up in the
     // declaration map.
     SgEnumDeclaration* decdummy = NULL;
-    PrologTerm* dect = isPrologCompTerm(annot->at(2))->at(0);
+    Term* dect = isCompTerm(annot->at(2))->at(0);
     TERM_ASSERT(t, declarationMap.find(dect->getRepresentation())
                 != declarationMap.end());
     decdummy = isSgEnumDeclaration(declarationMap[dect->getRepresentation()]);
@@ -1225,12 +1230,12 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
   else if (vtype == "char_val") {
     //char
     debug("unparsing char");
-    PrologCompTerm* annot = retrieveAnnotation(t);
+    CompTerm* annot = retrieveAnnotation(t);
     TERM_ASSERT(t, annot != NULL);
     char number;
-    if (PrologAtom* s = isPrologAtom(annot->at(0))) {
+    if (Atom* s = isAtom(annot->at(0))) {
       number = unescape_char(s->getName());
-    } else if (PrologInt* val = isPrologInt(annot->at(0))) {
+    } else if (Int* val = isInt(annot->at(0))) {
       number = val->getValue();
     } else {
       TERM_ASSERT(t, false && "Must be either a string or an int");
@@ -1240,12 +1245,12 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
   } else if (vtype == "unsigned_char_val") {
     //unsigned char
     debug("unparsing unsigned char");
-    PrologCompTerm* annot = retrieveAnnotation(t);
+    CompTerm* annot = retrieveAnnotation(t);
     TERM_ASSERT(t, annot != NULL);
     unsigned char number;
-    if (PrologAtom* s = isPrologAtom(annot->at(0))) {
+    if (Atom* s = isAtom(annot->at(0))) {
       number = unescape_char(s->getName());
-    } else if (PrologInt* val = isPrologInt(annot->at(0))) {
+    } else if (Int* val = isInt(annot->at(0))) {
       number = val->getValue();
     } else {
       TERM_ASSERT(t, false && "Must be either a string or an int");
@@ -1259,9 +1264,9 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
   else if (vtype == "bool_val_exp")
     createValue(SgBoolValExp, int, fi, t);
   else if (vtype == "string_val") {
-    PrologCompTerm* annot = retrieveAnnotation(t);
+    CompTerm* annot = retrieveAnnotation(t);
     TERM_ASSERT(t, annot != NULL);
-    EXPECT_TERM(PrologAtom*, s, annot->at(0));
+    EXPECT_TERM(Atom*, s, annot->at(0));
     SgStringVal* sv = new SgStringVal(fi,s->getName());
     sv->set_usesSingleQuotes(getFlag(annot->at(1)));
     sv->set_usesDoubleQuotes(getFlag(annot->at(2)));
@@ -1313,19 +1318,19 @@ TermToRose::isUnaryOp(std::string opname) {
 /**
  * create a SgUnaryOp*/
 SgUnaryOp*
-TermToRose::createUnaryOp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
+TermToRose::createUnaryOp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   EXPECT_NODE(SgExpression*,sgexp,succ);
-  PrologTerm* n = t->at(0);
+  Term* n = t->at(0);
   string opname = t->getName();
   debug("creating " + opname + "\n");
   //cerr << t->getRepresentation() << endl << succ << endl;
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   ARITY_ASSERT(annot, 5);
   // GB (2008-12-04): A unary op's mode is now represented by an atom
   // 'prefix' or 'postfix', not by a numerical constant.
-  // PrologInt* mode = isPrologInt(annot->at(0));
-  EXPECT_TERM(PrologAtom*, mode, annot->at(0));
+  // Int* mode = isInt(annot->at(0));
+  EXPECT_TERM(Atom*, mode, annot->at(0));
   SgType* sgtype = createType(annot->at(1));
   ROSE_ASSERT(sgtype != NULL);
   /*nothing special with these*/
@@ -1368,9 +1373,9 @@ TermToRose::createUnaryOp(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
     int tkind = createEnum(annot->at(2), re.throw_kind);
     // FIXME: use kind!
     /*need to retrieve types */
-    EXPECT_TERM(PrologList*, typel, annot->at(3));
-    deque<PrologTerm*>* succs = typel->getSuccs();
-    deque<PrologTerm*>::iterator it = succs->begin();
+    EXPECT_TERM(List*, typel, annot->at(3));
+    deque<Term*>* succs = typel->getSuccs();
+    deque<Term*>::iterator it = succs->begin();
     SgTypePtrListPtr tpl = new SgTypePtrList();
     while (it != succs->end()) {
       tpl->push_back(createType(*it));
@@ -1500,7 +1505,7 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
  * create SgSourceFile
  */
 SgSourceFile*
-TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,PrologCompTerm*) {
+TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,CompTerm*) {
   // GB (2008-10-20): It looks like there is a new SgSourceFile class in
   // ROSE 0.9.3a-2261, and that it is an instance of that class that we
   // need.
@@ -1514,27 +1519,29 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,PrologCompTerm*) {
   if (regex_match(fi->get_filename(), regex(".*[fF](77)?"))) {
       isFortran = true;
       file->set_Fortran_only(true);
-  }
-  if (regex_match(fi->get_filename(), regex(".*[fF]90"))) {
+  } else if (regex_match(fi->get_filename(), regex(".*[fF]90"))) {
       isFortran = true;
+      file->set_Fortran_only(true);
       file->set_F90_only(true);
-  }
-  if (regex_match(fi->get_filename(), regex(".*[fF]95"))) {
+  } else if (regex_match(fi->get_filename(), regex(".*[fF]95"))) {
       isFortran = true;
+      file->set_Fortran_only(true);
       file->set_F95_only(true);
-  }
-  if (regex_match(fi->get_filename(), regex(".*[fF]03"))) {
+  } else if (regex_match(fi->get_filename(), regex(".*[fF]03"))) {
       isFortran = true;
+      file->set_Fortran_only(true);
       file->set_F2003_only(true);
   }
-
   if (isFortran) {
     file->set_outputLanguage(SgFile::e_Fortran_output_language);
-    file->set_Fortran_only(true);
   }
 
   SgGlobal* glob = isSgGlobal(child1);
   ROSE_ASSERT(glob);
+  if (isFortran) {
+    // This is pure voodoo, but it un-breaks the test with the CONTAINS statement
+    glob->set_file_info(FI);
+  }
 
   //ROSE_ASSERT(declarationStatementsWithoutScope.empty());
   ROSE_ASSERT(labelStatementsWithoutScope.empty());
@@ -1605,9 +1612,9 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,PrologCompTerm*) {
  * create SgSizeOfOp
  */
 SgSizeOfOp*
-TermToRose::createSizeOfOp(Sg_File_Info* fi,SgNode* child1,PrologCompTerm* t) {
+TermToRose::createSizeOfOp(Sg_File_Info* fi,SgNode* child1,CompTerm* t) {
   /* retrieve anntoation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   /* get operand type*/
   SgType* otype = NULL;
@@ -1625,7 +1632,7 @@ TermToRose::createSizeOfOp(Sg_File_Info* fi,SgNode* child1,PrologCompTerm* t) {
 
 /** create a SgReturnStmt*/
 SgReturnStmt*
-TermToRose::createReturnStmt(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
+TermToRose::createReturnStmt(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   /* get expression*/
   SgExpression* exp = isSgExpression(succ);
   SgReturnStmt* s  = new SgReturnStmt(fi,exp);
@@ -1673,7 +1680,7 @@ TermToRose::createBasicBlock(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
  * create a SgFunctionDefinition
  */
 SgFunctionDefinition*
-TermToRose::createFunctionDefinition(Sg_File_Info* fi,SgNode* succ,PrologCompTerm* t) {
+TermToRose::createFunctionDefinition(Sg_File_Info* fi,SgNode* succ,CompTerm* t) {
   /* create a basic block*/
   EXPECT_NODE(SgBasicBlock*, b, succ);
   SgFunctionDefinition* fd = new SgFunctionDefinition(fi,b);
@@ -1704,9 +1711,9 @@ TermToRose::createFunctionDefinition(Sg_File_Info* fi,SgNode* succ,PrologCompTer
  * create SgInitializedName
  */
 SgInitializedName*
-TermToRose::createInitializedName(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
+TermToRose::createInitializedName(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   /* retrieve annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /*create the type*/
   SgType* tpe = createType(annot->at(0));
   TERM_ASSERT(t, tpe != NULL);
@@ -1727,16 +1734,16 @@ TermToRose::createInitializedName(Sg_File_Info* fi, SgNode* succ, PrologCompTerm
 }
 
 /**
- * create SgInitializedName from PrologCompTerm
+ * create SgInitializedName from CompTerm
  */
 SgInitializedName*
-TermToRose::inameFromAnnot(PrologCompTerm* annot) {
+TermToRose::inameFromAnnot(CompTerm* annot) {
   //TERM_ASSERT(annot, false && "deprecated function");
   debug("creating initialized name for sg var ref exp");
   /* get type*/
   SgType* tpe = createType(annot->at(0));
   /* create name*/
-  PrologAtom *nstring = isPrologAtom(annot->at(1));
+  Atom *nstring = isAtom(annot->at(1));
   SgName sgnm = nstring->getName().c_str();
   SgInitializedName* siname = new SgInitializedName(sgnm,tpe,NULL);
   TERM_ASSERT(annot, siname != NULL);
@@ -1757,8 +1764,8 @@ TermToRose::inameFromAnnot(PrologCompTerm* annot) {
  * create SgFunctionType
  */
 SgFunctionType*
-TermToRose::createFunctionType(PrologTerm* t) {
-  EXPECT_TERM_NAME(PrologCompTerm*, tterm, t, "function_type");
+TermToRose::createFunctionType(Term* t) {
+  EXPECT_TERM_NAME(CompTerm*, tterm, t, "function_type");
   /* create the return type*/
   SgType* ret_type = createType(tterm->at(0));
   /* has ellipses?*/
@@ -1767,7 +1774,7 @@ TermToRose::createFunctionType(PrologTerm* t) {
   SgFunctionType* func_type = new SgFunctionType(ret_type,has_ellipses);
   TERM_ASSERT(t, func_type != NULL);
   /* add argument list*/
-  PrologList* atypes = isPrologList(tterm->at(2));
+  List* atypes = isList(tterm->at(2));
   TERM_ASSERT(t, atypes != NULL);
   for(int i = 0; i < atypes->getArity(); i++) {
     func_type->append_argument(createType(atypes->at(i)));
@@ -1779,8 +1786,8 @@ TermToRose::createFunctionType(PrologTerm* t) {
  * create SgMemberFunctionType
  */
 SgMemberFunctionType*
-TermToRose::createMemberFunctionType(PrologTerm* t) {
-  EXPECT_TERM_NAME(PrologCompTerm*, tterm, t, "member_function_type");
+TermToRose::createMemberFunctionType(Term* t) {
+  EXPECT_TERM_NAME(CompTerm*, tterm, t, "member_function_type");
   /* create the reutnr type*/
   SgType* ret_type = createType(tterm->at(0));
   /* has ellipses?*/
@@ -1794,7 +1801,7 @@ TermToRose::createMemberFunctionType(PrologTerm* t) {
   SgMemberFunctionType* func_type = new SgMemberFunctionType(ret_type,has_ellipses,NULL,mfuncs);
   TERM_ASSERT(t, func_type != NULL);
   /* add argument list*/
-  PrologList* atypes = isPrologList(tterm->at(2));
+  List* atypes = isList(tterm->at(2));
   TERM_ASSERT(t, atypes != NULL);
   for(int i = 0; i < atypes->getArity(); i++) {
     func_type->append_argument(createType(atypes->at(i)));
@@ -1824,7 +1831,7 @@ TermToRose::createFunctionParameterList(Sg_File_Info* fi, std::deque<SgNode*>* s
 }
 
 void TermToRose::register_func_decl(SgName func_name, SgFunctionDeclaration* func_decl, 
-                                    PrologTerm* type_term)
+                                    Term* type_term)
 {
   /* register the function declaration with our own symbol table */
   string id = makeFunctionID(func_name, type_term->getRepresentation());
@@ -1842,19 +1849,19 @@ void TermToRose::register_func_decl(SgName func_name, SgFunctionDeclaration* fun
  * create SgFunctionDeclaration
  */
 SgFunctionDeclaration*
-TermToRose::createFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u, PrologCompTerm* t) {
+TermToRose::createFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u, CompTerm* t) {
   debug("function declaration:");
   /* cast parameter list */
   SgFunctionParameterList* par_list = isSgFunctionParameterList(par_list_u);
   /* param list must exist*/
   TERM_ASSERT(t, par_list != NULL);
   /* get annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create type*/
   SgFunctionType* func_type = isSgFunctionType(createType(annot->at(0)));
   TERM_ASSERT(t, func_type != NULL);
   /* get function name*/
-  EXPECT_TERM(PrologAtom*, func_name_term, annot->at(1));
+  EXPECT_TERM(Atom*, func_name_term, annot->at(1));
   SgName func_name = func_name_term->getName();
   //cerr<<"func decl: "<<func_name<<endl;
   /* create declaration*/
@@ -1871,28 +1878,30 @@ TermToRose::createFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u, Prol
 }
 
 SgFunctionDeclaration*
-TermToRose::createTemplateInstantiationFunctionDecl(Sg_File_Info* fi, SgNode* par_list_u, PrologCompTerm* t) {
+TermToRose::createTemplateInstantiationFunctionDecl(Sg_File_Info* fi, SgNode* par_list_u, CompTerm* t) {
   debug("template function declaration:");
   /* cast parameter list */
   SgFunctionParameterList* par_list = isSgFunctionParameterList(par_list_u);
   /* param list must exist*/
   TERM_ASSERT(t, par_list != NULL);
   /* get annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create type*/
   SgFunctionType* func_type = isSgFunctionType(createType(annot->at(0)));
   TERM_ASSERT(t, func_type != NULL);
   /* get function name*/
-  EXPECT_TERM(PrologAtom*, func_name_term, annot->at(1));
+  EXPECT_TERM(Atom*, func_name_term, annot->at(1));
   SgName func_name = func_name_term->getName();
 
-  EXPECT_TERM(PrologList*, ptemplateargs, annot->at(4));
-  deque<PrologTerm*>* succs = ptemplateargs->getSuccs();
-  deque<PrologTerm*>::iterator it = succs->begin();
+  EXPECT_TERM(List*, ptemplateargs, annot->at(4));
+
+  //deque<Term*>* succs = ptemplateargs->getSuccs();
+  //deque<Term*>::iterator it = succs->begin();
   SgTemplateArgumentPtrList args;
-  while (it != succs->end()) {
-    args.push_back(static_cast<SgTemplateArgument*>(toRose(*it)));
-    it++;
+  //while (it != succs->end()) {
+  for (int i = 0; i < ptemplateargs->getArity(); ++i) {
+    //args.push_back(static_cast<SgTemplateArgument*>(toRose(*it)));
+    args.push_back(static_cast<SgTemplateArgument*>(toRose(ptemplateargs->at(i))));
   }
 
   EXPECT_ATOM(templ_decl_name, annot->at(5));
@@ -1912,9 +1921,9 @@ TermToRose::createTemplateInstantiationFunctionDecl(Sg_File_Info* fi, SgNode* pa
 }
 
 SgTemplateArgument*
-TermToRose::createTemplateArgument(PrologCompTerm* t) {
+TermToRose::createTemplateArgument(CompTerm* t) {
   debug("template argument:");
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   EXPECT_ATOM(templ_decl_name, annot->at(4));
   return new SgTemplateArgument( 
      (SgTemplateArgument::template_argument_enum)createEnum(annot->at(0), re.template_argument),
@@ -1926,9 +1935,9 @@ TermToRose::createTemplateArgument(PrologCompTerm* t) {
 }
 
 SgTemplateParameter*
-TermToRose::createTemplateParameter(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createTemplateParameter(Sg_File_Info* fi, CompTerm* t) {
   debug("template param:");
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   EXPECT_ATOM(templ_decl_name, annot->at(4));
   EXPECT_ATOM(default_param, annot->at(5));
   return new SgTemplateParameter((SgTemplateParameter::template_parameter_enum)
@@ -1942,15 +1951,15 @@ TermToRose::createTemplateParameter(Sg_File_Info* fi, PrologCompTerm* t) {
 }
 
 SgTemplateDeclaration*
-TermToRose::createTemplateDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createTemplateDeclaration(Sg_File_Info* fi, CompTerm* t) {
   debug("template decl:");
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   EXPECT_ATOM(name, annot->at(0));
   EXPECT_ATOM(strng, annot->at(1));
 
-  EXPECT_TERM(PrologList*, args, annot->at(3));
-  deque<PrologTerm*>* succs = args->getSuccs();
-  deque<PrologTerm*>::iterator it = succs->begin();
+  EXPECT_TERM(List*, args, annot->at(3));
+  deque<Term*>* succs = args->getSuccs();
+  deque<Term*>::iterator it = succs->begin();
   SgTemplateParameterPtrList params;
   while (it != succs->end()) {
     params.push_back(static_cast<SgTemplateParameter*>(toRose(*it)));
@@ -2008,13 +2017,13 @@ TermToRose::setFunctionDeclarationBody(SgFunctionDeclaration* func_decl, SgNode*
 }
 
 SgTypedefSeq*
-TermToRose::createTypedefSeq(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createTypedefSeq(Sg_File_Info* fi, CompTerm* t) {
   debug("template decl:");
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   SgTypedefSeq* seq = new SgTypedefSeq();
-  EXPECT_TERM(PrologList*, l, annot->at(0));
-  deque<PrologTerm*>* succs = l->getSuccs();
-  deque<PrologTerm*>::iterator it = succs->begin();
+  EXPECT_TERM(List*, l, annot->at(0));
+  deque<Term*>* succs = l->getSuccs();
+  deque<Term*>::iterator it = succs->begin();
   while (it != succs->end()) {
     seq->append_typedef(static_cast<SgType*>(toRose(*it)));
     it++;
@@ -2029,18 +2038,18 @@ TermToRose::createTypedefSeq(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgMemberFunctionDeclaration
  */
 SgMemberFunctionDeclaration*
-TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u,SgNode* func_def_u, SgNode* ctor_list_u, PrologCompTerm* t) {
+TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u,SgNode* func_def_u, SgNode* ctor_list_u, CompTerm* t) {
   debug("member function declaration:");
   /* cast parameter list and function definition (if exists)*/
   EXPECT_NODE(SgFunctionParameterList*, par_list, par_list_u);
   SgFunctionDefinition* func_def = isSgFunctionDefinition(func_def_u);
   EXPECT_NODE(SgCtorInitializerList*, ctor_list, ctor_list_u);
   /* get annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create type*/
   EXPECT_NODE(SgFunctionType*, func_type, createType(annot->at(0)));
   /* get function name*/
-  EXPECT_TERM(PrologAtom*, func_name_term, annot->at(1));
+  EXPECT_TERM(Atom*, func_name_term, annot->at(1));
   SgName func_name = func_name_term->getName();
   /* create declaration*/
   SgMemberFunctionDeclaration* func_decl =
@@ -2053,7 +2062,7 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
 
   /*post processing*/
   /* class scope*/
-  PrologCompTerm* scopeTerm = isPrologCompTerm(annot->at(2));
+  CompTerm* scopeTerm = isCompTerm(annot->at(2));
   TERM_ASSERT(t, scopeTerm != NULL);
   string scope_name = *(toStringP(scopeTerm->at(0)));
   int scope_type  = createEnum(scopeTerm->at(1), re.class_type);
@@ -2101,18 +2110,18 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
 SgProcedureHeaderStatement*
 TermToRose::createProcedureHeaderStatement(Sg_File_Info* fi, SgNode* par_list_u, 
 					   SgNode* unknown, SgNode* func_def_u, 
-					   SgNode* result_name_u, PrologCompTerm* t) {
+					   SgNode* result_name_u, CompTerm* t) {
   debug("procedure header statement:");
   /* cast parameter list and function definition (if exists)*/
   EXPECT_NODE(SgFunctionParameterList*, par_list, par_list_u);
   SgFunctionDefinition* func_def = isSgFunctionDefinition(func_def_u);
   EXPECT_NODE(SgInitializedName*, result_name, result_name_u);
   /* get annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create type*/
   EXPECT_NODE(SgFunctionType*, func_type, createType(annot->at(0)));
   /* get function name*/
-  EXPECT_TERM(PrologAtom*, func_name_term, annot->at(1));
+  EXPECT_TERM(Atom*, func_name_term, annot->at(1));
   SgName func_name = func_name_term->getName();
   /* create declaration*/
   SgProcedureHeaderStatement* proc_header_stmt =
@@ -2147,12 +2156,12 @@ TermToRose::createProcedureHeaderStatement(Sg_File_Info* fi, SgNode* par_list_u,
 
 
 /**
- * Retrieve Annotation Term and cast to PrologCompTerm* from a node term
+ * Retrieve Annotation Term and cast to CompTerm* from a node term
  */
-PrologCompTerm*
-TermToRose::retrieveAnnotation(PrologCompTerm* t) {
+CompTerm*
+TermToRose::retrieveAnnotation(CompTerm* t) {
   /* the position of the annotation depends on the arity of the term*/
-  EXPECT_TERM(PrologCompTerm*, a, t->at(t->getArity()-(3-AR)));
+  EXPECT_TERM(CompTerm*, a, t->at(t->getArity()-(3-AR)));
   return a;
 }
 
@@ -2189,8 +2198,8 @@ TermToRose::createGlobal(Sg_File_Info* fi,std::deque<SgNode*>* succs) {
 
 /** create SgVarRefExp*/
 SgVarRefExp*
-TermToRose::createVarRefExp(Sg_File_Info* fi, PrologCompTerm* t) {
-  PrologCompTerm* annot = retrieveAnnotation(t);
+TermToRose::createVarRefExp(Sg_File_Info* fi, CompTerm* t) {
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   /* cast SgInitializedName*/
   bool forward_ref = false;
@@ -2245,7 +2254,7 @@ TermToRose::createVariableSymbol(SgInitializedName *init_name) {
  * create a SgAssignInitializer
  */
 SgAssignInitializer*
-TermToRose::createAssignInitializer(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
+TermToRose::createAssignInitializer(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   SgExpression* exp = isSgExpression(succ);
   // not true.. TERM_ASSERT(t, exp != NULL);
   SgAssignInitializer* ai = new SgAssignInitializer(fi,exp);
@@ -2257,7 +2266,7 @@ TermToRose::createAssignInitializer(Sg_File_Info* fi, SgNode* succ, PrologCompTe
  * create a SgBinaryOp
  */
 SgBinaryOp*
-TermToRose::createBinaryOp(Sg_File_Info* fi,SgNode* lnode,SgNode* rnode,PrologCompTerm* t) {
+TermToRose::createBinaryOp(Sg_File_Info* fi,SgNode* lnode,SgNode* rnode,CompTerm* t) {
   debug("creating binary op");
   string op_name = t->getName();
   debug("op type: " + op_name);
@@ -2268,7 +2277,7 @@ TermToRose::createBinaryOp(Sg_File_Info* fi,SgNode* lnode,SgNode* rnode,PrologCo
   SgExpression* lhs = isSgExpression(lnode);
   SgExpression* rhs = isSgExpression(rnode);
   abort_unless((lhs != NULL) && (rhs != NULL), "Operands of binary operator must be an expression");
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   abort_unless(annot != NULL, "Could not retrieve annotation for binary operator");
   /* get type*/
   SgType* op_type = createType(annot->at(0));
@@ -2369,7 +2378,7 @@ TermToRose::isBinaryOp(std::string tname) {
  * create SgExprStatement
  */
 SgExprStatement*
-TermToRose::createExprStatement(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* t) {
+TermToRose::createExprStatement(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   /* create statement*/
   SgExprStatement* es = NULL;
   debug("creating expression statenemt");
@@ -2389,9 +2398,9 @@ TermToRose::createExprStatement(Sg_File_Info* fi, SgNode* succ, PrologCompTerm* 
  * create a SgVariableDeclaration
  */
 SgVariableDeclaration*
-TermToRose::createVariableDeclaration(Sg_File_Info* fi,std::deque<SgNode*>* succs,PrologCompTerm* t, SgDeclarationStatement *baseTypeDeclaration) {
+TermToRose::createVariableDeclaration(Sg_File_Info* fi,std::deque<SgNode*>* succs,CompTerm* t, SgDeclarationStatement *baseTypeDeclaration) {
   /*extract annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, t != NULL);
   /* create declaration*/
   SgVariableDeclaration* dec = new SgVariableDeclaration(fi);
@@ -2473,7 +2482,7 @@ TermToRose::createVariableDeclaration(Sg_File_Info* fi,std::deque<SgNode*>* succ
  * create SgIfStmt
  */
 SgIfStmt*
-TermToRose::createIfStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, PrologCompTerm* t) {
+TermToRose::createIfStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, CompTerm* t) {
   /* condition*/
   /* GB (2008-08-21): True and false bodies are now SgStatements, not
    * SgBasicBlocks anymore; changed dynamic_casts to less verbose and more
@@ -2490,7 +2499,7 @@ TermToRose::createIfStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNod
   if_stmt = new SgIfStmt(fi,test_stmt,true_branch,false_branch);
   TERM_ASSERT(t, if_stmt != NULL);
 
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   if_stmt->set_has_end_statement(    getFlag(annot->at(0)) );
   if_stmt->set_use_then_keyword(     getFlag(annot->at(1)) );
   if_stmt->set_is_else_if_statement( getFlag(annot->at(2)) );
@@ -2500,7 +2509,7 @@ TermToRose::createIfStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNod
 
 /** create SgDoWhileStmt*/
 SgDoWhileStmt*
-TermToRose::createDoWhileStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2,PrologCompTerm* t) {
+TermToRose::createDoWhileStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2,CompTerm* t) {
   /* retrieve basic block -- there is always one*/
   SgStatement* b = isSgStatement(child1);
   /* retrieve statement */
@@ -2514,7 +2523,7 @@ TermToRose::createDoWhileStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2,P
 
 /** create SgWhileStmt*/
 SgWhileStmt*
-TermToRose::createWhileStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, PrologCompTerm* t) {
+TermToRose::createWhileStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, CompTerm* t) {
   /* retrieve Statemtent*/
   SgStatement* s = isSgStatement(child1);
   TERM_ASSERT(t, s != NULL);
@@ -2545,7 +2554,7 @@ TermToRose::createForInitStatement(Sg_File_Info* fi,std::deque<SgNode*>* succs) 
 
 /** create SgForStatement*/
 SgForStatement*
-TermToRose::createForStatement(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, SgNode* child4,PrologCompTerm* t) {
+TermToRose::createForStatement(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, SgNode* child4,CompTerm* t) {
   SgForInitStatement* ini_stmt = isSgForInitStatement(child1);
   SgStatement* test_stmt = isSgStatement(child2);
   SgStatement* loop_body = isSgStatement(child4);
@@ -2571,9 +2580,9 @@ TermToRose::createForStatement(Sg_File_Info* fi, SgNode* child1, SgNode* child2,
 
 /** create SgFortranDo*/
 SgFortranDo*
-TermToRose::createFortranDo(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, SgNode* child4,PrologCompTerm* t) {
+TermToRose::createFortranDo(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, SgNode* child4,CompTerm* t) {
   // get annotation
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
 
   SgFortranDo* fdo = new SgFortranDo(fi,
@@ -2590,7 +2599,7 @@ TermToRose::createFortranDo(Sg_File_Info* fi, SgNode* child1, SgNode* child2, Sg
  * create SgSwitchStatement
  */
 SgSwitchStatement*
-TermToRose::createSwitchStatement(Sg_File_Info* fi, SgNode* child1, SgNode* child2, PrologCompTerm* t) {
+TermToRose::createSwitchStatement(Sg_File_Info* fi, SgNode* child1, SgNode* child2, CompTerm* t) {
   SgStatement* switch_expr = NULL;
   SgBasicBlock* switch_block = NULL;
   SgSwitchStatement* s = NULL;
@@ -2611,7 +2620,7 @@ TermToRose::createSwitchStatement(Sg_File_Info* fi, SgNode* child1, SgNode* chil
  * create SgCaseOptionStmt
  */
 SgCaseOptionStmt*
-TermToRose::createCaseOptionStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, PrologCompTerm* t) {
+TermToRose::createCaseOptionStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNode* child3, CompTerm* t) {
   SgCaseOptionStmt* case_stmt = NULL;
   SgStatement* case_block = NULL;
   /* second child must be a SgStatement*/
@@ -2643,7 +2652,7 @@ TermToRose::createCaseOptionStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child
  * create SgDefaultOptionStmt
  */
 SgDefaultOptionStmt*
-TermToRose::createDefaultOptionStmt(Sg_File_Info* fi, SgNode* child1, PrologCompTerm* t) {
+TermToRose::createDefaultOptionStmt(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
   SgDefaultOptionStmt* default_stmt = NULL;
   SgStatement* b = NULL;
   /*make sure the body is actually one.*/
@@ -2662,7 +2671,7 @@ TermToRose::createDefaultOptionStmt(Sg_File_Info* fi, SgNode* child1, PrologComp
 
 /**create a SgBreakStmt*/
 SgBreakStmt*
-TermToRose::createBreakStmt(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createBreakStmt(Sg_File_Info* fi, CompTerm* t) {
   SgBreakStmt* b = NULL;
   b = new SgBreakStmt(fi);
   TERM_ASSERT(t, b != NULL);
@@ -2671,7 +2680,7 @@ TermToRose::createBreakStmt(Sg_File_Info* fi, PrologCompTerm* t) {
 
 /** create a SgContinueStmt*/
 SgContinueStmt*
-TermToRose::createContinueStmt(Sg_File_Info* fi,PrologCompTerm* t) {
+TermToRose::createContinueStmt(Sg_File_Info* fi,CompTerm* t) {
   SgContinueStmt* s = new SgContinueStmt(fi);
   TERM_ASSERT(t, s != NULL);
   return s;
@@ -2679,12 +2688,12 @@ TermToRose::createContinueStmt(Sg_File_Info* fi,PrologCompTerm* t) {
 
 /** create a SgLabelStatement for gotos */
 SgLabelStatement*
-TermToRose::createLabelStatement(Sg_File_Info* fi,PrologCompTerm* t) {
+TermToRose::createLabelStatement(Sg_File_Info* fi,CompTerm* t) {
   /* get annotation data*/
-  PrologCompTerm* u = retrieveAnnotation(t);
+  CompTerm* u = retrieveAnnotation(t);
   TERM_ASSERT(t, u != NULL);
   /* extract the label name*/
-  EXPECT_TERM(PrologAtom*, s, u->at(0));
+  EXPECT_TERM(Atom*, s, u->at(0));
   /* create SgLabelStatement with helper function*/
   /* makeLabel alreay asserts a non-NULL return value*/
   return makeLabel(fi,s->getName());
@@ -2692,12 +2701,12 @@ TermToRose::createLabelStatement(Sg_File_Info* fi,PrologCompTerm* t) {
 
 /** create a SgGotoStmt */
 SgGotoStatement*
-TermToRose::createGotoStatement(Sg_File_Info* fi,PrologCompTerm* t) {
+TermToRose::createGotoStatement(Sg_File_Info* fi,CompTerm* t) {
   /* get annotation data*/
-  PrologCompTerm* u = retrieveAnnotation(t);
+  CompTerm* u = retrieveAnnotation(t);
   TERM_ASSERT(t, u != NULL);
   /* extract the label name*/
-  EXPECT_TERM(PrologAtom*, s, u->at(0));
+  EXPECT_TERM(Atom*, s, u->at(0));
   /* create dummy SgLabelStatement with helper function*/
   SgLabelStatement* l = NULL; //makeLabel(FI,s->getName());
   /*makeLabel asserts a non-NULL return value*/
@@ -2725,12 +2734,12 @@ TermToRose::makeLabel(Sg_File_Info* fi, std::string s) {
 
 /** create a class definition*/
 SgClassDefinition*
-TermToRose::createClassDefinition(Sg_File_Info* fi, std::deque<SgNode*>* succs, PrologCompTerm* t) {
+TermToRose::createClassDefinition(Sg_File_Info* fi, std::deque<SgNode*>* succs, CompTerm* t) {
   /*the unparser needs a Sg_File_Info for determining the end of construct
    * hence it is put in the annotation and retrieved here */
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
-  EXPECT_TERM(PrologCompTerm*, fi_term, annot->at(1));
+  EXPECT_TERM(CompTerm*, fi_term, annot->at(1));
   Sg_File_Info* end_of_construct = createFileInfo(fi_term);
   TERM_ASSERT(t, end_of_construct != NULL);
 
@@ -2750,12 +2759,12 @@ TermToRose::createClassDefinition(Sg_File_Info* fi, std::deque<SgNode*>* succs, 
     it++;
   }
 
-  EXPECT_TERM(PrologList*, inhs, annot->at(0));
+  EXPECT_TERM(List*, inhs, annot->at(0));
   /* append inheritances */
   for (int i = 0; i < inhs->getArity(); i++) {
-    EXPECT_TERM(PrologCompTerm*, base_class_term, inhs->at(i));
-    EXPECT_TERM(PrologCompTerm*, class_decl_term, base_class_term->at(0));
-    EXPECT_TERM(PrologCompTerm*, class_decl_annot, class_decl_term->at(1));
+    EXPECT_TERM(CompTerm*, base_class_term, inhs->at(i));
+    EXPECT_TERM(CompTerm*, class_decl_term, base_class_term->at(0));
+    EXPECT_TERM(CompTerm*, class_decl_annot, class_decl_term->at(1));
     SgClassDeclaration* base_decl =
       isSgClassDeclaration(declarationMap[class_decl_annot->at(2)->getRepresentation()]);
     ROSE_ASSERT(base_decl != NULL);
@@ -2776,19 +2785,19 @@ TermToRose::createClassDefinition(Sg_File_Info* fi, std::deque<SgNode*>* succs, 
  * create SgClassDeclaration
  */
 SgClassDeclaration*
-TermToRose::createClassDeclaration(Sg_File_Info* fi, SgNode* child1, PrologCompTerm* t) {
+TermToRose::createClassDeclaration(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
   //cerr<<t->getRepresentation()<<endl;
   /* retrieve annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   /* if there is a child, it is a definition*/
   SgClassDefinition* class_def = isSgClassDefinition(child1);
   /*retrieve name, class type and type*/
-  EXPECT_TERM(PrologAtom*, class_name_s, annot->at(0));
+  EXPECT_TERM(Atom*, class_name_s, annot->at(0));
   /* get the class_type-enum (struct,class) -- not the type */
-  EXPECT_TERM(PrologAtom*, p_class_type, annot->at(1));
+  EXPECT_TERM(Atom*, p_class_type, annot->at(1));
   /* get the type*/
-  EXPECT_TERM(PrologCompTerm*, type_s, annot->at(2));
+  EXPECT_TERM(CompTerm*, type_s, annot->at(2));
   SgClassDeclaration::class_types e_class_type =
     (SgClassDeclaration::class_types)createEnum(p_class_type, re.class_type);
   //SgClassType* sg_class_type = createClassType(type_s);
@@ -2971,10 +2980,10 @@ TermToRose::createDummyMemberFunctionDeclaration(std::string s,int c_type) {
 
 /** create SgClassType from annotation */
 SgClassType*
-TermToRose::createClassType(PrologTerm* p) {
+TermToRose::createClassType(Term* p) {
   SgClassType* ct = NULL;
   /* must be a composite term*/
-  EXPECT_TERM(PrologCompTerm*, t, p);
+  EXPECT_TERM(CompTerm*, t, p);
   /* first term is class name*/
   string s = *toStringP(t->at(0));
   /* lookup class declaration */
@@ -3023,23 +3032,23 @@ TermToRose::createCtorInitializerList(Sg_File_Info* fi,std::deque<SgNode*>* succ
 void
 TermToRose::abort_unless(bool condition,std::string message) {
   if (condition) return;
-  cerr << "\nFatal error while transforming Prolog to ROSE AST:\n"<< message << "\n";
+  cerr << "\nFatal error while transforming  to ROSE AST:\n"<< message << "\n";
   assert(condition);
 }
 
-/** create bit deque from PrologList*/
+/** create bit deque from List*/
 SgBitVector*
-TermToRose::createBitVector(PrologTerm* t, std::map<std::string, int> names) {
+TermToRose::createBitVector(Term* t, std::map<std::string, int> names) {
   /*cast the argument to the list and extract elements*/
-  EXPECT_TERM(PrologList*, l, t);
-  deque<PrologTerm*>* succs = l->getSuccs();
+  EXPECT_TERM(List*, l, t);
+  deque<Term*>* succs = l->getSuccs();
   /*create a bit vector*/
   SgBitVector* bv = new SgBitVector();
   bv->resize(names.size(), false);
   /*extract bits from list*/
-  deque<PrologTerm*>::iterator it = succs->begin();
+  deque<Term*>::iterator it = succs->begin();
   while(it != succs->end()) {
-    EXPECT_TERM(PrologAtom*, a, *it);
+    EXPECT_TERM(Atom*, a, *it);
     //cerr<<"&& setting "<< names[a->getName()] << " $ " << a->getRepresentation()<< endl;
     (*bv)[names[a->getName()]] = true;
     it++;
@@ -3047,9 +3056,9 @@ TermToRose::createBitVector(PrologTerm* t, std::map<std::string, int> names) {
   return bv;
 }
 
-/** create enum from PrologAtom */
+/** create enum from Atom */
 int
-TermToRose::createEnum(PrologTerm* t, std::map<std::string, int> names) {
+TermToRose::createEnum(Term* t, std::map<std::string, int> names) {
   return names[t->getName()];
 }
 
@@ -3057,9 +3066,9 @@ TermToRose::createEnum(PrologTerm* t, std::map<std::string, int> names) {
  * create SgEnumDeclaration
  * */
 SgEnumDeclaration*
-TermToRose::createEnumDeclaration(Sg_File_Info* fi, std::deque<SgNode*>* succs, PrologCompTerm* t) {
+TermToRose::createEnumDeclaration(Sg_File_Info* fi, std::deque<SgNode*>* succs, CompTerm* t) {
   /*retrieve name*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, t != NULL);
   SgName e_name = *toStringP(annot->at(0));
   /* leave type blank for now*/
@@ -3093,11 +3102,11 @@ TermToRose::createEnumDeclaration(Sg_File_Info* fi, std::deque<SgNode*>* succs, 
  * Create SgTypedefDeclaration
  */
 SgTypedefDeclaration*
-TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createTypedefDeclaration(Sg_File_Info* fi, CompTerm* t) {
   TERM_ASSERT(t, t != NULL);
   debug("typedef declaration");
   /*get annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   /*create name*/
   SgName n = *(toStringP(annot->at(0)));
@@ -3105,18 +3114,18 @@ TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
   /*create definition, if there is one*/
   SgDeclarationStatement* decl = NULL;
   /* condition is true when a declaration is at this position*/
-  PrologCompTerm* ct = isPrologCompTerm(t->at(0));
+  CompTerm* ct = isCompTerm(t->at(0));
   if(ct != NULL) {
     debug("...with declaration");
     string id;
     if (ct->getName() == "class_declaration") {
       ARITY_ASSERT(ct, 4-AR);
-      PrologCompTerm* annot = isPrologCompTerm(ct->at(1));
+      CompTerm* annot = isCompTerm(ct->at(1));
       ARITY_ASSERT(annot, 4);
       id = annot->at(0)->getRepresentation();
     }
     else if (ct->getName() == "enum_declaration")
-      id = isPrologCompTerm(ct->at(1))->at(0)->getRepresentation();
+      id = isCompTerm(ct->at(1))->at(0)->getRepresentation();
     else id = ct->getRepresentation();
     //cerr<<"TDDECKL>>>>"<<id<<endl;
     // Try to look it up
@@ -3175,9 +3184,9 @@ TermToRose::createTypedefDeclaration(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgPragma
  */
 SgPragma*
-TermToRose::createPragma(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createPragma(Sg_File_Info* fi, CompTerm* t) {
   /* retrieve annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create the name*/
   SgName sgnm = *toStringP(annot->at(0));
   /* create the Pragma*/
@@ -3191,9 +3200,9 @@ TermToRose::createPragma(Sg_File_Info* fi, PrologCompTerm* t) {
  * Post Creation Initialization of SgDeclarationStatement
  * */
 void
-TermToRose::pciDeclarationStatement(SgDeclarationStatement* s,PrologTerm* t) {
-  /* check wether t is a PrologCompTerm*/
-  PrologCompTerm* atts = isPrologCompTerm(t);
+TermToRose::pciDeclarationStatement(SgDeclarationStatement* s,Term* t) {
+  /* check wether t is a CompTerm*/
+  CompTerm* atts = isCompTerm(t);
   TERM_ASSERT(t, atts != NULL);
   TERM_ASSERT(t, s != NULL);
   ARITY_ASSERT(atts, 5);
@@ -3267,26 +3276,26 @@ TermToRose::storeVariableSymbolFromDeclaration(SgScopeStatement *scope,
 }
 
 /**
- * create std::string* from PrologAtom*
- * including downcast from PrologTerm*.
+ * create std::string* from Atom*
+ * including downcast from Term*.
  * If both casts fail, an assertion will fail;
  */
 std::string*
-TermToRose::toStringP(PrologTerm* t) {
-  if(PrologAtom* a =isPrologAtom(t)) {
+TermToRose::toStringP(Term* t) {
+  if(Atom* a =isAtom(t)) {
     TERM_ASSERT(t, a != NULL);
     return new string(a->getName());
   }
 }
 
 /**
- * create int from PrologInt*
- * including downcast from PrologTerm*
+ * create int from Int*
+ * including downcast from Term*
  * If cast fails, an assertion will fail
  */
 int
-TermToRose::toInt(PrologTerm* t) {
-  PrologInt* i = isPrologInt(t);
+TermToRose::toInt(Term* t) {
+  Int* i = isInt(t);
   TERM_ASSERT(t, i != NULL);
   return i->getValue();
 }
@@ -3295,9 +3304,9 @@ TermToRose::toInt(PrologTerm* t) {
  * create SgDeleteExp
  */
 SgDeleteExp*
-TermToRose::createDeleteExp(Sg_File_Info* fi, SgNode* child1, PrologCompTerm* t) {
+TermToRose::createDeleteExp(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
   // get annotation
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   // cast child fitting constructor
   SgExpression* e = isSgExpression(child1);
@@ -3332,9 +3341,9 @@ TermToRose::createExprListExp(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
  * create SgRefExp*
  */
 SgRefExp*
-TermToRose::createRefExp(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createRefExp(Sg_File_Info* fi, CompTerm* t) {
   /* retrieve type from annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   SgType* tpe = createType(annot->at(0));
   TERM_ASSERT(t, tpe != NULL);
@@ -3347,12 +3356,12 @@ TermToRose::createRefExp(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgVarArgOp
  * */
 SgVarArgOp*
-TermToRose::createVarArgOp(Sg_File_Info* fi, SgNode* child1,PrologCompTerm* t) {
+TermToRose::createVarArgOp(Sg_File_Info* fi, SgNode* child1,CompTerm* t) {
   /* arg is supposed to be an expression*/
   SgExpression* c1 = isSgExpression(child1);
   TERM_ASSERT(t, c1 != NULL);
   /* retrieve type from annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   SgType* tpe = createType(annot->at(0));
   TERM_ASSERT(t, tpe != NULL);
@@ -3364,12 +3373,12 @@ TermToRose::createVarArgOp(Sg_File_Info* fi, SgNode* child1,PrologCompTerm* t) {
  * create SgVarArgEndOp
  * */
 SgVarArgEndOp*
-TermToRose::createVarArgEndOp(Sg_File_Info* fi, SgNode* child1,PrologCompTerm* t) {
+TermToRose::createVarArgEndOp(Sg_File_Info* fi, SgNode* child1,CompTerm* t) {
   /* arg is supposed to be an expression*/
   SgExpression* c1 = isSgExpression(child1);
   TERM_ASSERT(t, c1 != NULL);
   /* retrieve type from annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   SgType* tpe = createType(annot->at(0));
   TERM_ASSERT(t, tpe != NULL);
@@ -3380,12 +3389,12 @@ TermToRose::createVarArgEndOp(Sg_File_Info* fi, SgNode* child1,PrologCompTerm* t
  * create SgVarArgStartOneOperandOp
  * */
 SgVarArgStartOneOperandOp*
-TermToRose::createVarArgStartOneOperandOp(Sg_File_Info* fi, SgNode* child1,PrologCompTerm* t) {
+TermToRose::createVarArgStartOneOperandOp(Sg_File_Info* fi, SgNode* child1,CompTerm* t) {
   /* arg is supposed to be an expression*/
   SgExpression* c1 = isSgExpression(child1);
   TERM_ASSERT(t, c1 != NULL);
   /* retrieve type from annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   SgType* tpe = createType(annot->at(0));
   TERM_ASSERT(t, tpe != NULL);
@@ -3396,14 +3405,14 @@ TermToRose::createVarArgStartOneOperandOp(Sg_File_Info* fi, SgNode* child1,Prolo
  * create SgVarArgStartOp
  * */
 SgVarArgStartOp*
-TermToRose::createVarArgStartOp(Sg_File_Info* fi, SgNode* child1,SgNode* child2,PrologCompTerm* t) {
+TermToRose::createVarArgStartOp(Sg_File_Info* fi, SgNode* child1,SgNode* child2,CompTerm* t) {
   /* args are supposed to be expressions*/
   SgExpression* c1 = isSgExpression(child1);
   TERM_ASSERT(t, c1 != NULL);
   SgExpression* c2 = isSgExpression(child2);
   TERM_ASSERT(t, c2 != NULL);
   /* retrieve type from annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   SgType* tpe = createType(annot->at(0));
   TERM_ASSERT(t, tpe != NULL);
@@ -3415,14 +3424,14 @@ TermToRose::createVarArgStartOp(Sg_File_Info* fi, SgNode* child1,SgNode* child2,
  * create SgVarArgCopyOp
  * */
 SgVarArgCopyOp*
-TermToRose::createVarArgCopyOp(Sg_File_Info* fi, SgNode* child1,SgNode* child2,PrologCompTerm* t) {
+TermToRose::createVarArgCopyOp(Sg_File_Info* fi, SgNode* child1,SgNode* child2,CompTerm* t) {
   /* args are supposed to be expressions*/
   SgExpression* c1 = isSgExpression(child1);
   TERM_ASSERT(t, c1 != NULL);
   SgExpression* c2 = isSgExpression(child2);
   TERM_ASSERT(t, c2 != NULL);
   /* retrieve type from annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   SgType* tpe = createType(annot->at(0));
   TERM_ASSERT(t, tpe != NULL);
@@ -3434,8 +3443,8 @@ TermToRose::createVarArgCopyOp(Sg_File_Info* fi, SgNode* child1,SgNode* child2,P
  * create SgAccessModifier
  */
 SgAccessModifier*
-TermToRose::createAccessModifier(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createAccessModifier(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   SgAccessModifier* a = new SgAccessModifier();
   TERM_ASSERT(t, a != NULL);
@@ -3447,8 +3456,8 @@ TermToRose::createAccessModifier(PrologTerm* t) {
  * create SgBaseClassModifier
  */
 SgBaseClassModifier*
-TermToRose::createBaseClassModifier(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createBaseClassModifier(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   SgBaseClassModifier* b = new SgBaseClassModifier();
   TERM_ASSERT(t, b != NULL);
@@ -3464,8 +3473,8 @@ TermToRose::createBaseClassModifier(PrologTerm* t) {
  * create SgFunctionModifier
  */
 SgFunctionModifier*
-TermToRose::createFunctionModifier(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createFunctionModifier(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   //extract bit vector list and create bit vector
   // ( cast done in createBitVector)
@@ -3479,8 +3488,8 @@ TermToRose::createFunctionModifier(PrologTerm* t) {
  * create SgSpecialFunctionModifier
  */
 void
-TermToRose::setSpecialFunctionModifier(PrologTerm* t, SgSpecialFunctionModifier* m) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::setSpecialFunctionModifier(Term* t, SgSpecialFunctionModifier* m) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   ROSE_ASSERT(m != NULL);
   //extract bit vector list and create bit vector
@@ -3494,8 +3503,8 @@ TermToRose::setSpecialFunctionModifier(PrologTerm* t, SgSpecialFunctionModifier*
  * create SgStorageModifier
  */
 SgStorageModifier*
-TermToRose::createStorageModifier(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createStorageModifier(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   SgStorageModifier* a = new SgStorageModifier();
   TERM_ASSERT(t, a != NULL);
@@ -3507,8 +3516,8 @@ TermToRose::createStorageModifier(PrologTerm* t) {
  * create SgLinkageModifier
  */
 SgLinkageModifier*
-TermToRose::createLinkageModifier(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createLinkageModifier(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   SgLinkageModifier* a = new SgLinkageModifier();
   TERM_ASSERT(t, a != NULL);
@@ -3519,8 +3528,8 @@ TermToRose::createLinkageModifier(PrologTerm* t) {
  * create SgElaboratedTypeModifier
  */
 SgElaboratedTypeModifier*
-TermToRose::createElaboratedTypeModifier(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createElaboratedTypeModifier(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   SgElaboratedTypeModifier* a = new SgElaboratedTypeModifier();
   TERM_ASSERT(t, a != NULL);
@@ -3532,8 +3541,8 @@ TermToRose::createElaboratedTypeModifier(PrologTerm* t) {
  * create SgConstVolatileModifier
  */
 SgConstVolatileModifier*
-TermToRose::createConstVolatileModifier(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createConstVolatileModifier(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   SgConstVolatileModifier* a = new SgConstVolatileModifier();
   TERM_ASSERT(t, a != NULL);
@@ -3545,8 +3554,8 @@ TermToRose::createConstVolatileModifier(PrologTerm* t) {
  * create SgUPC_AccessModifier
  */
 SgUPC_AccessModifier*
-TermToRose::createUPC_AccessModifier(PrologTerm* t) {
-  PrologCompTerm* c = isPrologCompTerm(t);
+TermToRose::createUPC_AccessModifier(Term* t) {
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   SgUPC_AccessModifier* a = new SgUPC_AccessModifier();
   TERM_ASSERT(t, a != NULL);
@@ -3559,7 +3568,7 @@ TermToRose::createUPC_AccessModifier(PrologTerm* t) {
  * create SgTypeModifier
  */
 SgTypeModifier*
-TermToRose::createTypeModifier(PrologTerm* t) {
+TermToRose::createTypeModifier(Term* t) {
   /* create modifier*/
   SgTypeModifier* m = new SgTypeModifier();
   TERM_ASSERT(t, m != NULL);
@@ -3573,9 +3582,9 @@ TermToRose::createTypeModifier(PrologTerm* t) {
  * set SgTypeModifier's values
  */
 void
-TermToRose::setTypeModifier(PrologTerm* t, SgTypeModifier* tm) {
+TermToRose::setTypeModifier(Term* t, SgTypeModifier* tm) {
   /* cast*/
-  PrologCompTerm* c = isPrologCompTerm(t);
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   TERM_ASSERT(t, tm != NULL);
   /* set bit vector and internal modifiers*/
@@ -3599,7 +3608,7 @@ TermToRose::setTypeModifier(PrologTerm* t, SgTypeModifier* tm) {
  * create SgDeclarationModifier
  */
 SgDeclarationModifier*
-TermToRose::createDeclarationModifier(PrologTerm* t) {
+TermToRose::createDeclarationModifier(Term* t) {
   SgDeclarationModifier* d = new SgDeclarationModifier();
   TERM_ASSERT(t, d != NULL);
   /* set values*/
@@ -3611,11 +3620,11 @@ TermToRose::createDeclarationModifier(PrologTerm* t) {
  * set SgDeclarationModifier's values
  */
 void
-TermToRose::setDeclarationModifier(PrologTerm* t, SgDeclarationModifier* d) {
+TermToRose::setDeclarationModifier(Term* t, SgDeclarationModifier* d) {
   debug("setting modifier");
   TERM_ASSERT(t, d != NULL);
   /* cast*/
-  PrologCompTerm* c = isPrologCompTerm(t);
+  CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   /* create and set bit vector*/
   SgBitVector b = *(createBitVector(c->at(0), re.declaration_modifier));
@@ -3634,7 +3643,7 @@ TermToRose::setDeclarationModifier(PrologTerm* t, SgDeclarationModifier* d) {
  * create SgAggregateInitializer
  */
 SgAggregateInitializer*
-TermToRose::createAggregateInitializer(Sg_File_Info* fi,SgNode* child1,PrologCompTerm* t) {
+TermToRose::createAggregateInitializer(Sg_File_Info* fi,SgNode* child1,CompTerm* t) {
   //Child must be a SgExprListExp
   SgExprListExp* e = isSgExprListExp(child1);
   TERM_ASSERT(t, e != NULL);
@@ -3650,7 +3659,7 @@ TermToRose::createAggregateInitializer(Sg_File_Info* fi,SgNode* child1,PrologCom
  * Use this function only if there really is no other way (ie. forward declarations)
  */
 SgFunctionDeclaration*
-TermToRose::createDummyFunctionDeclaration(std::string* namestr, PrologTerm* type_term,
+TermToRose::createDummyFunctionDeclaration(std::string* namestr, Term* type_term,
 					   SgProcedureHeaderStatement::subprogram_kind_enum kind) {
   //cerr<<"**WARNING: deprecated function "<<__FUNCTION__<<endl;
   ROSE_ASSERT(namestr != NULL);
@@ -3692,7 +3701,7 @@ TermToRose::createDummyFunctionDeclaration(std::string* namestr, PrologTerm* typ
  * Use this function only if there really is no other way (ie. forward declarations)
  */
 SgFunctionSymbol*
-TermToRose::createDummyFunctionSymbol(std::string* namestr, PrologTerm* type_term, 	 
+TermToRose::createDummyFunctionSymbol(std::string* namestr, Term* type_term, 	 
 				      SgProcedureHeaderStatement::subprogram_kind_enum kind) {
   //cerr<<"**WARNING: deprecated function "<<__FUNCTION__<<endl;
   ROSE_ASSERT(namestr != NULL);
@@ -3711,11 +3720,11 @@ TermToRose::createDummyFunctionSymbol(std::string* namestr, PrologTerm* type_ter
  * create dummy SgMemberFunctionSymbol
  */
 SgMemberFunctionSymbol*
-TermToRose::createDummyMemberFunctionSymbol(PrologTerm* annot_term) {
+TermToRose::createDummyMemberFunctionSymbol(Term* annot_term) {
   /* retrieve representation of member function from annotation*/
   debug("mfs");
   TERM_ASSERT(annot_term, annot_term != NULL);
-  PrologCompTerm* annot = isPrologCompTerm(annot_term);
+  CompTerm* annot = isCompTerm(annot_term);
   /* use generic term to rose function for creating a SgNode and try to cast*/
   SgNode* mfunc_uncast = toRose(annot->at(0));
   TERM_ASSERT(annot_term, mfunc_uncast != NULL);
@@ -3723,7 +3732,7 @@ TermToRose::createDummyMemberFunctionSymbol(PrologTerm* annot_term) {
     isSgMemberFunctionDeclaration(mfunc_uncast);
   TERM_ASSERT(annot_term, mfunc != NULL);
   /*add class scope*/
-  PrologCompTerm* scope_term = isPrologCompTerm(annot->at(1));
+  CompTerm* scope_term = isCompTerm(annot->at(1));
   /*scope name and type*/
   debug("creating scope for member function declaration for symbol ");
   string scope_name = *(toStringP(scope_term->at(0)));
@@ -3741,11 +3750,11 @@ TermToRose::createDummyMemberFunctionSymbol(PrologTerm* annot_term) {
  * create SgFunctionRefExp
  */
 SgFunctionRefExp*
-TermToRose::createFunctionRefExp(Sg_File_Info* fi, PrologCompTerm* ct) {
+TermToRose::createFunctionRefExp(Sg_File_Info* fi, CompTerm* ct) {
   /* extract pointer to string containing the name
-   * and a PrologTerm* with the type info from annotation*/
+   * and a Term* with the type info from annotation*/
   TERM_ASSERT(ct, ct != NULL);
-  PrologCompTerm* annot = retrieveAnnotation(ct);
+  CompTerm* annot = retrieveAnnotation(ct);
   TERM_ASSERT(ct, annot != NULL);
   ARITY_ASSERT(annot, 4);
   string* s = toStringP(annot->at(0));
@@ -3785,11 +3794,11 @@ TermToRose::createFunctionRefExp(Sg_File_Info* fi, PrologCompTerm* ct) {
  * create SgMemberFunctionRefExp
  */
 SgMemberFunctionRefExp*
-TermToRose::createMemberFunctionRefExp(Sg_File_Info* fi, PrologCompTerm* ct) {
+TermToRose::createMemberFunctionRefExp(Sg_File_Info* fi, CompTerm* ct) {
   /* extract pointer to string containing the name
-   * and a PrologTerm* with the type info from annotation*/
+   * and a Term* with the type info from annotation*/
   TERM_ASSERT(ct, ct != NULL);
-  PrologCompTerm* annot = retrieveAnnotation(ct);
+  CompTerm* annot = retrieveAnnotation(ct);
   ARITY_ASSERT(annot, 5);
   /* create member function symbol*/
   SgMemberFunctionSymbol* sym;
@@ -3846,8 +3855,8 @@ TermToRose::createNamespaceDefinitionStatement(Sg_File_Info* fi, std::deque<SgNo
  * create SgNamespaceDeclarationStatement
  */
 SgNamespaceDeclarationStatement*
-TermToRose::createNamespaceDeclarationStatement(Sg_File_Info* fi, SgNode* child1, PrologCompTerm* t) {
-  PrologCompTerm* annot = retrieveAnnotation(t);
+TermToRose::createNamespaceDeclarationStatement(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   SgNamespaceDefinitionStatement* def = isSgNamespaceDefinitionStatement(child1);
   if (def == NULL) {
@@ -3873,12 +3882,12 @@ TermToRose::createNamespaceDeclarationStatement(Sg_File_Info* fi, SgNode* child1
  * create SgFunctionCallExp
  */
 SgFunctionCallExp*
-TermToRose::createFunctionCallExp(Sg_File_Info* fi, SgNode* child1, SgNode* child2, PrologCompTerm* ct) {
+TermToRose::createFunctionCallExp(Sg_File_Info* fi, SgNode* child1, SgNode* child2, CompTerm* ct) {
   /* cast children*/
   EXPECT_NODE(SgExpression*, re, child1);
   EXPECT_NODE(SgExprListExp*, el, child2);
   /*create return type*/
-  PrologCompTerm* annot = retrieveAnnotation(ct);
+  CompTerm* annot = retrieveAnnotation(ct);
   ROSE_ASSERT(annot != NULL);
   SgType* rt = createType(annot->at(0));
   ROSE_ASSERT(rt != NULL);
@@ -3892,7 +3901,7 @@ TermToRose::createFunctionCallExp(Sg_File_Info* fi, SgNode* child1, SgNode* chil
  * create SgTryStmt
  */
 SgTryStmt*
-TermToRose::createTryStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, PrologCompTerm* ct) {
+TermToRose::createTryStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, CompTerm* ct) {
   /* first child is a SgStatement*/
   EXPECT_NODE(SgStatement*,b,child1);
   /*second child is a SgCatchStatementSeq*/
@@ -3910,7 +3919,7 @@ TermToRose::createTryStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, Prol
  * create SgCatchOptionStmt
  */
 SgCatchOptionStmt*
-TermToRose::createCatchOptionStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, PrologCompTerm* ct) {
+TermToRose::createCatchOptionStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, CompTerm* ct) {
   EXPECT_NODE(SgVariableDeclaration*, dec, child1);
   EXPECT_NODE(SgStatement*, bl, child2);
   SgCatchOptionStmt* s = new SgCatchOptionStmt(fi,dec,bl,NULL);
@@ -3938,7 +3947,7 @@ TermToRose::createCatchStatementSeq(Sg_File_Info* fi, std::deque<SgNode*>* succs
  * create a SgThisExp
  */
 SgThisExp*
-TermToRose::createThisExp(Sg_File_Info* fi, PrologCompTerm* ct) {
+TermToRose::createThisExp(Sg_File_Info* fi, CompTerm* ct) {
   /*the unparser does not use the class name*/
   SgThisExp* t = new SgThisExp(fi,NULL);
   ROSE_ASSERT(t != NULL);
@@ -3949,9 +3958,9 @@ TermToRose::createThisExp(Sg_File_Info* fi, PrologCompTerm* ct) {
  * create a SgConstructorInitializer
  */
 SgConstructorInitializer*
-TermToRose::createConstructorInitializer(Sg_File_Info* fi, SgNode* child1,PrologCompTerm* t) {
+TermToRose::createConstructorInitializer(Sg_File_Info* fi, SgNode* child1,CompTerm* t) {
   /*retrieve annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, t != NULL);
   /* get class name*/
   string s = *toStringP(annot->at(0));
@@ -3979,9 +3988,9 @@ TermToRose::createConstructorInitializer(Sg_File_Info* fi, SgNode* child1,Prolog
  * create a SgPragmaDeclaration
  */
 SgPragmaDeclaration*
-TermToRose::createPragmaDeclaration(Sg_File_Info* fi, SgNode* child1,PrologCompTerm* t) {
+TermToRose::createPragmaDeclaration(Sg_File_Info* fi, SgNode* child1,CompTerm* t) {
   /*retrieve annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, t != NULL);
   /* cast the SgPragma*/
   SgPragma* p = isSgPragma(child1);
@@ -3995,9 +4004,9 @@ TermToRose::createPragmaDeclaration(Sg_File_Info* fi, SgNode* child1,PrologCompT
  * create a SgNewExp
  */
 SgNewExp*
-TermToRose::createNewExp(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode* child3,PrologCompTerm* t) {
+TermToRose::createNewExp(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode* child3,CompTerm* t) {
   /*retrieve annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   /* retrieve type*/
   SgType* tpe = createType(annot->at(0));
@@ -4018,9 +4027,9 @@ TermToRose::createNewExp(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode*
  * create a SgConditionalExp
  */
 SgConditionalExp*
-TermToRose::createConditionalExp(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode* child3,PrologCompTerm* t) {
+TermToRose::createConditionalExp(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode* child3,CompTerm* t) {
   /*retrieve annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   TERM_ASSERT(t, annot != NULL);
   /* retrieve type*/
   SgType* tpe = createType(annot->at(0));
@@ -4042,19 +4051,19 @@ TermToRose::createConditionalExp(Sg_File_Info* fi,SgNode* child1,SgNode* child2,
  * create a createProgramHeaderStatement
  */
 SgProgramHeaderStatement*
-TermToRose::createProgramHeaderStatement(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode* child3,PrologCompTerm* t) {
+TermToRose::createProgramHeaderStatement(Sg_File_Info* fi,SgNode* child1,SgNode* child2, SgNode* child3,CompTerm* t) {
   debug("function declaration:");
   /* cast parameter list */
   SgFunctionParameterList* par_list = isSgFunctionParameterList(child1);
   /* param list must exist*/
   TERM_ASSERT(t, par_list != NULL);
   /* get annotation*/
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create type*/
   SgFunctionType* func_type = isSgFunctionType(createType(annot->at(0)));
   TERM_ASSERT(t, func_type != NULL);
   /* get function name*/
-  EXPECT_TERM(PrologAtom*, func_name_term, annot->at(1));
+  EXPECT_TERM(Atom*, func_name_term, annot->at(1));
   SgName func_name = func_name_term->getName();
   /* create definition*/
   SgFunctionDefinition* func_def = isSgFunctionDefinition(child3);
@@ -4072,9 +4081,9 @@ TermToRose::createProgramHeaderStatement(Sg_File_Info* fi,SgNode* child1,SgNode*
  * create SgImplicitStatement
  */
 SgImplicitStatement*
-TermToRose::createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createImplicitStatement(Sg_File_Info* fi, CompTerm* t) {
   /* retrieve annotation */
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create the SgImplicitStatement */
   SgImplicitStatement* s = new SgImplicitStatement(fi, getFlag(annot->at(0)));
   TERM_ASSERT(t, s != NULL);
@@ -4087,9 +4096,9 @@ TermToRose::createImplicitStatement(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgAttributeSpecificationStatement
  */
 SgAttributeSpecificationStatement*
-TermToRose::createAttributeSpecificationStatement(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createAttributeSpecificationStatement(Sg_File_Info* fi, CompTerm* t) {
   /* retrieve annotation */
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create the SgAttributeSpecificationStatement */
   SgAttributeSpecificationStatement* ass = 
     new SgAttributeSpecificationStatement(fi);
@@ -4106,9 +4115,9 @@ TermToRose::createAttributeSpecificationStatement(Sg_File_Info* fi, PrologCompTe
  * create SgCommonBlockObject
  */
 SgCommonBlockObject*
-TermToRose::createCommonBlockObject(Sg_File_Info* fi, SgNode* child, PrologCompTerm* t) {
+TermToRose::createCommonBlockObject(Sg_File_Info* fi, SgNode* child, CompTerm* t) {
   /* retrieve annotation */
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create the SgCommonBlockObject */
   SgExprListExp* le = isSgExprListExp(child);
   ROSE_ASSERT(le);
@@ -4149,9 +4158,9 @@ TermToRose::createCommonBlock(Sg_File_Info* fi, std::deque<SgNode*>* succs)
  * create SgFortranIncludeLine
  */
 SgFortranIncludeLine*
-TermToRose::createFortranIncludeLine(Sg_File_Info* fi, PrologCompTerm* t) {
+TermToRose::createFortranIncludeLine(Sg_File_Info* fi, CompTerm* t) {
   /* retrieve annotation */
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   /* create the SgFortranIncludeLine */
   SgFortranIncludeLine* fil = new SgFortranIncludeLine(fi);
   EXPECT_ATOM(filename, annot->at(0));
@@ -4163,8 +4172,8 @@ TermToRose::createFortranIncludeLine(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgAsteriskShapeExp
  */
 SgAsteriskShapeExp*
-TermToRose::createAsteriskShapeExp(Sg_File_Info* fi, PrologCompTerm* t) {
-  //PrologCompTerm* annot = retrieveAnnotation(t);
+TermToRose::createAsteriskShapeExp(Sg_File_Info* fi, CompTerm* t) {
+  //CompTerm* annot = retrieveAnnotation(t);
   SgAsteriskShapeExp* n = new SgAsteriskShapeExp(fi);
   //n->set_type(createType(annot->at(0)));
   return n;
@@ -4174,9 +4183,9 @@ TermToRose::createAsteriskShapeExp(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgWriteStatement
  */
 SgWriteStatement*
-TermToRose::createWriteStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, PrologCompTerm* t) {
+TermToRose::createWriteStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, CompTerm* t) {
   /* retrieve annotation */
-  PrologCompTerm* annot = retrieveAnnotation(t);
+  CompTerm* annot = retrieveAnnotation(t);
   ARITY_ASSERT(annot, 10);
   /* create the SgWriteStatement */
   SgWriteStatement* n = new SgWriteStatement(fi);
@@ -4201,20 +4210,20 @@ TermToRose::createWriteStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, P
  * create SgFormatItem
  */
 SgFormatItem*
-TermToRose::createFormatItem(Sg_File_Info* fi, PrologCompTerm* t) {
-  PrologCompTerm* annot = retrieveAnnotation(t);
+TermToRose::createFormatItem(Sg_File_Info* fi, CompTerm* t) {
+  CompTerm* annot = retrieveAnnotation(t);
   SgFormatItem* n = new SgFormatItem();
 
-  EXPECT_TERM(PrologList*, items, annot->at(2));
-  deque<PrologTerm*>* succs = items->getSuccs();
-  deque<PrologTerm*>::iterator it;
+  EXPECT_TERM(List*, items, annot->at(2));
+  deque<Term*>* succs = items->getSuccs();
+  deque<Term*>::iterator it;
   SgFormatItemList* sgitems = new SgFormatItemList();
   for (it = succs->begin(); it != succs->end(); ++it) {
     sgitems->get_format_item_list().push_back(isSgFormatItem(toRose(*it)));
     it++;
   }
 
-  EXPECT_TERM(PrologInt*, rs, annot->at(0));
+  EXPECT_TERM(Int*, rs, annot->at(0));
   n->set_repeat_specification( rs->getValue() );
   n->set_data( isSgExpression(toRose(annot->at(1))) );
   n->set_format_item_list(sgitems);
@@ -4226,14 +4235,14 @@ TermToRose::createFormatItem(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgFormatStatement
  */
 SgFormatStatement*
-TermToRose::createFormatStatement(Sg_File_Info* fi, PrologCompTerm* t) {
-  PrologCompTerm* annot = retrieveAnnotation(t);
+TermToRose::createFormatStatement(Sg_File_Info* fi, CompTerm* t) {
+  CompTerm* annot = retrieveAnnotation(t);
   SgFormatStatement* n = new SgFormatStatement(fi);
 
-  EXPECT_TERM(PrologList*, items, annot->at(0));
+  EXPECT_TERM(List*, items, annot->at(0));
   SgFormatItemList* sgitems = new SgFormatItemList();
-  deque<PrologTerm*>* succs = items->getSuccs();
-  deque<PrologTerm*>::iterator it;
+  deque<Term*>* succs = items->getSuccs();
+  deque<Term*>::iterator it;
   for (it = succs->begin(); it != succs->end(); ++it) {
     sgitems->get_format_item_list().push_back(isSgFormatItem(toRose(*it)));
   }
@@ -4256,8 +4265,8 @@ TermToRose::createFormatStatement(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgLabelRefExp
  */
 SgLabelRefExp*
-TermToRose::createLabelRefExp(Sg_File_Info* fi, PrologCompTerm* t) {
-  PrologCompTerm* annot = retrieveAnnotation(t);
+TermToRose::createLabelRefExp(Sg_File_Info* fi, CompTerm* t) {
+  CompTerm* annot = retrieveAnnotation(t);
   SgLabelRefExp* n = new SgLabelRefExp(fi, isSgLabelSymbol(toRose(annot->at(0))));
   return n;
 }
@@ -4266,11 +4275,11 @@ TermToRose::createLabelRefExp(Sg_File_Info* fi, PrologCompTerm* t) {
  * create SgLabelSymbol
  */
 SgLabelSymbol*
-TermToRose::createLabelSymbol(Sg_File_Info* fi, SgNode* child1, PrologCompTerm* t) {
-  PrologCompTerm* annot = retrieveAnnotation(t);
+TermToRose::createLabelSymbol(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
+  CompTerm* annot = retrieveAnnotation(t);
   SgLabelSymbol* n = new SgLabelSymbol(isSgLabelStatement(child1));
 
-  EXPECT_TERM(PrologInt*, val, annot->at(0));
+  EXPECT_TERM(Int*, val, annot->at(0));
   n->set_numeric_label_value(val->getValue());
   n->set_label_type((SgLabelSymbol::label_type_enum)
     createEnum(annot->at(1), re.label_type));

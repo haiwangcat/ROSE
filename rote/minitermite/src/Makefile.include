@@ -13,14 +13,13 @@ nobase_include_HEADERS = \
 	src/minitermite/TermPrinter.h \
 	\
 	src/minitermite/TermToRose.h \
-	src/minitermite/PrologTerm.h \
-	src/minitermite/PrologCompTerm.h	\
-	src/minitermite/PrologList.h \
-	src/minitermite/PrologAtom.h \
-	src/minitermite/PrologInt.h \
-	src/minitermite/PrologVariable.h \
 	src/minitermite/RoseToTerm.h \
-	src/minitermite/RoseEnums.h
+	src/minitermite/RoseEnums.h \
+	\
+	src/minitermite/term.h++ \
+	src/minitermite/stl-term.h++ \
+	src/minitermite/swipl-term.h++ \
+	src/minitermite/stratego-term.h++
 
 ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) \
             -L$(BOOST_LIB_DIR) -Wl,-rpath $(BOOST_LIB_DIR)
@@ -77,7 +76,7 @@ nobase_dist_data_DATA = \
   src/termite/termlint.pl       src/termite/termite_spec.pl \
   src/termite/markers.pl
 
-else # -----------------------------------------------------------------
+endif # -----------------------------------------------------------------
 
 BUILT_SOURCES += src/termparser.tab.h++ 
 
@@ -91,8 +90,6 @@ src/termparser.tab.h++: $(srcdir)/src/termparser.y++ Makefile
 	$(YACC) -d $(srcdir)/src/termparser.y++ && \
 	rm y.tab.c && \
 	mv y.tab.h $@
-
-endif # ----------------------------------------------------------------
 
 src_termpretty_SOURCES = src/termpretty.l++
 src_termpretty_LDFLAGS = $(ROSELDFLAGS)

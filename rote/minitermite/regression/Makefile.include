@@ -1,9 +1,16 @@
 # -*- makefile-automake -*-
 
-# the first two are big, so run them first
+# parallel make: the first two are big, so run them first
 TERMITE_TESTS = \
     regression/mrtc/success/statemate.c \
     regression/mrtc/success/nsichneu.c \
+    regression/fortran/trivial.f90 \
+    regression/fortran/simple_ccsd_t2.f \
+    regression/fortran/complex.f03 \
+    regression/fortran/icsd.f \
+    regression/fortran/icsd_t2.f \
+    regression/fortran/funCall.f \
+    regression/fortran/rose_dim.f \
     regression/base/ab.c \
     regression/base/bigger.c \
     regression/base/blocks.c \
@@ -76,13 +83,6 @@ TERMITE_TESTS = \
     regression/base/verysmall.c \
     regression/base/virtual.cxx \
     regression/base/while_call1.c \
-    regression/fortran/trivial.f90 \
-    regression/fortran/simple_ccsd_t2.f \
-    regression/fortran/complex.f03 \
-    regression/fortran/icsd.f \
-    regression/fortran/icsd_t2.f \
-    regression/fortran/funCall.f \
-    regression/fortran/rose_dim.f \
     regression/mrtc/failure/des.c \
     regression/mrtc/success/adpcm.c \
     regression/mrtc/success/bs.c \
@@ -169,11 +169,14 @@ regression/c_driver.sh: Makefile
 	@echo 'NAME=`basename $$1 .c`' >> $@
 	@echo '../$(builddir)/src/src2term -I../`dirname $$1` ../$$1 -o $${NAME}-1.term || exit 1' >> $@
 	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.c || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term -I../`dirname $$1` $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stl-engine -I../`dirname $$1` $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stratego-engine -I../`dirname $$1` $${NAME}-4.c -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(builddir)/src/term2src --stratego-engine  $${NAME}-5.term -o $${NAME}-6.c || exit 6' >>$@
 if WITH_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-5.term || exit 9' >> $@
 endif
 
 regression/cxx_driver.sh: Makefile
@@ -186,11 +189,14 @@ regression/cxx_driver.sh: Makefile
 	@echo 'NAME=`basename ../$$1 .cxx`' >> $@
 	@echo '../$(builddir)/src/src2term -I../`dirname $$1` ../$$1 -o $${NAME}-1.term || exit 1' >> $@
 	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.cxx || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term -I../`dirname $$1` $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stl-engine -I../`dirname $$1` $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stratego-engine -I../`dirname $$1` $${NAME}-4.cxx -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(builddir)/src/term2src --stratego-engine  $${NAME}-5.term -o $${NAME}-6.cxx || exit 6' >>$@
 if WITH_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-5.term || exit 9' >> $@
 endif
 
 regression/f90_driver.sh: Makefile
@@ -203,11 +209,14 @@ regression/f90_driver.sh: Makefile
 	@echo 'NAME=`basename ../$$1 .f90`' >> $@
 	@echo '../$(builddir)/src/src2term -I../`dirname $$1` ../$$1 -o $${NAME}-1.term || exit 1' >> $@
 	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.f90 || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term -I../`dirname $$1` $${NAME}-2.f90 -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.f90 || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stl-engine -I../`dirname $$1` $${NAME}-2.f90 -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f90 || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stratego-engine -I../`dirname $$1` $${NAME}-4.f90 -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(builddir)/src/term2src --stratego-engine  $${NAME}-5.term -o $${NAME}-6.f90 || exit 6' >>$@
 if WITH_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-5.term || exit 9' >> $@
 endif
 
 regression/f03_driver.sh: Makefile
@@ -220,11 +229,14 @@ regression/f03_driver.sh: Makefile
 	@echo 'NAME=`basename ../$$1 .f03`' >> $@
 	@echo '../$(builddir)/src/src2term -I../`dirname $$1` ../$$1 -o $${NAME}-1.term || exit 1' >> $@
 	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.f03 || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term -I../`dirname $$1` $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.f03 || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stl-engine -I../`dirname $$1` $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f03 || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stratego-engine -I../`dirname $$1` $${NAME}-4.f03 -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(builddir)/src/term2src --stratego-engine  $${NAME}-5.term -o $${NAME}-6.f03 || exit 6' >>$@
 if WITH_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-5.term || exit 9' >> $@
 endif
 
 regression/f77_driver.sh: Makefile
@@ -237,9 +249,12 @@ regression/f77_driver.sh: Makefile
 	@echo 'NAME=`basename ../$$1 .f`' >> $@
 	@echo '../$(builddir)/src/src2term -I../`dirname $$1` ../$$1 -o $${NAME}-1.term || exit 1' >> $@
 	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.f || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term -I../`dirname $$1` $${NAME}-2.f -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-3.term -o $${NAME}-4.f || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stl-engine -I../`dirname $$1` $${NAME}-2.f -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f || exit 4' >>$@
+	@echo '../$(builddir)/src/src2term --stratego-engine -I../`dirname $$1` $${NAME}-4.f -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(builddir)/src/term2src --stratego-engine  $${NAME}-5.term -o $${NAME}-6.f || exit 6' >>$@
 if WITH_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 5' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 6' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(builddir)/src/termite_lint $${NAME}-5.term || exit 9' >> $@
 endif
