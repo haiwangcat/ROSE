@@ -243,7 +243,7 @@ namespace term {
     virtual bool isGround() const {return true;}
     /// return value
     int64_t getValue() const {return mValue;}
-  private:
+  protected:
     /// the value
     int mValue;
   };
@@ -271,7 +271,7 @@ namespace term {
 
     /// return value
     double getValue() const {return mValue;}
-  private:
+  protected:
     /// the value
     double mValue;
   };
@@ -280,8 +280,6 @@ namespace term {
   /// Representation of a compound prolog term.
   class STLCompTerm : public CompTerm, public STLTerm {
   public:
-    ~STLCompTerm() {};
-
     /// Creates a compound term with the given name. no subterms added yet.
     STLCompTerm(const std::string name = "#ERROR") : mName(name) {};
 
@@ -499,7 +497,7 @@ namespace term {
     /// output the name
     std::string getRepresentation() const {return mName;};
     
-  private:
+  protected:
     /// the name
     std::string mName;
   };
@@ -556,7 +554,7 @@ namespace term {
 
     std::deque<Term*>* getSuccs() { return &mTerms; };
 
-  private:
+  protected:
     /// the successors
     std::deque<term::Term*> mTerms;
   };

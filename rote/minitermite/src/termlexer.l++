@@ -7,9 +7,11 @@ using namespace std;
 #include <string>
 #include <vector>
 #include <iostream> 
+#include <boost/algorithm/string.hpp>
 #include "minitermite.h"
 #include "termparser.tab.h++"
 
+bool yy_use_stratego_filter = false;
 int colno = 0;
 
 void count() {
@@ -89,6 +91,11 @@ operator [\-\+\*\/\<\=\>\:\.\#]+
         *(yytext + yyleng - 2) = '\0';
 	unescape();
         yylval.strValue = new string(buf);
+	if (yy_use_stratego_filter) {
+	  // screw efficiency...
+	  boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-BANG", "!");
+	  boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-OCTOTHORPE", "#");
+        }
 	return(STRING);
         }
 

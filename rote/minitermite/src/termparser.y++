@@ -61,10 +61,10 @@ pterm:
 ;
 term:
   STRING      { $$ = new term::STLAtom(*$1);  } 
- | ATOM       { $$ = new term::STLAtom(*$1);    }
+ | ATOM       { $$ = new term::STLAtom(*$1);  }
  | OPERATOR   { $$ = new term::STLAtom(*$1);    
-   // The problem is, we can't really decide the difference between the 
-   // string-atom '->' and the operator '->'
+   // The problem here is that we can't really decide the difference
+   // between the string-atom '->' and the operator '->'
    }
  | VARIABLE   { $$ = new term::STLVariable(*$1);}
  | comp_term  { $$ = $1;                     }

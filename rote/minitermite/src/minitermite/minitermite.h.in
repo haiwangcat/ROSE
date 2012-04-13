@@ -72,6 +72,8 @@
 
 #define DEBUG_TERMITE 0
 
+extern bool yy_use_stratego_filter;
+
 #include <stl-term.h++>
 #include <swipl-term.h++>
 #include <stratego-term.h++>
