@@ -74,39 +74,36 @@ namespace term {
 
     // Escape non-printable characters
     static std::string escape(std::string s) {
-      std::string r;
+      std::ostringstream r;
       for (unsigned int i = 0; i < s.length(); ++i) {
 	unsigned char c = s[i];
 	switch (c) {
-	case '\\': r += "\\\\"; break; // Literal backslash
-	case '\"': r += "\\\""; break; // Double quote
-	case '\'': r += "\\'"; break;  // Single quote
-	case '\n': r += "\\n"; break;  // Newline (line feed)
-	case '\r': r += "\\r"; break;  // Carriage return
-	case '\b': r += "\\b"; break;  // Backspace
-	case '\t': r += "\\t"; break;  // Horizontal tab
-	case '\f': r += "\\f"; break;  // Form feed
-	case '\a': r += "\\a"; break;  // Alert (bell)
-	case '\v': r += "\\v"; break;  // Vertical tab
+	case '\\': r << "\\\\"; break; // Literal backslash
+	case '\"': r << "\\\""; break; // Double quote
+	case '\'': r << "\\'"; break;  // Single quote
+	case '\n': r << "\\n"; break;  // Newline (line feed)
+	case '\r': r << "\\r"; break;  // Carriage return
+	case '\b': r << "\\b"; break;  // Backspace
+	case '\t': r << "\\t"; break;  // Horizontal tab
+	case '\f': r << "\\f"; break;  // Form feed
+	case '\a': r << "\\a"; break;  // Alert (bell)
+	case '\v': r << "\\v"; break;  // Vertical tab
 	default:
 	  if (c < 32 || c > 127) {
-	    std::stringstream strm;
-	    strm << '\\' 
-		 << std::oct 
-		 << std::setfill('0') 
-		 << std::setw(3) 
-		 << (unsigned int)c // \nnn Character with octal value nnn
-		 << '\\'; // Prolog expects this weird syntax with a trailing backslash
-	    r += strm.str();
+	    r << '\\' 
+	      << std::oct 
+	      << std::setfill('0') 
+	      << std::setw(3) 
+	      << (unsigned int)c // \nnn Character with octal value nnn
+	      << '\\'; // Prolog expects this weird syntax with a trailing backslash
 	  } else {
-	    r += c;
+	    r << c;
 	  }
 	}
       }
       //cerr<<"escape("<<s<<") = "<< r <<endl;
-      return r;
+      return r.str();
     }
-
 
   };
 

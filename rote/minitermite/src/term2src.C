@@ -120,9 +120,10 @@ int main(int argc, char** argv) {
 
   // Choose the way to parse terms based on the options
   TermFactory* termFactory;
-  if (stratego_flag)
+  if (stratego_flag) {
+    yy_use_stratego_filter = true;
     termFactory = new StrategoTermFactory();
-  else 
+  } else 
     if (stl_flag)
       termFactory = new STLTermFactory();
 #if HAVE_SWI_PROLOG
