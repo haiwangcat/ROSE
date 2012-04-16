@@ -43,7 +43,7 @@ TermToRose::warn_msg(std::string msg) {
 /** output a debug message, unless
  * compiled with NDEBUG*/
 #define debug(message) {                        \
-    /*cerr << "TERMITE>>" << message << "\n";*/	\
+    /*cerr << "TERMITE>>" << message << "\n";*/ \
 }
 
 Term* TermToRose::canonical_type(Term* term) {
@@ -55,12 +55,12 @@ Term* TermToRose::canonical_type(Term* term) {
     // For iname lookup purposes, we treat array_type(X,null) and
     // pointer_type(X) as equivalent
     return termFactory.makeCompTerm("array_type", 
-				    canonical_type(t->at(0)), 
-				    termFactory.makeAtom("null"));
+                                    canonical_type(t->at(0)), 
+                                    termFactory.makeAtom("null"));
 
   if (n == "array_type") // remove initializer
     return termFactory.makeCompTerm(n, canonical_type(t->at(0)), 
-				    termFactory.makeAtom("null"));
+                                    termFactory.makeAtom("null"));
 
   if (n == "typedef_type")      // actual type instead of typedef type
     return canonical_type(t->at(1));
@@ -113,10 +113,10 @@ static inline string makeFunctionID(const string& func_name,
 #endif
 
 #define ARITY_ASSERT(t, arity) do {                                     \
-    if ((t)->getArity() != (arity)) {					\
+    if ((t)->getArity() != (arity)) {                                   \
       cerr << "** ERROR: " << (t)->getArity() << "-ary Term\n  >>"      \
            << (t)->getRepresentation() << "<<\n"                        \
-           << "does not have the expected arity of " << (arity)		\
+           << "does not have the expected arity of " << (arity)         \
            << endl;                                                     \
       ROSE_ASSERT(false && "Arity Error");                              \
     }                                                                   \
@@ -188,11 +188,11 @@ void expect_term(Term* n, TermType **r,
 #define EXPECT_TERM_NAME_ARITY(type, spec, base, name, arity)   \
   type spec;                                                    \
   expect_term(base, &spec, name, arity);
-#define EXPECT_ATOM(name, base)			\
-  std::string name;				\
-  {						\
-     EXPECT_TERM(Atom*, a, base);		\
-     name = a->getName();			\
+#define EXPECT_ATOM(name, base)                 \
+  std::string name;                             \
+  {                                             \
+     EXPECT_TERM(Atom*, a, base);               \
+     name = a->getName();                       \
   }
 
 /** reverse of makeFlag */
@@ -293,19 +293,19 @@ TermToRose::toRose(const char* filename) {
     PL_chars_to_term("[alias(r)]", alias);
     int ignored;
     ignored=PL_cons_functor(open, PL_new_functor(PL_new_atom("open"), 4),
-			    fn, read, var, alias);
+                            fn, read, var, alias);
 
     PL_put_atom_chars(r, "r");
     PL_put_variable(term);
     PL_chars_to_term("[double_quotes(string)]", flags);
     ignored=PL_cons_functor(read_term, PL_new_functor(PL_new_atom("read_term"), 3),
-			    r, term, flags);
+                            r, term, flags);
 
     PL_chars_to_term("close(r)", close);
 
     assert(PL_call(open, NULL) &&
-	   PL_call(read_term, NULL) &&
-	   PL_call(close, NULL));
+           PL_call(read_term, NULL) &&
+           PL_call(close, NULL));
 
     prote = SWIPLTerm::wrap_PL_Term(term);
 
@@ -562,7 +562,7 @@ TermToRose::ternaryToRose(CompTerm* t,std::string tname) {
   if (tname == "if_stmt") {
     s = createIfStmt(fi,child1,child2,child3,t);
   } else if (tname == "function_declaration" || 
-	     tname == "template_instantiation_function_decl") {
+             tname == "template_instantiation_function_decl") {
     /* function declaration: created above, needs a fixup here */
     /* child2 is the decorator now */
     s = setFunctionDeclarationBody(isSgFunctionDeclaration(s),child3);
@@ -1153,22 +1153,34 @@ TermToRose::unescape_char(std::string s) {
 }
 
 
-#define createValue(SGTYPE, TYPE, fi, fromTerm)	    \
-  do {						    \
-    debug("unparsing " + fromTerm->getName());	    \
+#define createValue(SGTYPE, TYPE, fi, fromTerm)     \
+  do {                                              \
+    debug("unparsing " + fromTerm->getName());      \
     CompTerm* annot = retrieveAnnotation(fromTerm); \
-    TERM_ASSERT(fromTerm, annot != NULL);	    \
-    TYPE value;					    \
-    if (Atom* a = isAtom(annot->at(0))) {	    \
-      istringstream instr(a->getName());	    \
-      instr >> value;				    \
-    } else if (Int* i = isInt(annot->at(0)))	    \
-      value = i->getValue();			    \
-    else if (Float* f = isFloat(annot->at(0)))	    \
-      value = f->getValue();			    \
-    else TERM_ASSERT(fromTerm, false);		    \
-    ve = new SGTYPE(fi, value);			    \
+    TERM_ASSERT(fromTerm, annot != NULL);           \
+    TYPE value;                                     \
+    if (Atom* a = isAtom(annot->at(0))) {           \
+      istringstream instr(a->getName());            \
+      instr >> value;                               \
+    } else if (Int* i = isInt(annot->at(0)))        \
+      value = i->getValue();                        \
+    else if (Float* f = isFloat(annot->at(0)))      \
+      value = f->getValue();                        \
+    else TERM_ASSERT(fromTerm, false);              \
+    ve = new SGTYPE(fi, value);                     \
   } while (false)
+
+// float values also have a value string attached to it
+#define createFloatValue(SGTYPE, TYPE, fi, fromTerm)            \
+  do {                                                          \
+    debug("unparsing " + fromTerm->getName());                  \
+    EXPECT_ATOM(valueStr, retrieveAnnotation(fromTerm)->at(0));	\
+    istringstream instr(valueStr);                              \
+    TYPE value;                                                 \
+    instr >> value;                                             \
+    ve = new SGTYPE(fi, value, valueStr);                       \
+  } while (false)
+
 
 /** create a SgValueExp*/
 SgExpression*
@@ -1220,11 +1232,11 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
 
   /* floating point types*/
   else if (vtype == "float_val")
-    createValue(SgFloatVal, float, fi, t);
+    createFloatValue(SgFloatVal, float, fi, t);
   else if (vtype == "double_val")
-    createValue(SgDoubleVal, double, fi, t);
+    createFloatValue(SgDoubleVal, double, fi, t);
   else if (vtype == "long_double_val")
-    createValue(SgLongDoubleVal, longdouble, fi, t);
+    createFloatValue(SgLongDoubleVal, longdouble, fi, t);
 
   /* characters */
   else if (vtype == "char_val") {
@@ -1437,15 +1449,15 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
               ROSE_ASSERT(false && "enum decl has no parent and no scope?");
               in->set_scope(scp);
             }
-	  } else {
-	    // try to make an educated guess by attaching it to the closest parent scope
-	    SgScopeStatement* scope;
-	    do {
-	      scope = isSgScopeStatement(parent);
-	      parent = parent->get_parent();
-	      ROSE_ASSERT(parent != NULL && "initialized name without a scope, I'm lost");
-	    } while (scope == NULL);
-	    in->set_scope(scope);
+          } else {
+            // try to make an educated guess by attaching it to the closest parent scope
+            SgScopeStatement* scope;
+            do {
+              scope = isSgScopeStatement(parent);
+              parent = parent->get_parent();
+              ROSE_ASSERT(parent != NULL && "initialized name without a scope, I'm lost");
+            } while (scope == NULL);
+            in->set_scope(scope);
           }
         }
       }
@@ -1573,7 +1585,7 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,CompTerm*) {
     AstJanitor janitor(isFortran);
     janitor.traverse(*it, InheritedAttribute(this, glob, glob));
     if ((*it)->get_scope() != NULL &&
-	(*it)->variantT()  != V_SgVariableDeclaration) {
+        (*it)->variantT()  != V_SgVariableDeclaration) {
       (*it)->set_scope(glob);
     }
 
@@ -1909,7 +1921,7 @@ TermToRose::createTemplateInstantiationFunctionDecl(Sg_File_Info* fi, SgNode* pa
   /* create declaration*/
   SgTemplateInstantiationFunctionDecl* func_decl =
     new SgTemplateInstantiationFunctionDecl(fi,func_name,func_type,/*func_def=*/NULL,
-					    lookupTemplateDecl(templ_decl_name), args);
+                                            lookupTemplateDecl(templ_decl_name), args);
   TERM_ASSERT(t, func_decl != NULL);
   func_decl->set_parameterList(par_list);
   setDeclarationModifier(annot->at(2),&(func_decl->get_declarationModifier()));
@@ -1941,13 +1953,13 @@ TermToRose::createTemplateParameter(Sg_File_Info* fi, CompTerm* t) {
   EXPECT_ATOM(templ_decl_name, annot->at(4));
   EXPECT_ATOM(default_param, annot->at(5));
   return new SgTemplateParameter((SgTemplateParameter::template_parameter_enum)
-				 createEnum(annot->at(0), re.template_parameter),
-				 createType(annot->at(1)),
-				 createType(annot->at(2)),
-				 static_cast<SgExpression*>(toRose(annot->at(3))),
-				 static_cast<SgExpression*>(toRose(annot->at(4))),
-				 lookupTemplateDecl(templ_decl_name),
-				 lookupTemplateDecl(default_param));
+                                 createEnum(annot->at(0), re.template_parameter),
+                                 createType(annot->at(1)),
+                                 createType(annot->at(2)),
+                                 static_cast<SgExpression*>(toRose(annot->at(3))),
+                                 static_cast<SgExpression*>(toRose(annot->at(4))),
+                                 lookupTemplateDecl(templ_decl_name),
+                                 lookupTemplateDecl(default_param));
 }
 
 SgTemplateDeclaration*
@@ -1968,9 +1980,9 @@ TermToRose::createTemplateDeclaration(Sg_File_Info* fi, CompTerm* t) {
 
   SgTemplateDeclaration* decl = 
     new SgTemplateDeclaration(fi, name, strng,
-			      (SgTemplateDeclaration::template_type_enum)
-			      createEnum(annot->at(2), re.template_instantiation),
-			      params);
+                              (SgTemplateDeclaration::template_type_enum)
+                              createEnum(annot->at(2), re.template_instantiation),
+                              params);
 
   // register it in the symbol table
   templateDeclMap[name] = decl;
@@ -2086,7 +2098,7 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
   register_func_decl(func_name, func_decl, annot->at(0));
   // cerr<<__FUNCTION__<<"**** inserting "+scope_name<<":"<<func_decl<<endl;
   memberFunctionDeclarationMap.insert(pair<string,SgMemberFunctionDeclaration*>
-				      (scope_name,func_decl));
+                                      (scope_name,func_decl));
 
   // Is this a definition outside of the main class declaration?
   // ie., parent != scope  
@@ -2109,8 +2121,8 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
  */
 SgProcedureHeaderStatement*
 TermToRose::createProcedureHeaderStatement(Sg_File_Info* fi, SgNode* par_list_u, 
-					   SgNode* unknown, SgNode* func_def_u, 
-					   SgNode* result_name_u, CompTerm* t) {
+                                           SgNode* unknown, SgNode* func_def_u, 
+                                           SgNode* result_name_u, CompTerm* t) {
   debug("procedure header statement:");
   /* cast parameter list and function definition (if exists)*/
   EXPECT_NODE(SgFunctionParameterList*, par_list, par_list_u);
@@ -2334,16 +2346,16 @@ TermToRose::isBinaryOp(std::string tname) {
   // FIXME: replace this with a hashmap or a regex
   if (tname == "arrow_exp")                return true;
   else if (tname == "add_op")              return true;
-  else if (tname == "and_assign_op")	   return true;
-  else if (tname == "and_op")		   return true;
-  else if (tname == "arrow_exp")	   return true;
+  else if (tname == "and_assign_op")       return true;
+  else if (tname == "and_op")              return true;
+  else if (tname == "arrow_exp")           return true;
   else if (tname == "arrow_star_op")       return true;
-  else if (tname == "assign_op")	   return true;
-  else if (tname == "bit_and_op")	   return true;
-  else if (tname == "bit_or_op")	   return true;
-  else if (tname == "bit_xor_op")	   return true;
-  else if (tname == "comma_op_exp")	   return true;
-  else if (tname == "div_assign_op")	   return true;
+  else if (tname == "assign_op")           return true;
+  else if (tname == "bit_and_op")          return true;
+  else if (tname == "bit_or_op")           return true;
+  else if (tname == "bit_xor_op")          return true;
+  else if (tname == "comma_op_exp")        return true;
+  else if (tname == "div_assign_op")       return true;
   else if (tname == "divide_op")           return true;
   else if (tname == "dot_exp")             return true;
   else if (tname == "dot_star_op")         return true;
@@ -2352,25 +2364,25 @@ TermToRose::isBinaryOp(std::string tname) {
   else if (tname == "greater_or_equal_op") return true;
   else if (tname == "greater_than_op")     return true;
   else if (tname == "integer_divide_op")   return true;
-  else if (tname == "ior_assign_op")	   return true;
+  else if (tname == "ior_assign_op")       return true;
   else if (tname == "less_or_equal_op")    return true;
   else if (tname == "less_than_op")        return true;
-  else if (tname == "lshift_assign_op")	   return true;
-  else if (tname == "lshift_op")	   return true;
-  else if (tname == "minus_assign_op")	   return true;
-  else if (tname == "mod_assign_op")	   return true;
-  else if (tname == "mod_op")		   return true;
-  else if (tname == "mult_assign_op")	   return true;
+  else if (tname == "lshift_assign_op")    return true;
+  else if (tname == "lshift_op")           return true;
+  else if (tname == "minus_assign_op")     return true;
+  else if (tname == "mod_assign_op")       return true;
+  else if (tname == "mod_op")              return true;
+  else if (tname == "mult_assign_op")      return true;
   else if (tname == "multiply_op")         return true;
   else if (tname == "not_equal_op")        return true;
-  else if (tname == "or_op")		   return true;
-  else if (tname == "plus_assign_op")	   return true;
-  else if (tname == "pntr_arr_ref_exp")	   return true;
-  else if (tname == "rshift_assign_op")	   return true;
-  else if (tname == "rshift_op")	   return true;
-  else if (tname == "scope_op")		   return true;
+  else if (tname == "or_op")               return true;
+  else if (tname == "plus_assign_op")      return true;
+  else if (tname == "pntr_arr_ref_exp")    return true;
+  else if (tname == "rshift_assign_op")    return true;
+  else if (tname == "rshift_op")           return true;
+  else if (tname == "scope_op")            return true;
   else if (tname == "subtract_op")         return true;
-  else if (tname == "xor_assign_op")	   return true;
+  else if (tname == "xor_assign_op")       return true;
   else return false;
 }
 
@@ -2586,10 +2598,10 @@ TermToRose::createFortranDo(Sg_File_Info* fi, SgNode* child1, SgNode* child2, Sg
   TERM_ASSERT(t, annot != NULL);
 
   SgFortranDo* fdo = new SgFortranDo(fi,
-				     isSgExpression(child1), 
-				     isSgExpression(child2),
-				     isSgExpression(child3),
-				     isSgBasicBlock(child4));
+                                     isSgExpression(child1), 
+                                     isSgExpression(child2),
+                                     isSgExpression(child3),
+                                     isSgBasicBlock(child4));
   fdo->set_old_style(getFlag(annot->at(0)));
   fdo->set_has_end_statement(getFlag(annot->at(1)));
   return fdo;
@@ -2880,7 +2892,7 @@ TermToRose::setClassDeclarationBody(SgClassDeclaration* d, SgNode *body) {
     // Set scope of member function declarations
     // cerr<<__FUNCTION__<<"**** looking for ::"+d->get_name()<<endl;
     for (multimap<string,SgMemberFunctionDeclaration*>::iterator it =
-	   memberFunctionDeclarationMap.find("::"+d->get_name());
+           memberFunctionDeclarationMap.find("::"+d->get_name());
          it != memberFunctionDeclarationMap.end(); it++) {
       // cerr<<__FUNCTION__<<"**** found "<<it->second<<endl;
       //if (it->second->get_scope() == NULL)
@@ -3660,7 +3672,7 @@ TermToRose::createAggregateInitializer(Sg_File_Info* fi,SgNode* child1,CompTerm*
  */
 SgFunctionDeclaration*
 TermToRose::createDummyFunctionDeclaration(std::string* namestr, Term* type_term,
-					   SgProcedureHeaderStatement::subprogram_kind_enum kind) {
+                                           SgProcedureHeaderStatement::subprogram_kind_enum kind) {
   //cerr<<"**WARNING: deprecated function "<<__FUNCTION__<<endl;
   ROSE_ASSERT(namestr != NULL);
   ROSE_ASSERT(type_term != NULL);
@@ -3701,8 +3713,8 @@ TermToRose::createDummyFunctionDeclaration(std::string* namestr, Term* type_term
  * Use this function only if there really is no other way (ie. forward declarations)
  */
 SgFunctionSymbol*
-TermToRose::createDummyFunctionSymbol(std::string* namestr, Term* type_term, 	 
-				      SgProcedureHeaderStatement::subprogram_kind_enum kind) {
+TermToRose::createDummyFunctionSymbol(std::string* namestr, Term* type_term,     
+                                      SgProcedureHeaderStatement::subprogram_kind_enum kind) {
   //cerr<<"**WARNING: deprecated function "<<__FUNCTION__<<endl;
   ROSE_ASSERT(namestr != NULL);
   ROSE_ASSERT(type_term != NULL);
@@ -3773,8 +3785,8 @@ TermToRose::createFunctionRefExp(Sg_File_Info* fi, CompTerm* ct) {
     debug("symbol");
 
     sym = createDummyFunctionSymbol(s,annot->at(1), 
-				    (SgProcedureHeaderStatement::subprogram_kind_enum)
-				    createEnum(annot->at(2), re.subprogram_kind));
+                                    (SgProcedureHeaderStatement::subprogram_kind_enum)
+                                    createEnum(annot->at(2), re.subprogram_kind));
     //SgFunctionRefExp* re = new SgFunctionRefExp(fi);
     //TERM_ASSERT(ct, re != NULL);
     //return re;
@@ -3803,7 +3815,7 @@ TermToRose::createMemberFunctionRefExp(Sg_File_Info* fi, CompTerm* ct) {
   /* create member function symbol*/
   SgMemberFunctionSymbol* sym;
   string id = makeFunctionID(annot->at(0)->getRepresentation(), 
-			     annot->at(2)->getRepresentation());
+                             annot->at(2)->getRepresentation());
   SgFunctionDeclaration* decl = NULL;
   if (lookupDecl(&decl, id)) {
     /* get the real symbol */

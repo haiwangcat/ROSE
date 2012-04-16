@@ -10,6 +10,7 @@ TERMITE_TESTS = \
     regression/fortran/icsd.f \
     regression/fortran/icsd_t2.f \
     regression/fortran/funCall.f \
+    regression/fortran/precision.f03 \
     regression/fortran/rose_dim.f \
     regression/base/ab.c \
     regression/base/bigger.c \

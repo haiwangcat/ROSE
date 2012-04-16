@@ -718,23 +718,11 @@ RoseToTerm::getValueExpSpecific(SgValueExp* astNode) {
   }
   /* float types */
   else if (SgFloatVal* n = dynamic_cast<SgFloatVal*>(astNode)) {
-    //ostringstream o;
-    //o << n->get_value();
-    //string s = o.str();
-    //val = termFactory.makeAtom(s);
-    val = termFactory.makeFloat(n->get_value());
+    val = termFactory.makeAtom(n->get_valueString());
   } else if (SgDoubleVal* n = dynamic_cast<SgDoubleVal*>(astNode)) {
-    // ostringstream o;
-    // o << n->get_value();
-    // string s = o.str();
-    // val = termFactory.makeAtom(s);
-    val = termFactory.makeFloat(n->get_value());
+    val = termFactory.makeAtom(n->get_valueString());
   } else if (SgLongDoubleVal* n = dynamic_cast<SgLongDoubleVal*>(astNode)) {
-    // ostringstream o;
-    // o << n->get_value();
-    // string s = o.str();
-    // val = termFactory.makeAtom(s);
-    val = termFactory.makeFloat(n->get_value());
+    val = termFactory.makeAtom(n->get_valueString());
   }
   /* boolean type */
   else if (SgBoolValExp* n = dynamic_cast<SgBoolValExp*>(astNode)) {
