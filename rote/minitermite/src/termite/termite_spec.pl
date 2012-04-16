@@ -422,6 +422,7 @@ initialized_name_annotation ::=
 
 function_declaration_annotation ::=
     function_declaration_annotation(type, name, declaration_modifier, todo /* special */,
+				    todo, todo, todo, todo, todo, 
                                     preprocessing_info).
 
 member_function_declaration_annotation ::=

@@ -62,19 +62,24 @@ public:
     // These nodes don't have a scope associated
     if (SgDeclarationStatement* decl = isSgDeclarationStatement(n)) {
       VariantT v = decl->variantT();
-      if (v != V_SgAttributeSpecificationStatement
+      if (   v != V_SgAttributeSpecificationStatement
 	  && v != V_SgCommonBlock
 	  && v != V_SgContainsStatement
 	  && v != V_SgCtorInitializerList
 	  && v != V_SgFormatStatement
+	     //&& v != V_SgFunctionDeclaration
 	  && v != V_SgFunctionParameterList
 	  && v != V_SgImplicitStatement
+	  && v != V_SgNamespaceDeclarationStatement
 	  && v != V_SgMemberFunctionDeclaration
 	  && v != V_SgPragmaDeclaration
 	  && v != V_SgVariableDeclaration
 	  ) {
 	ROSE_ASSERT(scope != NULL);
-	decl->set_scope(scope);
+	if (v == V_SgFunctionDeclaration) {
+	  if (decl->get_scope() == NULL)
+	    decl->set_scope(scope);
+	} else decl->set_scope(scope);
       }
       if (isFortran && scope->variantT() == V_SgGlobal) { 
 	/* SKIP, Fortran apparently has no global symbol table */

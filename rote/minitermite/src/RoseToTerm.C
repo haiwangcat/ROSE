@@ -24,6 +24,10 @@ using namespace term;
 /**
  * Create a descriptive name for a boolean flag
  */
+
+#define MAKE_FLAG(node, flag_name) \
+  makeFlag((node)->get_ ## flag_name(), #flag_name)
+ 
 Term*
 RoseToTerm::makeFlag(bool val, std::string name) {
   ROSE_ASSERT(!boost::starts_with(name, "no_"));
@@ -264,11 +268,11 @@ RoseToTerm::getTemplateArgumentSpecific(SgTemplateArgument* arg) {
   return termFactory.makeCompTerm
     ("template_argument_annotation", 
      getEnum(arg->get_argumentType(), re.template_arguments),
-     makeFlag(arg->get_isArrayBoundUnknownType(), "isArrayBoundUnknownType"),
+     MAKE_FLAG(arg, isArrayBoundUnknownType),
      getTypeSpecific(arg->get_type()),
      traverseSingleNode(arg->get_expression()),     
      templateDeclarationName(arg),
-     makeFlag(arg->get_explicitlySpecified(), "explicitlySpecified"));
+     MAKE_FLAG(arg, explicitlySpecified));
 }
 
 CompTerm*  
@@ -318,6 +322,11 @@ RoseToTerm::getFunctionDeclarationSpecific(SgFunctionDeclaration* decl) {
      termFactory.makeAtom(decl->get_name().getString()),
      getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
      getSpecialFunctionModifierSpecific(&(decl->get_specialFunctionModifier())),
+     termFactory.makeInt(decl->get_name_qualification_length()),
+     MAKE_FLAG(decl, type_elaboration_required),
+     MAKE_FLAG(decl, global_qualification_required),
+     MAKE_FLAG(decl, requiresNameQualificationOnReturnType),
+     getScope(decl),
      PPI(decl));
 }
 
@@ -480,10 +489,10 @@ RoseToTerm::getConstructorInitializerSpecific(SgConstructorInitializer* ci) {
     ("constructor_initializer_annotation",
      dec ? termFactory.makeAtom(dec->get_qualified_name().getString()): termFactory.makeAtom("null"),
      getTypeSpecific(ci->get_expression_type()),
-     makeFlag(ci->get_need_name(), "need_name"),
-     makeFlag(ci->get_need_qualifier(), "need_qualifier"),
-     makeFlag(ci->get_need_parenthesis_after_name(), "need_parenthesis_after_name"),
-     makeFlag(ci->get_associated_class_unknown(), "associated_class_unknown"),
+     MAKE_FLAG(ci, need_name),
+     MAKE_FLAG(ci, need_qualifier),
+     MAKE_FLAG(ci, need_parenthesis_after_name),
+     MAKE_FLAG(ci, associated_class_unknown),
      PPI(ci));
 }
 
@@ -745,8 +754,8 @@ RoseToTerm::getValueExpSpecific(SgValueExp* astNode) {
     return termFactory.makeCompTerm
       ("value_annotation", 
        termFactory.makeAtom(n->get_value()),
-       makeFlag(n->get_usesSingleQuotes(), "usesSingleQuotes"),
-       makeFlag(n->get_usesDoubleQuotes(), "usesDoubleQuotes"),
+       MAKE_FLAG(n, usesSingleQuotes),
+       MAKE_FLAG(n, usesDoubleQuotes),
        PPI(astNode));
   } else {
     val = termFactory.makeAtom("null");
@@ -838,22 +847,13 @@ RoseToTerm::getVarRefExpSpecific(SgVarRefExp* vr) {
 CompTerm*
 RoseToTerm::getInitializedNameSpecific(SgInitializedName* n) {
   /* named scope or irrelevant?*/
-  Term* scope;
-  if(SgNamespaceDefinitionStatement* scn =
-     isSgNamespaceDefinitionStatement(n->get_scope())) {
-    scope = getNamespaceScopeName(scn);
-  } else if (SgClassDefinition* scn = isSgClassDefinition(n->get_scope())) {
-    scope = getClassScopeName(scn);
-  } else {
-    scope = termFactory.makeAtom("null");
-  }
   return termFactory.makeCompTerm
     ("initialized_name_annotation", //4,
      getTypeSpecific(n->get_typeptr()),
      termFactory.makeAtom(n->get_name().getString()),
      /* static? (relevant for unparsing if scope is a class)*/
      getEnum(n->get_storageModifier().isStatic(), re.static_flags),
-     scope,
+     getScope(n),
      PPI(n));
 }
 
@@ -892,7 +892,7 @@ RoseToTerm::getClassDefinitionSpecific(SgClassDefinition* def) {
       inhs->addElement(termFactory.makeCompTerm
 		       ("base_class", 
 			traverseSingleNode((*it)->get_base_class()),
-			makeFlag((*it)->get_isDirectBaseClass(),"direct_base_class"),
+			MAKE_FLAG(*it, isDirectBaseClass),
 			termFactory.makeCompTerm("default_annotation", /*1,*/ termFactory.makeAtom("null"))));
   }
 
@@ -1043,8 +1043,8 @@ RoseToTerm::getDeclarationAttributes(SgDeclarationStatement* s) {
 CompTerm*
 RoseToTerm::getDeleteExpSpecific(SgDeleteExp* de) {
   return termFactory.makeCompTerm("delete_exp_annotation", //3,
-			    makeFlag(de->get_is_array(), "is_array"),
-			    makeFlag(de->get_need_global_specifier(), "need_global_specifier"),
+			    MAKE_FLAG(de, is_array),
+			    MAKE_FLAG(de, need_global_specifier),
 			    PPI(de));
 }
 
@@ -1413,11 +1413,9 @@ RoseToTerm::getNamespaceScopeName(SgNamespaceDefinitionStatement* def) {
   ROSE_ASSERT(decl != NULL);
   /* create annotation term*/
   return termFactory.makeCompTerm
-    ("namespace_scope", //3,
-     /* add qualified name*/
+    ("namespace_scope", 
      termFactory.makeAtom(decl->get_qualified_name().getString()),
-     /* add unnamed */
-     termFactory.makeInt((int)decl->get_isUnnamedNamespace()),
+     MAKE_FLAG(decl, isUnnamedNamespace),
      PPI(def));
 }
 
@@ -1558,7 +1556,7 @@ RoseToTerm::getPragmaSpecific(SgPragma* n) {
 CompTerm*
 RoseToTerm::getImplicitStatementSpecific(SgImplicitStatement* is) {
   return termFactory.makeCompTerm("implicit_statement_annotation", 
-			    makeFlag(is->get_implicit_none(), "implicit_none"), 
+			    MAKE_FLAG(is, implicit_none), 
 			    PPI(is));
 }
 
@@ -1601,9 +1599,9 @@ CompTerm*
 RoseToTerm::getIfStmtSpecific(SgIfStmt* ifstmt) {
   return termFactory.makeCompTerm
     ("if_stmt_annotation",
-     makeFlag(ifstmt->get_has_end_statement(), "has_end_statement"),
-     makeFlag(ifstmt->get_use_then_keyword(), "use_then_keyword"),
-     makeFlag(ifstmt->get_is_else_if_statement(), "is_else_if_statement"),
+     MAKE_FLAG(ifstmt, has_end_statement),
+     MAKE_FLAG(ifstmt, use_then_keyword),
+     MAKE_FLAG(ifstmt, is_else_if_statement),
      PPI(ifstmt));
 }
 
@@ -1611,8 +1609,8 @@ CompTerm*
 RoseToTerm::getFortranDoSpecific(SgFortranDo* dostmt) {
   return termFactory.makeCompTerm
     ("fortran_do_annotation",
-     makeFlag(dostmt->get_old_style(), "old_style"),
-     makeFlag(dostmt->get_has_end_statement(), "has_end_statement"),
+     MAKE_FLAG(dostmt, old_style),
+     MAKE_FLAG(dostmt, has_end_statement),
      PPI(dostmt));
 }
 

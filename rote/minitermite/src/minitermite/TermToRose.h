@@ -211,7 +211,7 @@ public:
 			     A a, B b, C c) 
   {
     decl->set_forward(0);
-    decl->set_definingDeclaration(decl);
+    //decl->set_definingDeclaration(decl);
     
     DeclType* ndd = new DeclType(fi,a,b,c);
     ndd->set_endOfConstruct(fi);
@@ -219,7 +219,7 @@ public:
     
     /* Set the internal reference to the non-defining declaration */  
     ndd->set_firstNondefiningDeclaration(ndd);
-    ndd->set_definingDeclaration(decl);
+    //ndd->set_definingDeclaration(decl);
     ndd->setForward();
     decl->set_firstNondefiningDeclaration(ndd);
     declarationStatementsWithoutScope.push_back(ndd);

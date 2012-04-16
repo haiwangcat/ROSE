@@ -1583,8 +1583,9 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,CompTerm*) {
     // (*it)->set_parent(glob);
     AstJanitor janitor(isFortran);
     janitor.traverse(*it, InheritedAttribute(this, glob, glob));
-    if ((*it)->get_scope() != NULL &&
-        (*it)->variantT()  != V_SgVariableDeclaration) {
+    if ((*it)->get_scope() == NULL &&
+        (*it)->variantT()  != V_SgVariableDeclaration && 
+        (*it)->variantT()  != V_SgNamespaceDeclarationStatement) {
       (*it)->set_scope(glob);
     }
 
@@ -1879,12 +1880,33 @@ TermToRose::createFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u, Comp
   SgFunctionDeclaration* func_decl =
     new SgFunctionDeclaration(fi,func_name,func_type,/*func_def=*/NULL);
   TERM_ASSERT(t, func_decl != NULL);
+
+  // set namespace/scope if any
+  CompTerm* scopeTerm = isCompTerm(annot->at(8));
+  if (scopeTerm) {
+    EXPECT_ATOM(scope_name, scopeTerm->at(0));
+    SgNamespaceDeclarationStatement* ns = NULL;
+    //cerr<< "@@@@@@ looking up decl " << scope_name << endl;
+    lookupDecl(&ns, "namespace,"+scope_name, false);
+    cerr<< "ns = " << ns << endl;
+    if (ns != NULL) {
+      //cerr<< "ns->get_definition() = " << ns->get_definition() << endl;
+      SgScopeStatement* scope = ns->get_definition();
+      func_decl->set_scope(scope);
+    }
+  }
+
   func_decl->set_parameterList(par_list);
   setDeclarationModifier(annot->at(2),&(func_decl->get_declarationModifier()));
   setSpecialFunctionModifier(annot->at(3), &func_decl->get_specialFunctionModifier());
 
-  register_func_decl(func_name, func_decl, annot->at(0));
+  EXPECT_TERM(Int*, length, annot->at(4));
+  func_decl->set_name_qualification_length(length->getValue());
+  func_decl->set_type_elaboration_required(getFlag(annot->at(5)));
+  func_decl->set_global_qualification_required(getFlag(annot->at(6)));
+  func_decl->set_requiresNameQualificationOnReturnType(getFlag(annot->at(7)));
 
+  register_func_decl(func_name, func_decl, annot->at(0));
   return func_decl;
 }
 
@@ -2075,7 +2097,7 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
   /* class scope*/
   CompTerm* scopeTerm = isCompTerm(annot->at(2));
   TERM_ASSERT(t, scopeTerm != NULL);
-  string scope_name = *(toStringP(scopeTerm->at(0)));
+  EXPECT_ATOM(scope_name, scopeTerm->at(0));
   int scope_type  = createEnum(scopeTerm->at(1), re.class_type);
 
   //func_decl->set_scope(fakeClassScope(scope_name,scope_type,func_decl));
@@ -2453,12 +2475,7 @@ TermToRose::createVariableDeclaration(Sg_File_Info* fi,std::deque<SgNode*>* succ
         SgEnumType* et = isSgEnumType(ini_name->get_typeptr());
         TERM_ASSERT(t, et);
         et->set_declaration(enum_decl);
-      } else {
-        //dec->set_definingDeclaration(dec);
-        //createDummyNondefDecl(dec, FI, "",
-        //                    ini_name->get_typeptr(), ini_initializer);
       }
-
       dec->append_variable(ini_name,ini_initializer);
       /* fixup for ROSE 0.9.4 */
       SgVariableDefinition* def = dec->get_definition(ini_name);
@@ -3007,7 +3024,7 @@ TermToRose::createClassType(Term* p) {
   }
 
   TERM_ASSERT(t, d != NULL);
-  string scopename = *(toStringP(t->at(2)));
+  EXPECT_ATOM(scopename, t->at(2));
   if(scopename != "::") {
     fakeNamespaceScope(scopename,0,d);
   } else {
@@ -3746,7 +3763,7 @@ TermToRose::createDummyMemberFunctionSymbol(Term* annot_term) {
   CompTerm* scope_term = isCompTerm(annot->at(1));
   /*scope name and type*/
   debug("creating scope for member function declaration for symbol ");
-  string scope_name = *(toStringP(scope_term->at(0)));
+  EXPECT_ATOM(scope_name, scope_term->at(0));
   int scope_type  = createEnum(scope_term->at(1), re.class_type);
   fakeClassScope(scope_name,scope_type,mfunc);
   TERM_ASSERT(annot_term, mfunc->get_class_scope() != NULL);
@@ -3882,6 +3899,9 @@ TermToRose::createNamespaceDeclarationStatement(Sg_File_Info* fi, SgNode* child1
     dec->setForward();
     dec->set_firstNondefiningDeclaration(dec);
   }
+
+  //cerr<<"registering ::"<<n<<" = "<<dec<<endl;
+  declarationMap["namespace,::"+n] = dec;
   return dec;
 }
 

@@ -115,6 +115,18 @@ private:
     return alist;
   }
 
+
+  template< class NodeType >
+  term::Term* getScope(NodeType n) {
+    if(SgNamespaceDefinitionStatement* scn =
+       isSgNamespaceDefinitionStatement(n->get_scope())) {
+      return getNamespaceScopeName(scn);
+    } else if (SgClassDefinition* scn = isSgClassDefinition(n->get_scope())) {
+      return  getClassScopeName(scn);
+    } else {
+      return termFactory.makeAtom("null");
+    }
+  }
 		
 };
 
