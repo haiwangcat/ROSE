@@ -47,21 +47,24 @@ initialized_name ::=
 % --- statements ---
 statement ::=
     break_stmt
-  | common_block
+  | attribute_specification_statement
   | case_option_stmt
-  | continue_stmt
+  | common_block
   | contains_statement
+  | continue_stmt
   | declaration_statement
   | default_option_stmt
-  | attribute_specification_statement
   | expr_statement
   | for_init_statement
+  | format_statement
   | goto_statement
   | implicit_statement
   | label_statement
   | null_statement
   | return_stmt
-  | scope_statement.
+  | scope_statement
+  | write_statement
+  .
 
 break_stmt ::=
     break_stmt(default_annotation, analysis_info, file_info).
@@ -130,6 +133,14 @@ procedure_header_statement ::=
 			       procedure_header_statement_annotation,
 			       analysis_info, file_info).
 
+write_statement ::=
+    write_statement([expression], write_statement_annotation, analysis_info, file_info).
+
+write_statement_annotation ::=
+    write_statement_annotation(expression?, expression?, expression?, expression?,
+			       expression?, expression?, expression?, expression?,
+			       expression?, preprocessing_info).
+
 
 pragma_declaration ::=
     pragma_declaration(todo).
@@ -168,6 +179,18 @@ for_init_statement ::=
 
 goto_statement ::=
     goto_statement(label_annotation, analysis_info, file_info).
+
+format_statement ::=
+    format_statement(format_statement_annotation, analysis_info, file_info).
+
+format_statement_annotation ::=
+    format_statement_annotation([format_item], name, label_ref_exp, preprocessing_info).
+
+format_item ::=
+    format_item(format_item_annotation, analysis_info, file_info).
+
+format_item_annotation ::=
+    format_item_annotation(number_or_string, todo, todo).
 
 implicit_statement ::=
     implicit_statement(implicit_statement_annotation, analysis_info, file_info).
@@ -249,7 +272,8 @@ while_stmt ::=
 
 % --- expressions ---
 expression ::=
-    binary_op
+  asterisk_shape_exp
+  | binary_op
   | cast_exp(expression, /*expression? * original expression tree ,*/
              unary_op_annotation, analysis_info, file_info)
   | conditional_exp
@@ -279,7 +303,7 @@ expression ::=
 binary_op ::=
     functors [add_op, and_assign_op, and_op, arrow_exp, assign_op,
         bit_and_op, bit_or_op, bit_xor_op, comma_op_exp, div_assign_op,
-        divide_op, dot_exp, equality_op, greater_or_equal_op,
+        divide_op, dot_exp, equality_op, exponentiation_op, greater_or_equal_op,
         greater_than_op, ior_assign_op, less_or_equal_op, less_than_op,
         lshift_assign_op, lshift_op, minus_assign_op, mod_assign_op, mod_op,
         mult_assign_op, multiply_op, not_equal_op, or_op, plus_assign_op,
@@ -287,6 +311,10 @@ binary_op ::=
         xor_assign_op]
     with (expression /* lhs */, expression /* rhs */,
           binary_op_annotation, analysis_info, file_info).
+
+asterisk_shape_exp ::= asterisk_shape_exp(asterisk_shape_exp_annotation, analysis_info, file_info).
+
+asterisk_shape_exp_annotation ::= asterisk_shape_exp_annotation(type, preprocessing_info).
 
 conditional_exp ::=
     conditional_exp(expression /* condition */,
@@ -352,6 +380,18 @@ unary_op ::=
     functors [address_of_op, bit_complement_op, minus_minus_op,
         minus_op, not_op, plus_plus_op, pointer_deref_exp, unary_add_op]
     with (expression, unary_op_annotation, analysis_info, file_info).
+
+label_ref_exp ::=
+    label_ref_exp(label_ref_exp_annotation, analysis_info, file_info).
+
+label_ref_exp_annotation ::=
+    label_ref_exp_annotation(label_symbol).
+
+label_symbol ::=
+    label_symbol(name, label_symbol_annotation, analysis_info, file_info).
+
+label_symbol_annotation ::=
+    label_symbol_annotation(number_or_string, todo).
 
 var_arg_copy_op ::=
     var_arg_copy_op(todo).

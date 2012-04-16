@@ -1205,7 +1205,6 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   else if (vtype == "unsigned_long_long_int_val")
     createValue(SgUnsignedLongLongIntVal, ulonglongint, fi, t);
 
-
   else if (vtype == "enum_val") {
     debug("unparsing enum value");
     CompTerm* annot = retrieveAnnotation(t);
@@ -3779,17 +3778,14 @@ TermToRose::createFunctionRefExp(Sg_File_Info* fi, CompTerm* ct) {
     /* get the real symbol */
     sym = new SgFunctionSymbol(decl);
   } else {
-    cerr<<"**WARNING: no symbol found for "<<id<<endl;
-    //TERM_ASSERT(ct, false);
+    debug("**WARNING: no symbol found for "+id);
+
     /* create function symbol*/
     debug("symbol");
 
     sym = createDummyFunctionSymbol(s,annot->at(1), 
                                     (SgProcedureHeaderStatement::subprogram_kind_enum)
                                     createEnum(annot->at(2), re.subprogram_kind));
-    //SgFunctionRefExp* re = new SgFunctionRefExp(fi);
-    //TERM_ASSERT(ct, re != NULL);
-    //return re;
   }
   TERM_ASSERT(ct, sym != NULL);
 
@@ -4202,7 +4198,8 @@ TermToRose::createWriteStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, C
   /* create the SgWriteStatement */
   SgWriteStatement* n = new SgWriteStatement(fi);
   // from IOStatement
-  n->set_io_stmt_list(  createExprListExp(fi, succs ));
+  assert(succs->size() > 0);
+  n->set_io_stmt_list(  isSgExprListExp(succs->at(0)) ); //FIXME: createExprListExp(fi, succs ));
   n->set_unit(          isSgExpression(toRose(annot->at(0))) );
   n->set_iostat(        isSgExpression(toRose(annot->at(1))) );
   n->set_err(           isSgExpression(toRose(annot->at(2))) );
@@ -4227,12 +4224,10 @@ TermToRose::createFormatItem(Sg_File_Info* fi, CompTerm* t) {
   SgFormatItem* n = new SgFormatItem();
 
   EXPECT_TERM(List*, items, annot->at(2));
-  deque<Term*>* succs = items->getSuccs();
-  deque<Term*>::iterator it;
+
   SgFormatItemList* sgitems = new SgFormatItemList();
-  for (it = succs->begin(); it != succs->end(); ++it) {
-    sgitems->get_format_item_list().push_back(isSgFormatItem(toRose(*it)));
-    it++;
+  for (int i = 0; i < items->getArity(); ++i) {
+    sgitems->get_format_item_list().push_back(isSgFormatItem(toRose(items->at(i))));
   }
 
   EXPECT_TERM(Int*, rs, annot->at(0));
