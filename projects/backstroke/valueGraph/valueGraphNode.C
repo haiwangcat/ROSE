@@ -98,7 +98,9 @@ std::string VersionedVariable::toString() const
 
 SgExpression* VersionedVariable::getVarRefExp() const
 {
-    ROSE_ASSERT(!name.empty());
+    if (name.empty())
+        return NULL;
+    //ROSE_ASSERT(!name.empty());
     
     SgExpression* var = SageBuilder::buildVarRefExp(name[0]);
     

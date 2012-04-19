@@ -24,10 +24,12 @@ SgExpression* buildVariable(ValueNode* node)
 {
     // I think there may be a bug here, since why I did not use 
     // node->var.getVarRefExp() before?
-#if 1
-    return node->var.getVarRefExp();
-#else
-    SgExpression* var;
+
+    SgExpression* var = NULL;
+    
+    if (var = node->var.getVarRefExp())
+        return var;
+
     if (node->isAvailable())
         var = SageInterface::copyExpression(isSgExpression(node->astNode));
     else
@@ -38,7 +40,6 @@ SgExpression* buildVariable(ValueNode* node)
             var = buildVarRefExp(getVarNameString(node->var.name));
     }
     return var;
-#endif
 }
 
 SgStatement* buildVarDeclaration(ValueNode* newVar, SgExpression* expr)

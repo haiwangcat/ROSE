@@ -733,7 +733,8 @@ void PathNumManager::insertPathNumToFwdFunc()
     pushScopeStack(funcDef->get_body());
     SgExpression* pathNumVar = SageBuilder::buildVarRefExp(pathNumDecl);
     SgStatement* pushPathNumFuncCall = SageBuilder::buildExprStatement(
-            buildPushFunctionCall(pathNumVar));
+            //buildPushFunctionCall(pathNumVar));
+            buildStoreFunctionCall(pathNumVar));
     popScopeStack();
     
     // For each in edges to exit node of CFG, insert the push functin on that edge.
