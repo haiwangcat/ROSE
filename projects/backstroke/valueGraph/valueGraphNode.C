@@ -70,7 +70,7 @@ namespace
                 return sizeof(int);
             default:
                 cout << t->class_name() << ' ' << t->unparseToString() << endl;
-                ROSE_ASSERT(!"Unknow type.");
+                //ROSE_ASSERT(!"Unknow type.");
                 return 100;
         }
 

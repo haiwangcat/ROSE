@@ -7,6 +7,7 @@
 #include <boost/graph/reverse_graph.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/filtered_graph.hpp>
+#include <vector>
 
 namespace Backstroke
 {
@@ -1979,6 +1980,7 @@ namespace
             SgSwitchStatement* switchStmt = switches[0];
             
             SgBasicBlock* newBlock = SageBuilder::buildBasicBlock();
+            //SageInterface::insertStatementAfter(switchStmt, newBlock);
             //newBlock->set_scope(switchStmt->get_scope());
             
             SgVariableDeclaration* newItemSelectorDecl = NULL;
@@ -2067,6 +2069,19 @@ namespace
             {
                 SgBasicBlock* basicBlock = isSgBasicBlock(labelPair.second);
                 ROSE_ASSERT(basicBlock);
+                
+                while (true)
+                {
+                    vector<SgStatement*> stmts = basicBlock->get_statements();
+                    while (!stmts.empty() && isSgNullStatement(stmts.back()))
+                        stmts.erase(stmts.end() - 1);
+                
+                    if (stmts.size() == 1 && isSgBasicBlock(stmts[0]))
+                        basicBlock = isSgBasicBlock(stmts[0]);
+                    else
+                        break;
+                }
+                
                 foreach (SgStatement* stmt, basicBlock->get_statements())
                 {
                     if (isSgBreakStmt(stmt))
@@ -2093,7 +2108,52 @@ namespace
             // Finally, replace the switch statement with the new generated basic block.
             
             SageInterface::replaceStatement(switchStmt, newBlock);
+            //SageInterface::removeStatement(switchStmt);
+            //SageInterface::deepDelete(switchStmt);
             //SageInterface::fixVariableReferences(newBlock);
+        }
+    }
+    
+    void addStateVarRefAtTheEnd(SgFunctionDefinition* funcDef)
+    {
+                // Add all parameters of the event to the value graph.
+        SgInitializedNamePtrList& paraList = funcDef->get_declaration()->get_args();
+        foreach (SgInitializedName* initName, paraList)
+        {
+            // The argument may be anonymous.
+            if (initName->get_name() == "") continue;
+
+            // FIXME State variable may not be parameters.
+            
+            SgType* type = initName->get_type();
+            if (SgPointerType* pointerT = isSgPointerType(type))// || isSgReferenceType(type))
+            {
+                //cout << BackstrokeUtility::cleanModifersAndTypeDefs(
+                //           pointerT->get_base_type())->class_name() << endl;
+                SgClassType* classT = 
+                        isSgClassType(BackstrokeUtility::cleanModifersAndTypeDefs(
+                            pointerT->get_base_type()));
+                if (classT == NULL)
+                    continue;
+                
+                SgClassDefinition* classDef = 
+                        isSgClassDeclaration(classT->get_declaration()->
+                            get_definingDeclaration())->get_definition();
+                ROSE_ASSERT(classDef);
+
+                foreach (SgDeclarationStatement* decl, classDef->get_members())
+                {
+                    SgVariableDeclaration* varDecl = isSgVariableDeclaration(decl);
+                    if (varDecl == NULL)
+                        continue;
+
+                    SgStatement* stmt = SageBuilder::buildExprStatement(
+                            SageBuilder::buildArrowExp(
+                                SageBuilder::buildVarRefExp(initName),
+                                SageBuilder::buildVarRefExp(varDecl)));
+                    SageInterface::appendStatement(stmt, funcDef->get_body());
+                }
+            }
         }
     }
 }
@@ -2103,11 +2163,20 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     // Preprocessing of the events
     foreach (SgFunctionDefinition* funcDef, funcDefs)
     {
-        BackstrokeNorm::normalizeEvent(funcDef->get_declaration());
-        // Add a null statement at the end of all scopes then we can find the last defs of variables.
-        addNullStmtAtScopeEnd(funcDef);
         // Convert all switch statements into if statements.
         convertSwitchStmt(funcDef);
+        
+        BackstrokeNorm::normalizeEvent(funcDef->get_declaration());
+        
+        //cout << funcDef->unparseToString() << endl;
+        
+        // Add a var ref for each state variable of a->b type at the end of the function.
+        // This is a workaround for the buggy SSA, which forces the SSA to generate the final version 
+        // of each state variable.
+        addStateVarRefAtTheEnd(funcDef);
+        
+        // Add a null statement at the end of all scopes then we can find the last defs of variables.
+        addNullStmtAtScopeEnd(funcDef);
         
         //cout << funcDef->unparseToString() << endl;
         SageInterface::fixVariableReferences(funcDef);

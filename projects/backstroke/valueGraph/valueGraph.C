@@ -1877,6 +1877,11 @@ void EventReverser::addStateSavingEdges()
         if (processedVars.count(initName))
             continue;
         
+        // Workaround for __func__ initName used in assert. 
+        // It seems that there is no definition of __func__, which may be a keyword under MacOS.
+        if (initName->get_name() == "__func__")
+            continue;
+        
         SgScopeStatement* scope = initName->get_scope();
         if (SgFunctionDefinition* funcDef = isSgFunctionDefinition(scope))
             scope = funcDef->get_body();
@@ -1884,15 +1889,16 @@ void EventReverser::addStateSavingEdges()
         if (!SageInterface::isAncestor(funcDef_, scope)) 
             continue;
         
-        ROSE_ASSERT(exitsForScopes.count(scope));
+        //ROSE_ASSERT(exitsForScopes.count(scope));
         
             
         // We have added a null statement to every basic block and then we can get the 
         // reaching defs on this statement to get all last versions of local variables.
         if (SgBasicBlock* basicBlock = isSgBasicBlock(scope))
         {
-            //cout << "Scope end SS edge: " << initName->get_name() 
-            //        << "--SS-->" << basicBlock->class_name() << "\n\n";
+            cout << "Scope end SS edge: " << initName->get_name() 
+                    << "--SS-->" << basicBlock->class_name() << '\n' <<
+                    basicBlock->unparseToString() << "\n\n";
             ROSE_ASSERT(isSgNullStatement(basicBlock->get_statements().back()));
             addStateSavingEdges(VarName(1, initName), basicBlock->get_statements().back());
         }
