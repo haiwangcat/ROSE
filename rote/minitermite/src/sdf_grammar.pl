@@ -126,4 +126,7 @@ functor_sort(F, FSort) :-
 	atom_chars(F, Cs),
 	maplist(uppercase, Cs, Cs1),
 	atom_chars(FSort, Cs1),
-	assert(sort(FSort)).
+	(  sort(FSort)
+	-> true % else record it in the database
+	;  assert(sort(FSort))
+	).
