@@ -36,34 +36,94 @@ user:message_hook(_Term, error, _Lines) :-
 % for the grammar specified in the termite grammar spec
 % (src/termite/termite_spec.pl)
 main :-
-   format('# Minitermite term signatures for use with SDF~n', []),
+   retractall(visited(_)),
+   retractall(sort(_)),
+   retractall(constructor(_)),
+   format('# Minitermite term signatures for use with SDF~n', []), !,
    start_symbol(Start),
-   gtrace,
-   print_rule(Start).
+   fmt_rule(Start),
 
-print_nonterm(Nonterminal, A|B) :- !,
-   format_rule(A, Af),
-   print_rule(Nonterminal, B),
-   format('~w -> ~w {cons("~w")}~n', [Af, Nonterminal, Nonterminal]).
+   write('sorts '), !,
+   print_sorts, nl,
+
+   write('constructors '), !,
+   print_constructors, nl.
+
+print_sorts :-
+   sort(Sort),
+   format('~w ', [Sort]),
+   fail.
+print_sorts.
+
+print_constructors :-
+   constructor(C),
+   format('  ~w~n', [C]),
+   fail.
+print_constructors.
 
 
-print_nonterm(Nonterminal, A) :- !,
-   format_rule(A, Terminals),
-   format('~w -> ~w {cons("~w")}~n', [Terminals, Nonterminal, Nonterminal]).
+fmt_rule(Nonterminal) :-
+   (  visited(Nonterminal)
+   -> true
+   ;  assert(visited(Nonterminal)),
+      fail % continue
+   ).
 
-print_rule({_}) :- !.
+fmt_rule({_} where _) :- !.
+fmt_rule({_}) :- !.
+fmt_rule(Var) :- var(Var), !.
 
-print_rule(Nonterminal) :-
+fmt_rule(atoms _) :- !.
+fmt_rule(functors _) :- !.
+fmt_rule(A|B) :- !,
+   fmt_rule(A),
+   fmt_rule(B).
+
+fmt_rule([A]) :- !, fmt_rule(A).
+fmt_rule(A?) :- !, fmt_rule(A).
+
+% ATOMS
+fmt_rule(Nonterminal) :-
    atom(Nonterminal), !,
    ( Nonterminal ::= Rhs ),
-   print_nonterm(Nonterminal, Rhs).
 
-format_rule(CompoundTerm) :-
-   CompoundTerm =.. [F|Args],
-   format('~w \'(\'', [F]),
-   print_terms(Args),
-   format('\')\'').
+   functor_sort(Nonterminal, Sort),
+   format(atom(S), '~w : ~w', [Nonterminal, Sort]),
 
-print_terms([T]) :- write(' \',\' '), fail.
-print_terms([[T]|Ts]) :- !, format('\'[\' ~w \']\'', [T]).
-print_terms(T) :- format('~w', [T]).
+   assert(constructor(S)),
+   fmt_rule(Rhs).
+
+% RULES
+fmt_rule(Nonterminal) :- 
+   Nonterminal =.. [F|Args], !,
+
+   functor_sort(F, Sort),
+   with_output_to(atom(As), print_terms(Args)),
+   format(atom(S), '~w : ~w -> ~w', [F, As, Sort]),
+
+   assert(constructor(S)),
+   maplist(fmt_rule, Args).
+
+print_terms([]).
+print_terms([T1|[T2|Ts]]) :- !, print_term(T1), write(' * '), print_terms([T2|Ts]).
+print_terms([T]) :- print_term(T).
+
+print_term(Var)         :- var(Var), !, write('UNKNOWN').
+print_term([Var])       :- var(Var), !, write('UNKNOWNS').
+print_term({T})         :- !, print_term(T).
+print_term({T} where _) :- !, functor_sort(T, S), write(S).
+print_term([T])         :- !, functor_sort(T, S), format('~w_LIST', [S]).
+print_term(T?)		:- !, functor_sort(T, S), format('~w_OR_NULL', [S]).
+print_term(atoms _)     :- !, write('ATOMS').
+print_term(functors _)  :- !, write('FUNCTORS').
+print_term(T) :- functor_sort(T, S), write(S).
+
+uppercase(C, C1) :-
+	char_type(C1, to_upper(C)).
+
+% convert a functor to a sort just by converting it to uppercase
+functor_sort(F, FSort) :-
+	atom_chars(F, Cs),
+	maplist(uppercase, Cs, Cs1),
+	atom_chars(FSort, Cs1),
+	assert(sort(FSort)).
