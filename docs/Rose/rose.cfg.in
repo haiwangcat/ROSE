@@ -436,6 +436,7 @@ INPUT                  = \
 			 @top_srcdir@/src/frontend/Disassemblers/Disassembler.C \
 			 @top_srcdir@/src/frontend/Disassemblers/DisassemblerArm.C \
 			 @top_srcdir@/src/frontend/Disassemblers/DisassemblerX86.C \
+			 @top_srcdir@/src/frontend/Disassemblers/Expressions.C \
 			 @top_srcdir@/src/frontend/Disassemblers/Partitioner.C \
 			 @top_srcdir@/src/frontend/Disassemblers/Registers.C \
 			 @top_srcdir@/src/frontend/BinaryFormats/DataConversion.C \
@@ -477,7 +478,6 @@ INPUT                  = \
 			 @top_srcdir@/src/frontend/BinaryFormats/PeSymbolTable.C \
 			 @top_srcdir@/src/frontend/BinaryFormats/Rva.C \
 			 @top_srcdir@/src/frontend/BinaryLoader \
-                         @top_srcdir@/src/frontend/Open64/documentation.docs \
                          @top_srcdir@/src/frontend/SageIII/ \
                          @top_srcdir@/src/frontend/SageIII/docs \
 			 @top_srcdir@/src/frontend/SageIII/astPostProcessing/checkIsModifiedFlag.C \
@@ -495,16 +495,11 @@ INPUT                  = \
                          @top_srcdir@/src/midend/programTransformation/ompLowering \
                          @top_srcdir@/src/midend/midend.docs \
                          @top_srcdir@/src/midend/astDiagnostics/AstDiagnostics.docs \
-                         @top_srcdir@/src/midend/programTransformation/astInlining/documentation.docs \
-                         @top_srcdir@/src/midend/programTransformation/astOutlining/documentation.docs \
-                         @top_srcdir@/src/midend/programTransformation/loopProcessing/documentation.docs \
-                         @top_srcdir@/src/midend/programAnalysis/documentation.docs \
                          @top_srcdir@/src/midend/programAnalysis/staticSingleAssignment/ \
                          @top_srcdir@/src/midend/programAnalysis/ssaUnfilteredCfg/ \
                          @top_srcdir@/src/midend/programAnalysis/CallGraphAnalysis \
                          @top_srcdir@/src/midend/programTransformation/documentation.docs \
                          @top_srcdir@/src/midend/programTransformation/extractFunctionArgumentsNormalization \
-                         @top_srcdir@/src/midend/astRewriteMechanism/ASTRewrite.docs \
                          @top_srcdir@/src/midend/astProcessing \
                          @top_srcdir@/src/midend/astQuery/QueryLib.docs \
                          @top_srcdir@/src/backend/backend.docs \
@@ -527,7 +522,14 @@ INPUT                  = \
                          @top_srcdir@/src/3rdPartyLibraries/MSTL/MSTL.docs \
                          @top_srcdir@/src/extra.docs \
                          @top_srcdir@/projects/projects.docs
-
+# Liao 4/13/2012 commenting out outdated docs, We expect documentation in Manual/Tutorial pdfs, not
+#   in Doxygen documents (maintaining two copies is a pain and confusing to users). 
+#                         @top_srcdir@/src/midend/programTransformation/astOutlining/documentation.docs 
+#                         @top_srcdir@/src/midend/programTransformation/astInlining/documentation.docs 
+#                         @top_srcdir@/src/midend/astRewriteMechanism/ASTRewrite.docs 
+#                         @top_srcdir@/src/frontend/Open64/documentation.docs 
+#                         @top_srcdir@/src/midend/programTransformation/loopProcessing/documentation.docs 
+#                         @top_srcdir@/src/midend/programAnalysis/documentation.docs 
 # DQ (4/13/2010): Added @top_srcdir@/src/midend/astProcessing directory in place of:
 #                         @top_srcdir@/src/midend/astProcessing/AstProcessing.docs 
 
@@ -583,7 +585,8 @@ RECURSIVE              = NO
 # excluded from the INPUT source files. This way you can easily exclude a 
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = @top_srcdir@/AST_RewriteMechanism/testRewrite.h \
+EXCLUDE                = @top_srcdir@/src/frontend/CxxFrontend/EDG \
+			 @top_srcdir@/AST_RewriteMechanism/testRewrite.h \
                          @top_srcdir@/AST_RewriteMechanism/testRewrite.C \
                          @top_srcdir@/AST_RewriteMechanism/testNewRewrite.h \
                          @top_srcdir@/AST_RewriteMechanism/testNewRewrite.C \
@@ -671,7 +674,7 @@ FILTER_SOURCE_FILES    = NO
 # Note: To get rid of all source code in the generated output, make sure also 
 # VERBATIM_HEADERS is set to NO.
 
-SOURCE_BROWSER         = NO
+SOURCE_BROWSER         = YES
 
 # Setting the INLINE_SOURCES tag to YES will include the body 
 # of functions and classes directly in the documentation.

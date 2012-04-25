@@ -271,13 +271,70 @@ protected:
     typedef std::map<rose_addr_t, DataBlock*> DataBlocks;
 
     /** Represents a function within the Partitioner. Each non-empty function will become an SgAsmFunction in the AST. */
-    struct Function {
-        Function(rose_addr_t entry_va): reason(0), pending(true), entry_va(entry_va), may_return(false) {}
-        Function(rose_addr_t entry_va, unsigned r): reason(r), pending(true), entry_va(entry_va), may_return(false) {}
+    class Function {
+    public:
+        /** Function return property.  This enum describes whether a function returns to its caller. */
+        enum MayReturn {
+            RET_UNKNOWN,                        /**< It is unknown whether this function returns or not. */
+            RET_NEVER,                          /**< This function is known to never return. */
+            RET_SOMETIMES,                      /**< This function may return (but is not required to return). */
+            RET_ALWAYS,                         /**< This function returns every time it's called. */
+        };
+
+        Function(rose_addr_t entry_va)
+            : reason(0), pending(true), entry_va(entry_va),
+              may_return_cur(RET_UNKNOWN), may_return_old(RET_UNKNOWN) {}
+        Function(rose_addr_t entry_va, unsigned r)
+            : reason(r), pending(true), entry_va(entry_va),
+              may_return_cur(RET_UNKNOWN), may_return_old(RET_UNKNOWN) {}
         Function(rose_addr_t entry_va, unsigned r, const std::string& name)
-            : reason(r), name(name), pending(true), entry_va(entry_va), may_return(false) {}
-        void clear_basic_blocks();              /**< Remove all basic blocks from this function w/out deleting the blocks. */
-        void clear_data_blocks();               /**< Remove all data blocks from this function w/out deleting the blocks. */
+            : reason(r), name(name), pending(true), entry_va(entry_va),
+              may_return_cur(RET_UNKNOWN), may_return_old(RET_UNKNOWN) {}
+
+        /** Remove all basic blocks from this function w/out deleting the blocks. */
+        void clear_basic_blocks();
+
+        /** Remove all data blocks from this function w/out deleting the blocks. */
+        void clear_data_blocks();
+
+        /** Move all basic blocks from the other function to this one. */
+        void move_basic_blocks_from(Function *other);
+
+        /** Move all data blocks from the other function to this one. */
+        void move_data_blocks_from(Function *other);
+
+        /** Accessor for the may-return property.  The may-return property indicates whether this function returns to its
+         *  caller.  This is a two-part property storing both the current value and the previous value; this enables us to
+         *  detect transitions after the fact, when it is more efficient to process them than when they actually occur.
+         *  Setting the current value does not update the old value; the old value is updated only by the commit_may_return()
+         *  method.
+         * @{ */
+        MayReturn get_may_return() const { return may_return_cur; }
+        void set_may_return(MayReturn may_return) { may_return_cur = may_return; }
+        bool changed_may_return() const { return may_return_cur != may_return_old; }
+        void commit_may_return() { may_return_old = may_return_cur; }
+        /** @} */
+
+        /** Can this function return?  Returns true if it is known that this function can return to its caller. */
+        bool possible_may_return() const {
+            return RET_SOMETIMES==get_may_return() || RET_ALWAYS==get_may_return();
+        }
+
+        /** Increase knowledge about the returnability of this function.  A current value of RET_UNKNOWN is always changed to
+         * the @p new_value.  A current value of RET_SOMETIMES can be changed to RET_ALWAYS or RET_NEVER.  A current value of
+         * RET_ALWAYS or RET_NEVER is not modified (not even to change RET_ALWAYS to RET_NEVER or vice versa). */
+        void promote_may_return(MayReturn new_value);
+
+        /** Initialize properties from another function.  This causes the properties of the @p other function to be copied into
+         *  this function without changing this function's list of blocks or entry address.  The @p pending status of this
+         *  function may be set if set in @p other, but it will never be cleared.  Returns @p this. */
+        Function *init_properties(const Function &other);
+
+        /** Emit function property values. This is mostly for debugging.  If the file handle is null then nothing happens. */
+        void show_properties(FILE*) const;
+
+    public:
+        /* If you add more data members, also update detach_thunk() and/or init_properties() */
         unsigned reason;                        /**< SgAsmFunction::FunctionReason bit flags */
         std::string name;                       /**< Name of function if known */
         BasicBlocks basic_blocks;               /**< Basic blocks belonging to this function */
@@ -285,8 +342,11 @@ protected:
         bool pending;                           /**< True if we need to (re)discover the basic blocks */
         rose_addr_t entry_va;                   /**< Entry virtual address */
         Disassembler::AddressSet heads;         /**< CFG heads, excluding func entry: addresses of additional blocks */
-        bool may_return;                        /**< Is it possible for this function to return? */
-        /* If you add more here, also update split_attached_thunks() */
+
+    private:
+        /* If you add more data members, also update detach_thunk() and/or init_properties() */
+        MayReturn may_return_cur;               /**< Is it possible for this function to return? Current value of property. */
+        MayReturn may_return_old;               /**< Is it possible for this function to return? Previous value of property. */
     };
     typedef std::map<rose_addr_t, Function*> Functions;
 
@@ -544,18 +604,38 @@ public:
     /** Looks up a function by address.  Returns the function pointer if found, the null pointer if not found. */
     virtual Function* find_function(rose_addr_t entry_va);
 
-    /** Builds the AST describing all the functions. The return value is an SgAsmBlock node that points to a list of
-     *  SgAsmFunction nodes (the functions), each of which points to a list of SgAsmBlock nodes (the basic
-     *  blocks). Any basic blocks that were not assigned to a function by the Partitioner will be added to a function named
-     *  "***uncategorized blocks***" whose entry address will be the address of the lowest instruction, and whose reasons for
-     * existence will include the SgAsmFunction::FUNC_LEFTOVERS bit.  However, if the FUNC_LEFTOVERS bit is not
-     * turned on (see set_search()) then uncategorized blocks will not appear in the AST. */
-    virtual SgAsmBlock* build_ast();
+    /** Builds the AST describing all the functions.
+     *
+     *  The return value is an SgAsmBlock node that points to a list of SgAsmFunction nodes (the functions), each of which
+     *  points to a list of SgAsmBlock nodes (the basic blocks). Any basic blocks that were not assigned to a function by the
+     *  Partitioner will be added to a function named "***uncategorized blocks***" whose entry address will be the address of
+     *  the lowest instruction, and whose reasons for existence will include the SgAsmFunction::FUNC_LEFTOVERS bit.  However,
+     *  if the FUNC_LEFTOVERS bit is not turned on (see set_search()) then uncategorized blocks will not appear in the AST.
+     *
+     *  If an interpretation is supplied, then it will be used to obtain information about where various file sections are
+     *  mapped into memory.  This mapping is used to fix-up various kinds of pointers in the instructions to make them relative
+     *  to a file section.  For instance, a pointer into the ".bss" section will be made relative to the beginning of that
+     *  section. */
+    virtual SgAsmBlock* build_ast(SgAsmInterpretation *interp=NULL);
 
-    /** Update SgAsmTarget block pointers.  This method traverses the specified AST and updates any SgAsmTarget nodes so their
-     *  block pointers point to actual blocks.  The update only happens for SgAsmTarget objects that don't already have a node
-     *  pointer. */
-    virtual void update_targets(SgNode *ast);
+    /** Update control flow graph edge nodes.  This method traverses the specified AST and updates any edge nodes so their
+     *  block pointers point to actual blocks rather than just containing virtual addresses.  The update only happens for
+     *  edges that don't already have a node pointer. */
+    virtual void fixup_cfg_edges(SgNode *ast);
+
+    /** Updates pointers inside instructions.  This method traverses each instruction in the specified AST and looks for
+     *  integer value expressions that that have no base node (i.e., those that have only an absolute value).  For each such
+     *  value it finds, it tries to determine if that value points to code or data.  Code pointers are made relative to the
+     *  instruction or function (for function calls) to which they point; data pointers are made relative to the data to which
+     *  they point.
+     *
+     *  The specified interpretation is only used to obtain a list of all mapped sections.  The sections are used to determine
+     *  whether a value is a data pointer even if it doesn't point to any specific data that was discovered during
+     *  disassembly.
+     *
+     *  This method is called by build_ast(), but can also be called explicitly. Only pointers that are not already relative to
+     *  some object are affected. */
+    virtual void fixup_pointers(SgNode *ast, SgAsmInterpretation *interp=NULL);
 
     /**************************************************************************************************************************
      *                                  Range maps relating address ranges to objects
@@ -1447,14 +1527,30 @@ public:
     /** Splits one thunk off the start of a function if possible.  Since the partitioner constructs functions according to the
      *  control flow graph, thunks (JMP to start of function) often become part of the function to which they jump.  This can
      *  happen if the real function has no direct callers and was not detected as a function entry point due to any pattern or
-     *  symbol.  The split_attached_thunks() function traverses all defined functions and looks for cases where the thunk is
-     *  attached to the jumped-to function, and splits them into two functions. */
+     *  symbol.  The detach_thunks() function traverses all defined functions and looks for cases where the thunk is attached
+     *  to the jumped-to function, and splits them into two functions. */
     virtual bool detach_thunk(Function*);
 
     /** Adjusts ownership of padding data blocks.  Each padding data block should be owned by the prior function in the address
      *  space.  This is normally the case, but when functions are moved around, split, etc., the padding data blocks can get
      *  mixed up.  This method puts them all back where they belong. */
     virtual void adjust_padding();
+
+    /** Merge function fragments.  The partitioner sometimes goes crazy breaking functions into smaller and smaller parts.
+     *  This method attempts to merge all those parts after the partitioner's function detection has completed.  A function
+     *  fragment is any function whose only reason code is one of the GRAPH codes (function detected by graph analysis and the
+     *  rule that every function has only one entry point). */
+    virtual void merge_function_fragments();
+
+    /** Merge two functions.  The @p other function is merged into @p parent and then @p other is deleted. */
+    virtual void merge_functions(Function *parent, Function *other);
+
+    /** Looks for a jump table.  This method looks at the specified basic block and tries to discover if the last instruction
+     *  is an indirect jump through memory.  If it is, then the entries of the jump table are returned by value (i.e., the
+     *  control flow successors of the given basic block), and the addresses of the table are added to the optional extent
+     *  map.  It is possible for the jump table to be discontiguous, but this is not usually the case.  If @p do_create is true
+     *  then data blocks are created for the jump table and added to the basic block. */
+    Disassembler::AddressSet discover_jump_table(BasicBlock *bb, bool do_create=true, ExtentMap *table_addresses=NULL);
 
     /*************************************************************************************************************************
      *                                   IPD Parser for initializing the Partitioner

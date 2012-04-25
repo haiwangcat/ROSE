@@ -188,6 +188,8 @@ these switches can be obtained by specifying the \"--rose-help\" switch.\n\
 /*FIXME: Rose cannot parse this file.*/
 #ifndef CXX_IS_ROSE_ANALYSIS
 
+using namespace BinaryAnalysis::InstructionSemantics;
+
 /* Convert a SHA1 digest to a string. */
 std::string
 digest_to_str(const unsigned char digest[20])
@@ -339,7 +341,7 @@ private:
             return enabled;
         }
     };
-    
+
     /* Functor to add syscall name after "INT 80" instructions */
     class SyscallName: public UnparserCallback {
     public:
@@ -1277,9 +1279,12 @@ main(int argc, char *argv[])
         std::cout <<ShowFunctions(block);
 
     if (!do_quiet) {
+        typedef BinaryAnalysis::ControlFlow::Graph CFG;
+        CFG cfg = BinaryAnalysis::ControlFlow().build_cfg_from_ast<CFG>(block);
         MyAsmUnparser unparser(do_show_hashes, do_syscall_names);
         unparser.add_function_labels(block);
         unparser.set_organization(do_linear ? AsmUnparser::ORGANIZED_BY_ADDRESS : AsmUnparser::ORGANIZED_BY_AST);
+        unparser.add_control_flow_graph(cfg);
         unparser.unparse(std::cout, block);
         fputs("\n\n", stdout);
     }
