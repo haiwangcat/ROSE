@@ -29,11 +29,11 @@ CLEANFILES = termpretty.c++
 bin_PROGRAMS = src/termpretty src/src2term src/term2src
 
 if WITH_SWI_PROLOG
-bin_SCRIPTS = src/termite_lint src/cime3_signatures src/sdf_grammar
+bin_SCRIPTS = src/termite_lint src/cime3_signatures src/stratego-signatures
 
 BUILT_SOURCES += $(builddir)/PP_termite_spec.pl
 CLEANFILES += $(builddir)/PP_termite_spec.pl \
-              src/termite_lint src/cime3_signatures src/sdf_grammar
+              src/termite_lint src/cime3_signatures src/stratego-signatures
 
 $(builddir)/PP_termite_spec.pl: src/termite/termite_spec.pl Makefile
 if WITH_ANALYSIS_RESULTS
@@ -44,15 +44,15 @@ endif
 
 src/termite_lint: $(srcdir)/src/term_lint_main.pl $(builddir)/PP_termite_spec.pl src/termite/termlint.pl
 	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
-	  $(SWI_PLC) -o $@ -c $<
+	$(SWI_PLC) -o $@ -c $<
 
 src/cime3_signatures: $(srcdir)/src/cime3_signatures.pl $(builddir)/PP_termite_spec.pl
 	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
-	  $(SWI_PLC) -o $@ -c $<
+	$(SWI_PLC) -o $@ -c $<
 
-src/sdf_grammar: $(srcdir)/src/sdf_grammar.pl $(builddir)/PP_termite_spec.pl
+src/stratego-signatures: $(srcdir)/src/stratego-signatures.pl $(builddir)/PP_termite_spec.pl
 	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
-	  $(SWI_PLC) -o $@ -c $<
+	$(SWI_PLC) -o $@ -c $<
 
 endif
 

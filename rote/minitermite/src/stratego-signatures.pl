@@ -64,23 +64,10 @@ print_constructors.
 
 fmt_rule(Nonterminal) :-
    (  visited(Nonterminal)
-   -> true
+   -> true % skip
    ;  assert(visited(Nonterminal)),
       fail % continue
    ).
-
-fmt_rule({_} where _) :- !.
-fmt_rule({_}) :- !.
-fmt_rule(Var) :- var(Var), !.
-
-fmt_rule(atoms _) :- !.
-fmt_rule(functors _) :- !.
-fmt_rule(A|B) :- !,
-   fmt_rule(A),
-   fmt_rule(B).
-
-fmt_rule([A]) :- !, fmt_rule(A).
-fmt_rule(A?) :- !, fmt_rule(A).
 
 % ATOMS
 fmt_rule(Nonterminal) :-
@@ -88,20 +75,38 @@ fmt_rule(Nonterminal) :-
    ( Nonterminal ::= Rhs ),
 
    functor_sort(Nonterminal, Sort),
-   format(atom(S), '~w : ~w', [Nonterminal, Sort]),
+   %format(atom(S), '~w : ~w', [Nonterminal, Sort]),
+   %assert(constructor(S)),
+   fmt_rule1(Sort, Rhs).
 
-   assert(constructor(S)),
-   fmt_rule(Rhs).
+fmt_rule(Nonterminal) :-
+   fmt_rule1(Nonterminal, Nonterminal).
+
+fmt_rule1(_, {_} where _) :- !.
+fmt_rule1(_, {_}) :- !.
+fmt_rule1(_, Var) :- var(Var), !.
+fmt_rule1(_, atoms _) :- !.
+fmt_rule1(_, functors _) :- !.
+fmt_rule1(Sort, A|B) :- !,
+   fmt_rule1(Sort, A),
+   fmt_rule1(Sort, B).
+
+fmt_rule1(_, [A]) :- !, fmt_rule(A).
+fmt_rule1(_, A?)  :- !, fmt_rule(A).
+
+fmt_rule1(Sort, Atom) :- atom(Atom), !,
+	( Atom ::= Rhs ),
+	fmt_rule1(Sort, Rhs).
 
 % RULES
-fmt_rule(Nonterminal) :- 
-   Nonterminal =.. [F|Args], !,
+fmt_rule1(Sort, Nonterminal) :- 
+   Nonterminal =.. [Constructor|Args], !,
 
-   functor_sort(F, Sort),
    with_output_to(atom(As), print_terms(Args)),
-   format(atom(S), '~w : ~w -> ~w', [F, As, Sort]),
+   format(atom(S), '~w : ~w -> ~w', [Constructor, As, Sort]),
 
    assert(constructor(S)),
+   fmt_rule(Constructor),
    maplist(fmt_rule, Args).
 
 print_terms([]).
