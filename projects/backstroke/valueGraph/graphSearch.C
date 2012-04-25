@@ -307,9 +307,9 @@ NEXT:
         cout << "\n\n\n" << valueGraph_[nodeWithRoutes.first]->toString() << "\n\n";
         foreach (const Route& route, nodeWithRoutes.second)
         {
-            cout << '\n' << route.paths << "\n";
+            cout << '\n' << route.paths << " " << route.cost << "\n";
             foreach (const VGEdge& edge, route.edges)
-            cout << edge << " ==> ";
+                cout << edge << " ==> ";
             cout << "\n";
         }
     }
@@ -351,11 +351,12 @@ NEXT:
             //else
                 ++costForEdges[edge].second;
         }
-    }
+    }      
+    
         
     foreach (VertexWithRoute& nodeWithRoute, allRoutes)
     {
-        cout << nodeWithRoute.first << endl;
+        //cout << nodeWithRoute.first << endl;
         
         vector<Route> routes;
         
@@ -376,36 +377,40 @@ NEXT:
                 cost += float(costWithCounter.first) / costWithCounter.second;
             }
             
-            route.cost = cost;
+            route.cost = static_cast<int>(cost);
+            
+            //cout << "Cost " << route.cost << '\n';
+            //cout << "Paths: " << route.paths << '\n';
             
             
-            
-            
-            bool toInsert = true;
-            vector<Route> newRoutes;
+            //bool toInsert = true;
+            //vector<Route> newRoutes;
             
             foreach (Route& route2, routes)
             {
                 PathInfo p = route2.paths & route.paths;
+                //cout << route.paths <<  ' ' << route2.paths << endl;
+                //cout << "p: " << p << endl;
                 if (p.any())
                 {
                     if (cost < route2.cost)
                     {
-                        newRoutes.push_back(route);
+                        //newRoutes.push_back(route);
                         route2.paths -= route.paths;
                     }
                     else
                     {
                         route.paths -= route2.paths;
-                        newRoutes.push_back(route);
+                        //newRoutes.push_back(route);
                     }
-                    toInsert = false;
+                    //cout << "Inserted path: " << route.paths << endl;
+                    //toInsert = false;
                 }
             }
-            if (toInsert)
-                routes.push_back(route);
+            //if (toInsert)
+            routes.push_back(route);
             
-            routes.insert(routes.end(), newRoutes.begin(), newRoutes.end());
+            //routes.insert(routes.end(), newRoutes.begin(), newRoutes.end());
         }
         
         
@@ -413,7 +418,7 @@ NEXT:
         PathSet paths;
         foreach (const Route& route, routes)
         {
-            cout << ">>>" << route.paths << endl;
+            cout << ">>>" << route.paths << " cost: " << route.cost << endl;
             if (paths.empty())
                 paths = route.paths;
             else

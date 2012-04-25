@@ -350,9 +350,9 @@ int main(int argc, char *argv[])
     {
         set<SgFunctionDefinition*> funcDefs;
                 
-        events.insert("Handle");
-        events.insert("tmr_event_handler");
-        events.insert("event_handler");
+        //events.insert("Handle");
+        //events.insert("tmr_event_handler");
+        //events.insert("event_handler");
     
         vector<SgFunctionDefinition*> allFuncDefs = 
                 BackstrokeUtility::querySubTree<SgFunctionDefinition>(project);

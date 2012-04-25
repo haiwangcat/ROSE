@@ -17,7 +17,7 @@ using namespace boost;
 namespace
 {
     //! An internal function to return a cost for state saving depending on the type.
-    int getCostFromType(SgType* t)
+    int getCostFromType_(SgType* t)
     {
         ROSE_ASSERT(t);
 
@@ -57,7 +57,7 @@ namespace
                 return sizeof(double);
             case V_SgClassType:
                 //ROSE_ASSERT(false);
-                return 100;
+                return 1000;
             case V_SgPointerType:
             {
                 //SgPointerType* pType = isSgPointerType(t);
@@ -65,17 +65,23 @@ namespace
                 return sizeof(void*);
             }
             case V_SgTypedefType:
-                return getCostFromType(t->stripTypedefsAndModifiers());
+                return getCostFromType_(t->stripTypedefsAndModifiers());
             case V_SgEnumType:
                 return sizeof(int);
             default:
                 cout << t->class_name() << ' ' << t->unparseToString() << endl;
-                ROSE_ASSERT(!"Unknow type.");
+                //ROSE_ASSERT(!"Unknow type.");
                 return 100;
         }
 
         ROSE_ASSERT(false);
         return 0;
+    }
+    
+    int getCostFromType(SgType* t)
+    {
+        // Enlarge the cost to offset the side effect of trivail costs.
+        return getCostFromType_(t) * 100;
     }
 }
 
@@ -92,7 +98,9 @@ std::string VersionedVariable::toString() const
 
 SgExpression* VersionedVariable::getVarRefExp() const
 {
-    ROSE_ASSERT(!name.empty());
+    if (name.empty())
+        return NULL;
+    //ROSE_ASSERT(!name.empty());
     
     SgExpression* var = SageBuilder::buildVarRefExp(name[0]);
     

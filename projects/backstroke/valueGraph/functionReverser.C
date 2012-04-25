@@ -7,6 +7,7 @@
 #include <boost/graph/reverse_graph.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/filtered_graph.hpp>
+#include <vector>
 
 namespace Backstroke
 {
@@ -120,7 +121,6 @@ void EventReverser::generateCode()
     typedef map<VGEdge, PathInfo>::value_type T;
     foreach (const T& edgeAndPaths, routeWithPaths)
         routes[edgeAndPaths.first][0] = edgeAndPaths.second;
-    
     
     // Process other DAGs.
     int dagNum = pathNumManager_->getNumberOfDags();
@@ -1746,7 +1746,7 @@ bool EventReverser::generateCode(
                 else
                     condition = buildOrOp(condition, condExpr);
             }
-            cout << condPaths << endl;
+            //cout << condPaths << endl;
             ROSE_ASSERT(condition);
 
 
@@ -1962,18 +1962,232 @@ namespace
             SageInterface::appendStatement(SageBuilder::buildNullStatement(), scope);
         }
     }
+    
+    // Convert all switch statements into if statements.
+    void convertSwitchStmt(SgFunctionDefinition* funcDef)
+    {
+        static int counter = 0;
+        
+        
+        while (true)
+        {
+            vector<SgSwitchStatement*> switches = 
+                    BackstrokeUtility::querySubTree<SgSwitchStatement>(funcDef);
+
+            if (switches.empty())
+                return;
+            
+            SgSwitchStatement* switchStmt = switches[0];
+            
+            SgBasicBlock* newBlock = SageBuilder::buildBasicBlock();
+            //SageInterface::insertStatementAfter(switchStmt, newBlock);
+            //newBlock->set_scope(switchStmt->get_scope());
+            
+            SgVariableDeclaration* newItemSelectorDecl = NULL;
+            //SgExpression* newItemSelector = NULL;
+            
+            // First, build a new integer var which takes the item selector.
+            
+            SgStatement* itemSelector = switchStmt->get_item_selector();
+            if (isSgVariableDeclaration(itemSelector))
+            {
+                newItemSelectorDecl = isSgVariableDeclaration(copyStatement(itemSelector));
+            }
+            else
+            {
+                SgExprStatement* expStmt = isSgExprStatement(itemSelector);
+                ROSE_ASSERT(expStmt);
+                newItemSelectorDecl = SageBuilder::buildVariableDeclaration(
+                        "__item_selector__",
+                        SageBuilder::buildIntType(),
+                        SageBuilder::buildAssignInitializer(
+                            SageInterface::copyExpression(expStmt->get_expression())),
+                        newBlock);
+            }
+                
+            appendStatement(newItemSelectorDecl, newBlock);
+
+            
+            // Second, build a nested if statement.
+            
+            std::vector<std::pair<SgExpression*, SgStatement*> > cases;
+            
+            SgBasicBlock* switchBody = isSgBasicBlock(switchStmt->get_body());
+            ROSE_ASSERT(switchBody);
+            
+            vector<pair<SgLabelStatement*, SgStatement*> > labels;
+            
+            //Build a basic block to put the if statement.
+            //SgBasicBlock* ifBlock = SageBuilder::buildBasicBlock();
+            SgBasicBlock* currentBlock = newBlock;
+            
+            foreach (SgStatement* stmt, switchBody->get_statements())
+            {
+                SgCaseOptionStmt* caseStmt = isSgCaseOptionStmt(stmt);
+                if (caseStmt == NULL)
+                {
+                    if (SgDefaultOptionStmt* defaultStmt = isSgDefaultOptionStmt(stmt))
+                    {
+                        SgLabelStatement* labelStmt = SageBuilder::buildLabelStatement(
+                            "LABEL" + boost::lexical_cast<std::string>(counter++));
+
+                        labels.push_back(make_pair(labelStmt, 
+                                SageInterface::copyStatement(defaultStmt->get_body())));
+
+                        SgGotoStatement* gotoStmt = SageBuilder::buildGotoStatement(labelStmt);
+                        SageInterface::appendStatement(gotoStmt, currentBlock);
+                    }
+                    continue;
+                }
+                
+                SgLabelStatement* labelStmt = SageBuilder::buildLabelStatement(
+                        "LABEL" + boost::lexical_cast<std::string>(counter++));
+                
+                labels.push_back(make_pair(labelStmt, 
+                        SageInterface::copyStatement(caseStmt->get_body())));
+                
+                SgGotoStatement* gotoStmt = SageBuilder::buildGotoStatement(labelStmt);
+                SgExpression* comp = SageBuilder::buildEqualityOp(
+                        SageBuilder::buildVarRefExp(newItemSelectorDecl), 
+                        SageInterface::copyExpression(caseStmt->get_key()));
+                
+                SgBasicBlock* elseBody = SageBuilder::buildBasicBlock();
+                SgIfStmt* ifStmt = SageBuilder::buildIfStmt(comp, gotoStmt, elseBody);
+                
+                SageInterface::appendStatement(ifStmt, currentBlock);
+                currentBlock = elseBody;
+            }
+            
+            // Third, build several goto labels corresponding to cases in the switch.
+            
+            SgLabelStatement* endLabelStmt = SageBuilder::buildLabelStatement(
+                "LABEL" + boost::lexical_cast<std::string>(counter++),
+                SageBuilder::buildNullStatement());
+            
+            typedef pair<SgLabelStatement*, SgStatement*> LabelPairT;
+            foreach (LabelPairT& labelPair, labels)
+            {
+                SgBasicBlock* basicBlock = isSgBasicBlock(labelPair.second);
+                ROSE_ASSERT(basicBlock);
+                
+                while (true)
+                {
+                    vector<SgStatement*> stmts = basicBlock->get_statements();
+                    while (!stmts.empty() && isSgNullStatement(stmts.back()))
+                        stmts.erase(stmts.end() - 1);
+                
+                    if (stmts.size() == 1 && isSgBasicBlock(stmts[0]))
+                        basicBlock = isSgBasicBlock(stmts[0]);
+                    else
+                        break;
+                }
+                
+                foreach (SgStatement* stmt, basicBlock->get_statements())
+                {
+                    if (isSgBreakStmt(stmt))
+                        SageInterface::replaceStatement(
+                            stmt, 
+                            SageBuilder::buildGotoStatement(endLabelStmt));
+                }
+                
+                SageInterface::appendStatement(labelPair.first, newBlock);
+                labelPair.first->set_scope(funcDef);
+            
+                //SageInterface::fixLabelStatement(labelPair.first, newBlock);
+                SageInterface::appendStatement(labelPair.second, newBlock);
+            }
+            
+            SageInterface::appendStatement(endLabelStmt, newBlock);
+            endLabelStmt->set_scope(funcDef);
+            
+            // Add a NULL statement at the end of the basic block to aid the SSA.
+            SageInterface::appendStatement(SageBuilder::buildNullStatement(), newBlock);
+            
+            //SageInterface::fixLabelStatement(endLabelStmt, newBlock);
+            
+            // Finally, replace the switch statement with the new generated basic block.
+            
+            SageInterface::replaceStatement(switchStmt, newBlock);
+            //SageInterface::removeStatement(switchStmt);
+            //SageInterface::deepDelete(switchStmt);
+            //SageInterface::fixVariableReferences(newBlock);
+        }
+    }
+    
+    void addStateVarRefAtTheEnd(SgFunctionDefinition* funcDef)
+    {
+                // Add all parameters of the event to the value graph.
+        SgInitializedNamePtrList& paraList = funcDef->get_declaration()->get_args();
+        foreach (SgInitializedName* initName, paraList)
+        {
+            // The argument may be anonymous.
+            if (initName->get_name() == "") continue;
+
+            // FIXME State variable may not be parameters.
+            
+            SgType* type = initName->get_type();
+            if (SgPointerType* pointerT = isSgPointerType(type))// || isSgReferenceType(type))
+            {
+                //cout << BackstrokeUtility::cleanModifersAndTypeDefs(
+                //           pointerT->get_base_type())->class_name() << endl;
+                SgClassType* classT = 
+                        isSgClassType(BackstrokeUtility::cleanModifersAndTypeDefs(
+                            pointerT->get_base_type()));
+                if (classT == NULL)
+                    continue;
+                
+                SgClassDefinition* classDef = 
+                        isSgClassDeclaration(classT->get_declaration()->
+                            get_definingDeclaration())->get_definition();
+                ROSE_ASSERT(classDef);
+
+                foreach (SgDeclarationStatement* decl, classDef->get_members())
+                {
+                    SgVariableDeclaration* varDecl = isSgVariableDeclaration(decl);
+                    if (varDecl == NULL)
+                        continue;
+
+                    SgStatement* stmt = SageBuilder::buildExprStatement(
+                            SageBuilder::buildArrowExp(
+                                SageBuilder::buildVarRefExp(initName),
+                                SageBuilder::buildVarRefExp(varDecl)));
+                    SageInterface::appendStatement(stmt, funcDef->get_body());
+                }
+            }
+        }
+    }
 }
     
 void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
 {
+    // Preprocessing of the events
     foreach (SgFunctionDefinition* funcDef, funcDefs)
     {
+        // Convert all switch statements into if statements.
+        convertSwitchStmt(funcDef);
+        
         BackstrokeNorm::normalizeEvent(funcDef->get_declaration());
+        
+        //cout << funcDef->unparseToString() << endl;
+        
+        // Add a var ref for each state variable of a->b type at the end of the function.
+        // This is a workaround for the buggy SSA, which forces the SSA to generate the final version 
+        // of each state variable.
+        addStateVarRefAtTheEnd(funcDef);
+        
         // Add a null statement at the end of all scopes then we can find the last defs of variables.
         addNullStmtAtScopeEnd(funcDef);
+        
+        //cout << funcDef->unparseToString() << endl;
+        SageInterface::fixVariableReferences(funcDef);
+        
+        // There is a bug that the transformed AST is not valid.
     }
     
     SgProject* project = SageInterface::getProject();
+    
+    //AstTests::runAllTests(project);
+    //project->unparse();
     
     StaticSingleAssignment* ssa = new StaticSingleAssignment(project);
     ssa->run(true, true);

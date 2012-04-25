@@ -22,7 +22,14 @@ string getVarNameString(const VarName& var)
 //! Build a variable expression from a value node in the value graph.
 SgExpression* buildVariable(ValueNode* node)
 {
-    SgExpression* var;
+    // I think there may be a bug here, since why I did not use 
+    // node->var.getVarRefExp() before?
+
+    SgExpression* var = NULL;
+    
+    if (var = node->var.getVarRefExp())
+        return var;
+
     if (node->isAvailable())
         var = SageInterface::copyExpression(isSgExpression(node->astNode));
     else
@@ -119,22 +126,42 @@ void instrumentPushFunction(ValueNode* valNode, SgFunctionDefinition* funcDef)
     }
 }
 
+#define ROSS
+
 SgExpression* buildPushFunctionCall(SgExpression* para)
 {
+#ifdef ROSS
+    SgExpression* lp = SageBuilder::buildVarRefExp("lp");
+    return buildFunctionCallExp("push", buildVoidType(), 
+            SageBuilder::buildExprListExp(para, lp));
+#else
     return buildFunctionCallExp("push", buildVoidType(), 
             SageBuilder::buildExprListExp(para));
+#endif
 }
 
 SgExpression* buildStoreFunctionCall(SgExpression* para)
 {
+#ifdef ROSS
+    SgExpression* lp = SageBuilder::buildVarRefExp("lp");
+    return buildFunctionCallExp("__store__", buildVoidType(), 
+            SageBuilder::buildExprListExp(para, lp));
+#else
     return buildFunctionCallExp("__store__", buildVoidType(), 
             SageBuilder::buildExprListExp(para));
+#endif
 }
 
 SgExpression* buildRestoreFunctionCall(SgExpression* para)
 {
+#ifdef ROSS
+    SgExpression* lp = SageBuilder::buildVarRefExp("lp");
+    return buildFunctionCallExp("__restore__", buildVoidType(), 
+            SageBuilder::buildExprListExp(para, lp));
+#else
     return buildFunctionCallExp("__restore__", buildVoidType(), 
             SageBuilder::buildExprListExp(para));
+#endif
 }
 
 SgStatement* buildPushStatement(ValueNode* valNode)
