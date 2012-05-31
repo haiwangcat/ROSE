@@ -115,5 +115,6 @@ EXTRA_DIST += \
   \
   src/term_lint_main.pl \
   src/cime3_signatures.pl \
+  src/stratego-signatures.pl \
   src/clang/README src/clang/INSTALL src/clang/clang-termite.patch
 

@@ -73,5 +73,4 @@ clean-local:
 	rm -rf doc/html
 	rm -rf doc/latex
 	rm -rf doc/man
-	rm -f testsuite/*-[13].term testsuite/*-[24].[cf]*
-
+	rm -f regression/*-[135].term regression/*-[246].[cf]* regression/*_postprocessed.f
