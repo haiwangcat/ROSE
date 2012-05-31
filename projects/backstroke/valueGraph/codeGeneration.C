@@ -126,22 +126,42 @@ void instrumentPushFunction(ValueNode* valNode, SgFunctionDefinition* funcDef)
     }
 }
 
+#define ROSS
+
 SgExpression* buildPushFunctionCall(SgExpression* para)
 {
+#ifdef ROSS
+    SgExpression* lp = SageBuilder::buildVarRefExp("lp");
+    return buildFunctionCallExp("push", buildVoidType(), 
+            SageBuilder::buildExprListExp(para, lp));
+#else
     return buildFunctionCallExp("push", buildVoidType(), 
             SageBuilder::buildExprListExp(para));
+#endif
 }
 
 SgExpression* buildStoreFunctionCall(SgExpression* para)
 {
+#ifdef ROSS
+    SgExpression* lp = SageBuilder::buildVarRefExp("lp");
+    return buildFunctionCallExp("__store__", buildVoidType(), 
+            SageBuilder::buildExprListExp(para, lp));
+#else
     return buildFunctionCallExp("__store__", buildVoidType(), 
             SageBuilder::buildExprListExp(para));
+#endif
 }
 
 SgExpression* buildRestoreFunctionCall(SgExpression* para)
 {
+#ifdef ROSS
+    SgExpression* lp = SageBuilder::buildVarRefExp("lp");
+    return buildFunctionCallExp("__restore__", buildVoidType(), 
+            SageBuilder::buildExprListExp(para, lp));
+#else
     return buildFunctionCallExp("__restore__", buildVoidType(), 
             SageBuilder::buildExprListExp(para));
+#endif
 }
 
 SgStatement* buildPushStatement(ValueNode* valNode)
