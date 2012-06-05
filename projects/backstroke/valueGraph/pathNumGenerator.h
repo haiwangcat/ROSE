@@ -252,11 +252,18 @@ public:
     void insertLoopCounterToFwdFunc(const std::set<SgNode*>& loopHeaders);
     
     //! Build a graph in dot file representing the given DAG.
+    
+    void writeDagNode(const DAG& dag, std::ostream& out, const DAGVertex& node) const;
     void dagToDot(const DAG& dag, const std::string& filename);
 
 private:
     //! Use path number generator to generate path numbers.
     void generatePathNumbers();
+    
+    //! This function calculates all vertices that should appear in the DAG.
+    //! If we remove the backedges and connect the exit to the entry, this DAG
+    //! should only contain one strong component.
+    std::set<CFGVertex> getAllVerticesInDag();
     
     //! Add additional nodes and edges to remove the edge whose source has
     //! several out edges and whose target has several in edges.

@@ -137,11 +137,16 @@ void PathNumManager::generatePathNumbers()
     // This is done by removing all back edges.
     
     DAG& dag = dags_[0];
+    
+    // This function calculates all vertices that should appear in the DAG.
+    // If we remove the backedges and connect the exit to the entry, this DAG
+    // should only contain one strong component.
+    set<CFGVertex> verticesInDag = getAllVerticesInDag();
 
     foreach (CFGVertex v, boost::vertices(*cfg_))
     {
-        //if (cfgNodesInLoop.count(v) > 0)
-        //    continue;
+        if (verticesInDag.count(v) == 0)
+            continue;
         
         DAGVertex dagNode = boost::add_vertex(dag);
         dag[dagNode] = (*cfg_)[v];
@@ -157,11 +162,17 @@ void PathNumManager::generatePathNumbers()
         if (backEdges_.count(e) > 0)
             continue;
         
-        ROSE_ASSERT(vertexToDagIndex_.count(boost::source(e, *cfg_)) > 0);
-        ROSE_ASSERT(vertexToDagIndex_.count(boost::target(e, *cfg_)) > 0);
+        CFGVertex cfgSrc = boost::source(e, *cfg_);
+        CFGVertex cfgTgt = boost::target(e, *cfg_);
         
-        DAGVertex src = vertexToDagIndex_[boost::source(e, *cfg_)].begin()->second;
-        DAGVertex tgt = vertexToDagIndex_[boost::target(e, *cfg_)].begin()->second;
+        if (verticesInDag.count(cfgSrc) == 0 || verticesInDag.count(cfgTgt) == 0)
+            continue;
+        
+        ROSE_ASSERT(vertexToDagIndex_.count(cfgSrc) > 0);
+        ROSE_ASSERT(vertexToDagIndex_.count(cfgTgt) > 0);
+        
+        DAGVertex src = vertexToDagIndex_[cfgSrc].begin()->second;
+        DAGVertex tgt = vertexToDagIndex_[cfgTgt].begin()->second;
         
         
         //// If both nodes are in a loop, don't add it to this DAG now.
@@ -246,18 +257,83 @@ void PathNumManager::generatePathNumbers()
     // For each DAG, generate its path information.
     for (int i = 0, n = dags_.size(); i != n; ++i)
     {
+        char filename[16];
+        sprintf(filename, "dag%d.dot", i);
+        dagToDot(dags_[i], filename);
+        
         PathNumGenerator* pathNumGen = 
                 new PathNumGenerator(dags_[i], cfg_);
         pathNumGen->generatePathNumbers();
         //cout << pathNumGen->getNumberOfPath() << endl;
         pathNumGenerators_[i] = pathNumGen;
         pathInfo_.push_back(make_pair(i, pathNumGen->getNumberOfPath()));
-        
-        char filename[16];
-        sprintf(filename, "dag%d.dot", i);
-        dagToDot(dags_[i], filename);
     }
 }
+
+
+std::set<PathNumManager::CFGVertex> PathNumManager::getAllVerticesInDag()
+{
+    DAG dag;
+    
+    map<DAGVertex, CFGVertex> dagToCfgVertices;
+    map<CFGVertex, DAGVertex> cfgToDagVertices;
+    
+    foreach (CFGVertex v, boost::vertices(*cfg_))
+    {
+        DAGVertex dagNode = boost::add_vertex(dag);
+        dag[dagNode] = (*cfg_)[v];
+        cfgToDagVertices[v] = dagNode;
+        
+        dagToCfgVertices[dagNode] = v;
+    }
+    
+    //cout << boost::num_vertices(*cfg_) << endl;
+    //cout << boost::num_vertices(dag) << endl;
+
+    foreach (const CFGEdge& e, boost::edges(*cfg_))
+    {
+        // Ignore back edges.
+        if (backEdges_.count(e) > 0)
+            continue;
+        
+        ROSE_ASSERT(cfgToDagVertices.count(boost::source(e, *cfg_)) > 0);
+        ROSE_ASSERT(cfgToDagVertices.count(boost::target(e, *cfg_)) > 0);
+        
+        DAGVertex src = cfgToDagVertices[boost::source(e, *cfg_)];
+        DAGVertex tgt = cfgToDagVertices[boost::target(e, *cfg_)];
+
+        DAGEdge dagEdge = boost::add_edge(src, tgt, dag).first;
+        dag[dagEdge] = (*cfg_)[e];
+    } 
+    
+    dag.setEntry(cfgToDagVertices[cfg_->getEntry()]);
+    dag.setExit(cfgToDagVertices[cfg_->getExit()]);
+    
+    
+    DAG cfgCopy = dag;
+	boost::add_edge(cfgCopy.getExit(), cfgCopy.getEntry(), cfgCopy);
+
+	std::vector<int> component(num_vertices(cfgCopy));
+	int num = boost::strong_components(cfgCopy, &component[0]);
+    
+        
+    // Here we remove those vertices that in a strong component with size 1. 
+    // So that we can remove all vertices in a loop.
+    // Warning: This method may not work on nested loops!
+    
+    std::map<int, int> components;
+    for (size_t i = 0; i < component.size(); ++i)
+        components[component[i]]++;
+    
+    set<CFGVertex> verticesInDag;
+    for (size_t i = 0; i < component.size(); ++i)
+        if (components[component[i]] > 1)
+            verticesInDag.insert(dagToCfgVertices[i]);
+    
+    return verticesInDag;
+}
+
+
 
 void PathNumManager::buildAuxiliaryDags()
 {
@@ -493,6 +569,8 @@ vector<pair<int, int> > PathNumManager::getMastAndCompTarget(int dagIndex, DAGVe
 
 PathInfos PathNumManager::getPathNumbers(SgNode* node) const
 {
+    cout << "getPathNumbers: " << node->unparseToString() << ' '  << node->get_parent()->unparseToString() << endl;
+    
     CFGVertex cfgNode;
     // If the given node is a data member of a class, set its CFG node to the exit.
     if (isDataMember(node))
@@ -514,6 +592,7 @@ PathInfos PathNumManager::getPathNumbers(SgNode* node) const
         boost::tie(idx, dagNode) = idxNode;
         vector<pair<int, int> > maskAndTarget = getMastAndCompTarget(idx, dagNode);
         
+        cout << idx << endl;
         PathSet p = pathNumGenerators_[idx]->getPaths(dagNode);
         if (p.any())
             paths[idx] = p;
@@ -1174,10 +1253,54 @@ void PathNumManager::insertLoopCounterPushOnEdge(
     popScopeStack();
 }
 
+
+void PathNumManager::writeDagNode(const DAG& dag, std::ostream& out, const DAGVertex& v) const
+{
+    DAG::CFGNodeType cfgNode = *(dag[v]);
+    SgNode* node = cfgNode.getNode();
+	ROSE_ASSERT(node);
+
+	std::string nodeColor = "black";
+	if (isSgStatement(node))
+		nodeColor = "blue";
+	else if (isSgExpression(node))
+		nodeColor = "green";
+	else if (isSgInitializedName(node))
+		nodeColor = "red";
+
+	std::string label;
+
+	if (SgFunctionDefinition* funcDef = isSgFunctionDefinition(node))
+	{
+		std::string funcName = funcDef->get_declaration()->get_name().str();
+		if (cfgNode.getIndex() == 0)
+			label = "Entry\\n" + funcName;
+		else if (cfgNode.getIndex() == 3)
+			label = "Exit\\n" + funcName;
+	}
+	
+	if (!isSgScopeStatement(node) && !isSgCaseOptionStmt(node) && !isSgDefaultOptionStmt(node))
+	{
+		std::string content = node->unparseToString();
+		boost::replace_all(content, "\"", "\\\"");
+		boost::replace_all(content, "\\n", "\\\\n");
+		label += content;
+	}
+    else
+		label += "<" + node->class_name() + ">";
+    
+    if (label == "")
+		label += "<" + node->class_name() + ">";
+	
+	out << "[label=\""  << label << "\", color=\"" << nodeColor <<
+		"\", style=\"" << (cfgNode.isInteresting()? "solid" : "dotted") << "\"]";
+}
+
 void PathNumManager::dagToDot(const DAG& dag, const std::string& filename)
 {
-    ofstream ofile(filename.c_str(), std::ios::out);
-    boost::write_graphviz(ofile, dag);    
+    std::ofstream ofile(filename.c_str(), std::ios::out);
+	boost::write_graphviz(ofile, dag,
+			boost::bind(&PathNumManager::writeDagNode, this, dag, ::_1, ::_2));
 }
 
 void PathNumGenerator::generateEdgeValues()
