@@ -135,7 +135,7 @@ EXTRA_DIST += $(TERMITE_TESTS) \
 	regression/shape/success/README \
 	regression/README
 
-TESTS = $(TERMITE_TESTS) # $(BROKEN_TESTS)
+TESTS = $(TERMITE_TESTS) $(BROKEN_TESTS)
 
 noinst_SCRIPTS = \
   regression/c_driver.sh \
