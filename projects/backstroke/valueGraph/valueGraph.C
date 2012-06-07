@@ -1710,6 +1710,9 @@ void EventReverser::addPhiEdges()
                         }
                         ROSE_ASSERT(preheader);
                         
+                        
+                        // Will transform all for loops into while loops.
+#if 0
                         // Set this node to the loop itself.
                         while (preheader && 
                                 !isSgForStatement(preheader) && 
@@ -1729,6 +1732,7 @@ void EventReverser::addPhiEdges()
                                 preheader = stmts[i-1];
                         
                         ROSE_ASSERT(preheader);
+#endif
                         
                         addStateSavingEdges(muNode->var.name, preheader);
                         

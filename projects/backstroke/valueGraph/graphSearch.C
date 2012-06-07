@@ -183,6 +183,12 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
         foreach (const VGEdge& edge, boost::out_edges(valToRestore, valueGraph_))
         {
             VGVertex tar = boost::target(edge, valueGraph_);
+            
+            // The current mu node is not connected to other nodes correctly.
+            // Temporarily prevent the mu node from the search.
+            
+            if (isMuNode(valueGraph_[tar]))
+                continue;
 
             Route route;
             route.edges.push_back(edge);
@@ -282,6 +288,11 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
             foreach (const VGEdge& edge, boost::out_edges(node, valueGraph_))
             {
                 VGVertex tar = boost::target(edge, valueGraph_);
+                
+                // The current mu node is not connected to other nodes correctly.
+                // Temporarily prevent the mu node from the search.
+                if (isMuNode(valueGraph_[tar]))
+                    continue;
                 
                 // The the following function returns true if adding
                 // this edge will form a circle.
