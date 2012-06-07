@@ -120,7 +120,7 @@ namespace // anonymous namespace
         typedef pair<VGVertex, VGVertex> VertexPair;
         foreach (const VertexPair& vpair, nodes)
         {
-            if (vpair.first == node)
+            if (vpair.second == node)
                 return true;
         }
         return false;

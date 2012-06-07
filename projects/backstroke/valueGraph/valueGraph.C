@@ -1376,6 +1376,10 @@ void EventReverser::addStateSavingEdges(const VarName& varName, SgNode* astNode)
     // If the lhs node is a declaration, no state saving is added here.
     if (isSgInitializedName(astNode)) return;
     
+    
+    cout << "******SS edge added for: " << varName[0]->unparseToString() << ' ' << astNode->unparseToString() << endl;
+    //cout << "******SS edge added for: " << getVersionedVariable(astNode, false) << endl;
+    
     // Once a variable is defined, it may kill it previous def. Here we detect
     // all it killed defs then add state saving edges for them in this specific
     //cout << "New Var Defined: " << var << endl;
@@ -1385,6 +1389,7 @@ void EventReverser::addStateSavingEdges(const VarName& varName, SgNode* astNode)
     foreach (const reachingDefPair& def, defTable)
     {
         // FIXME cannot get the correct reaching def for a loop header!!
+        // Update: it is temporarily fixed by a workaround. 
         
         if (def.first == varName)
         {
@@ -1409,6 +1414,10 @@ void EventReverser::addStateSavingEdges(const VarName& varName, SgNode* astNode)
             }
 #endif
             ROSE_ASSERT(varVertexMap_.count(killedVar));
+            
+            // We don't add SS edge to a mu node.
+            if (isMuNode(valueGraph_[varVertexMap_[killedVar]]))
+                continue;
 
             addValueGraphStateSavingEdges(varVertexMap_[killedVar], astNode);
         }
@@ -1460,7 +1469,7 @@ EventReverser::VGVertex EventReverser::createValueNode(SgNode* lhsNode, SgNode* 
     VGVertex rhsVertex;
     VersionedVariable var = getVersionedVariable(lhsNode, false);
     
-    //cout << "New var added: " << var << endl;
+    //cout << "=======> New var added: " << var << endl;
     
     if (lhsNode)
     {
@@ -1680,7 +1689,48 @@ void EventReverser::addPhiEdges()
                         
                         // A Mu mode can kill the defs from non-back edge. Add state
                         // saving edges here.
-                        addStateSavingEdges(muNode->var.name, cfgEdge.target().getNode());
+                        // Note that currently there is a bug in the SSA. We cannot get
+                        // the correct reaching defs on the loop header. Here we assume
+                        // a mu node kills the def coming from outside of the loop, not the 
+                        // one from inside of the loop. Therefore, we make a workaround here
+                        // by pass the CFG node ahead of the loop header.
+                        
+                        SgNode* preheader = NULL;
+                        
+                        foreach (BackstrokeCFG::CFGEdgePtr e, cfg_->getAllEdges())
+                        {
+                            //const BackstrokeCFG::CFGEdgeType& e = *ce;
+                            if (e->target() == cfgEdge.target() && 
+                                    *e != cfgEdge && 
+                                    backEdges.count(*e) == 0)
+                            {
+                                preheader = e->source().getNode();
+                                break;
+                            }
+                        }
+                        ROSE_ASSERT(preheader);
+                        
+                        // Set this node to the loop itself.
+                        while (preheader && 
+                                !isSgForStatement(preheader) && 
+                                !isSgWhileStmt(preheader) && 
+                                !isSgDoWhileStmt(preheader))
+                            preheader = preheader->get_parent();
+                        
+                        // We add a null stmt just before the loop and set the preheader
+                        // to this null stmt.
+                        
+                        SgBasicBlock* bb = isSgBasicBlock(preheader->get_parent());
+                        ROSE_ASSERT(bb);
+                        const vector<SgStatement*>& stmts = bb->get_statements();
+                        ROSE_ASSERT(stmts.size() > 1);
+                        for (size_t i = 1; i < stmts.size(); ++i)
+                            if (stmts[i] == preheader)
+                                preheader = stmts[i-1];
+                        
+                        ROSE_ASSERT(preheader);
+                        
+                        addStateSavingEdges(muNode->var.name, preheader);
                         
                         // For a Mu node, we duplicate it and connect all Mu edges to it.
                         duplicatedNode = boost::add_vertex(valueGraph_);
@@ -1865,7 +1915,7 @@ void EventReverser::addStateSavingEdges()
         exitsForScopes[scope] = BackstrokeUtility::getEarlyExits(scope);
     }
     
-    // This set make sure each variable is processed only once.
+    // This set makes sure each variable is processed only once.
     set<SgInitializedName*> processedVars;
     foreach (VGVertex v, boost::vertices(valueGraph_))
     {

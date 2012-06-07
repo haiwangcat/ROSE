@@ -118,12 +118,15 @@ void EventReverser::generateCode()
     
     
     map<VGEdge, PathInfo> routeWithPaths = getReversalRoute(0, valuesToRestore_[0]);
+    //cout << ">>>> number of edges: " << routeWithPaths.size() << ' ' << valuesToRestore_[0].size() << endl;
     typedef map<VGEdge, PathInfo>::value_type T;
     foreach (const T& edgeAndPaths, routeWithPaths)
         routes[edgeAndPaths.first][0] = edgeAndPaths.second;
     
     // Process other DAGs.
     int dagNum = pathNumManager_->getNumberOfDags();
+    
+    // Enable/disable loop handling.
 #if 0
     for (size_t i = 0; i < pathNum; ++i)
     {
@@ -1223,7 +1226,7 @@ void EventReverser::generateCodeForBasicBlock(
             //cout << killer->unparseToString() << ' ' << valNode->toString() << endl;
 
             // Since a SS edge can appear in several DAGs, the flag varStored indicates
-            // if this variable is already stored in forward function. But in reverse funciton,
+            // if this variable is already stored in forward function. But in reverse function,
             // several restores are needed.
             if (!ssEdge->varStored)
             {
@@ -1281,6 +1284,7 @@ void EventReverser::generateCodeForBasicBlock(
 
             if (pushFuncStmt)
             {
+                cout << "*** __store__ added: " << valNode->var.getVarRefExp()->unparseToString() << endl;
                 if (!pushLocation && ssEdge->scopeKiller)
                 {
                     ROSE_ASSERT(isSgScopeStatement(killer));
@@ -1963,6 +1967,18 @@ namespace
         }
     }
     
+    // This function is used to help force a preheader for each loop so that we can get
+    // the correct reaching def at the loop.
+    void addNullStmtBeforeLoops(SgFunctionDefinition* funcDef)
+    {
+        vector<SgStatement*> stmts = BackstrokeUtility::querySubTree<SgStatement>(funcDef);
+        foreach (SgStatement* s, stmts)
+        {
+            if (isSgForStatement(s) || isSgWhileStmt(s) || isSgDoWhileStmt(s))
+                SageInterface::insertStatementBefore(s, SageBuilder::buildNullStatement());
+        }
+    }
+    
     // Convert all switch statements into if statements.
     void convertSwitchStmt(SgFunctionDefinition* funcDef)
     {
@@ -2177,6 +2193,9 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
         
         // Add a null statement at the end of all scopes then we can find the last defs of variables.
         addNullStmtAtScopeEnd(funcDef);
+        
+        // Add a null statement before each loop as a point from which we can get all correct reaching defs.
+        addNullStmtBeforeLoops(funcDef);
         
         //cout << funcDef->unparseToString() << endl;
         SageInterface::fixVariableReferences(funcDef);
