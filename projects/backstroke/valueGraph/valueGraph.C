@@ -6,6 +6,8 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/topological_sort.hpp>
 
+#define ROSS
+
 namespace Backstroke
 {
 
@@ -130,9 +132,20 @@ void EventReverser::buildBasicValueGraph()
             SgType* type = initName->get_type();
             if (isSgPointerType(type) || isSgReferenceType(type))
             {
+#ifdef ROSS
+                // In ROSS, only the first parameter is the state variable.
+                static bool first = true;
+                if (first)
+                {
+                    valuesToRestore_[0].insert(newNode);
+                    addStateVariable(initName);
+                    first = false;
+                }
+#else
                 // Add the variable into wanted set.
                 valuesToRestore_[0].insert(newNode);
                 addStateVariable(initName);
+#endif
             }
         } 
     }
@@ -263,8 +276,7 @@ void EventReverser::processExpression(SgExpression* expr)
                     pt.second->getRenamingNumber() << endl;
         }
 #endif
-
-        // Disable this function so that we will not get forward/reverse function call.
+        
         createFunctionCallNode(funcCall);
     }
     
