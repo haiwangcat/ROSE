@@ -265,7 +265,7 @@ void EventReverser::processExpression(SgExpression* expr)
 #endif
 
         // Disable this function so that we will not get forward/reverse function call.
-        //createFunctionCallNode(funcCall);
+        createFunctionCallNode(funcCall);
     }
     
     else if (SgDeleteExp* delExp = isSgDeleteExp(expr))
