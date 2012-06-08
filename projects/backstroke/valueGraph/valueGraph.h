@@ -163,6 +163,8 @@ public:
     ~EventReverser();
     
     void reverseEvent(SgFunctionDefinition* funcDef);
+    
+    void postProcess();
 
 	//! Build the value graph for the given function.
 	void buildValueGraph();

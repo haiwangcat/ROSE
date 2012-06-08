@@ -39,6 +39,53 @@ EventReverser::~EventReverser()
         delete valueGraph_[edge];
 }
 
+namespace 
+{
+    void removeVarRefStmt(SgFunctionDefinition* funcDef)
+    {
+        vector<SgExprStatement*> stmts = 
+                    BackstrokeUtility::querySubTree<SgExprStatement>(funcDef);
+        foreach (SgExprStatement* stmt, stmts)
+        {
+            SgExpression* exp = stmt->get_expression();
+            if (BackstrokeUtility::isVariableReference(exp) &&
+                    isSgBasicBlock(stmt->get_parent()))
+                SageInterface::removeStatement(stmt);
+        }      
+    }
+    
+    void removeNullStmt(SgFunctionDefinition* funcDef)
+    {
+        vector<SgNullStatement*> stmts = 
+                    BackstrokeUtility::querySubTree<SgNullStatement>(funcDef);
+        foreach (SgNullStatement* stmt, stmts)
+        {
+            if (isSgBasicBlock(stmt->get_parent()))
+            {
+                SageInterface::removeStatement(stmt);
+            }
+        }
+    }
+}
+
+
+void EventReverser::postProcess()
+{    
+    vector<SgFunctionDefinition*> funcDefs;
+    funcDefs.push_back(funcDef_);
+    funcDefs.push_back(fwdFuncDef_);
+    funcDefs.push_back(rvsFuncDef_);
+    funcDefs.push_back(cmtFuncDef_);
+    
+    foreach (SgFunctionDefinition* funcDef, funcDefs)
+    {
+        removeEmptyIfStmt(funcDef);
+        removeVarRefStmt(funcDef);
+        removeNullStmt(funcDef);
+    }
+    
+    SageInterface::fixVariableReferences(fwdFuncDef_->get_body());
+}
 
 void EventReverser::reverseEvent(SgFunctionDefinition* funcDef)
 {
@@ -67,6 +114,10 @@ void EventReverser::reverseEvent(SgFunctionDefinition* funcDef)
     buildValueGraph();
     
     generateCode();
+    
+    // Post-processing includes removing unnecessary constructs like empty
+    // if stmts, var refs, etc.
+    postProcess();
 }
 
 namespace
@@ -236,12 +287,6 @@ void EventReverser::generateCode()
     
     // Finally insert all functions in the code.
     insertFunctions();
-    
-    // It is likely that there are lots of empty if statements in reverse event.
-    // Remove them here.
-    removeEmptyIfStmt(rvsFuncDef_);
-    removeEmptyIfStmt(cmtFuncDef_);
-    SageInterface::fixVariableReferences(fwdFuncDef_->get_body());
 }
 
 void EventReverser::collectAvailableValues()
@@ -1979,6 +2024,15 @@ namespace
         }
     }
     
+    void convertForToWhile(SgFunctionDefinition* funcDef)
+    {
+        vector<SgForStatement*> forStmts = 
+                    BackstrokeUtility::querySubTree<SgForStatement>(funcDef);
+        foreach (SgForStatement* forStmt, forStmts)
+            SageInterface::convertForToWhile(forStmt);
+    }
+    
+    
     // Convert all switch statements into if statements.
     void convertSwitchStmt(SgFunctionDefinition* funcDef)
     {
@@ -2173,7 +2227,8 @@ namespace
         }
     }
 }
-    
+
+
 void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
 {
     // Preprocessing of the events
@@ -2181,6 +2236,9 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     {
         // Convert all switch statements into if statements.
         convertSwitchStmt(funcDef);
+        
+        // Convert all for loops into while loops
+        convertForToWhile(funcDef);
         
         BackstrokeNorm::normalizeEvent(funcDef->get_declaration());
         
@@ -2246,6 +2304,8 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
         Backstroke::EventReverser reverser(ssa);
         reverser.reverseEvent(funcDef);
 
+        
+        
         //reverser.valueGraphToDot(vgFileName);
 
         cout << "\nFunction " << funcName << " is processed.\n\n";
