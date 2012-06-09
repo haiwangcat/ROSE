@@ -9,9 +9,9 @@ TERMITE_TESTS = \
     regression/fortran/complex.f03 \
     regression/fortran/icsd.f \
     regression/fortran/icsd_t2.f \
-    regression/fortran/funCall.f \
+    regression/fortran/funCall.F \
     regression/fortran/precision.f03 \
-    regression/fortran/rose_dim.f \
+    regression/fortran/rose_dim.F \
     regression/base/ab.c \
     regression/base/bigger.c \
     regression/base/blocks.c \
@@ -19,16 +19,12 @@ TERMITE_TESTS = \
     regression/base/bsort.c \
     regression/base/cconstants.c \
     regression/base/classes.cxx \
-    regression/base/classes2.cxx \
-    regression/base/classes3.cxx \
     regression/base/classes_and_returns.cxx \
     regression/base/deepreturn.c \
     regression/base/default_args.cxx \
     regression/base/demo1.cxx \
     regression/base/demo2.cxx \
-    regression/base/destructor.cxx \
     regression/base/destructor2.cxx \
-    regression/base/destructor_simple.cxx \
     regression/base/for_return1.c \
     regression/base/forinit.c \
     regression/base/hello.c \
@@ -41,7 +37,6 @@ TERMITE_TESTS = \
     regression/base/logical.c \
     regression/base/manyargs.c \
     regression/base/minimal.c \
-    regression/base/namespaces.cxx \
     regression/base/nested.c \
     regression/base/overload.cxx \
     regression/base/rdtest1.cxx \
@@ -58,7 +53,6 @@ TERMITE_TESTS = \
     regression/base/tests/rdtest0.cxx \
     regression/base/tests/rdtest1.cxx \
     regression/base/tests/rdtest10.cxx \
-    regression/base/tests/rdtest10all.cxx \
     regression/base/tests/rdtest10p1.cxx \
     regression/base/tests/rdtest10p2.cxx \
     regression/base/tests/rdtest10p3.cxx \
@@ -84,7 +78,6 @@ TERMITE_TESTS = \
     regression/base/verysmall.c \
     regression/base/virtual.cxx \
     regression/base/while_call1.c \
-    regression/mrtc/failure/des.c \
     regression/mrtc/success/adpcm.c \
     regression/mrtc/success/bs.c \
     regression/mrtc/success/bsort100.c \
@@ -125,14 +118,24 @@ TERMITE_TESTS = \
     regression/shape/success/nnh_xysel2.cxx \
     regression/shape/success/nnh_xysel3.cxx \
     regression/shape/success/nnh_xysel3shared.cxx \
-    regression/shape/success/pathjoin.cxx \
+    regression/shape/success/pathjoin.cxx
+
+BROKEN_TESTS = \
+    regression/base/classes2.cxx \
+    regression/base/classes3.cxx \
+    regression/base/destructor_simple.cxx \
+    regression/base/destructor.cxx \
+    regression/base/namespaces.cxx \
+    regression/base/tests/rdtest10all.cxx \
+    regression/mrtc/failure/des.c \
     regression/shape/success/srw98_listreverse.cxx
 
+# Known Failures
 EXTRA_DIST += $(TERMITE_TESTS) \
 	regression/shape/success/README \
 	regression/README
 
-TESTS = $(TERMITE_TESTS)
+TESTS = $(TERMITE_TESTS) $(BROKEN_TESTS)
 
 noinst_SCRIPTS = \
   regression/c_driver.sh \
