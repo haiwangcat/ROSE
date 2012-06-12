@@ -1388,9 +1388,16 @@ void EventReverser::generateCodeForBasicBlock(
             SgFunctionDeclaration* fDecl = isSgFunctionDeclaration(
                     funcCallExp->getAssociatedFunctionDeclaration()->
                     get_definingDeclaration());
-            ROSE_ASSERT(fDecl);
-            SgFunctionDefinition* fDef = fDecl->get_definition();
-            functionsToBeReversed_.insert(fDef);
+            if (fDecl)
+            {
+                if (SgFunctionDefinition* fDef = fDecl->get_definition())
+                    functionsToBeReversed_.insert(fDef);
+            }
+            else
+            {
+                cout << "The declaration of the following function cannot be found:\n" <<
+                        funcCallExp->unparseToString();
+            }
             
             //cout << "Function: " << funcCallExp->unparseToString() << endl;
             
