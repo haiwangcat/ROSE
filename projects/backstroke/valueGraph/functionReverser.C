@@ -87,7 +87,7 @@ void EventReverser::postProcess()
     SageInterface::fixVariableReferences(fwdFuncDef_->get_body());
 }
 
-void EventReverser::reverseEvent(SgFunctionDefinition* funcDef)
+set<SgFunctionDefinition*> EventReverser::reverseEvent(SgFunctionDefinition* funcDef)
 {
     funcDef_ = funcDef;
     
@@ -118,6 +118,8 @@ void EventReverser::reverseEvent(SgFunctionDefinition* funcDef)
     // Post-processing includes removing unnecessary constructs like empty
     // if stmts, var refs, etc.
     postProcess();
+    
+    return functionsToBeReversed_;
 }
 
 namespace
@@ -1380,6 +1382,16 @@ void EventReverser::generateCodeForBasicBlock(
             SgFunctionCallExp* funcCallExp = funcCallNode->getFunctionCallExp();
             ROSE_ASSERT(funcCallExp);
             
+            
+            // When we generate a fwd/rvs function call, we need to reverse that
+            // function also. Here we add that function to the to-do list.
+            SgFunctionDeclaration* fDecl = isSgFunctionDeclaration(
+                    funcCallExp->getAssociatedFunctionDeclaration()->
+                    get_definingDeclaration());
+            ROSE_ASSERT(fDecl);
+            SgFunctionDefinition* fDef = fDecl->get_definition();
+            functionsToBeReversed_.insert(fDef);
+            
             //cout << "Function: " << funcCallExp->unparseToString() << endl;
             
             SgMemberFunctionRefExp* funcRef = NULL;
@@ -2226,13 +2238,8 @@ namespace
             }
         }
     }
-}
-
-
-void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
-{
-    // Preprocessing of the events
-    foreach (SgFunctionDefinition* funcDef, funcDefs)
+    
+    void preprocess(SgFunctionDefinition* funcDef)
     {
         // Convert all switch statements into if statements.
         convertSwitchStmt(funcDef);
@@ -2259,6 +2266,17 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
         SageInterface::fixVariableReferences(funcDef);
         
         // There is a bug that the transformed AST is not valid.
+    
+    }
+}
+
+
+void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
+{
+    // Preprocessing of the events
+    foreach (SgFunctionDefinition* funcDef, funcDefs)
+    {
+        preprocess(funcDef);
     }
     
     SgProject* project = SageInterface::getProject();
@@ -2270,9 +2288,18 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     ssa->run(true, true);
 
     set<SgGlobal*> globalScopes;
+    
+    stack<SgFunctionDefinition*> toBeReversed;
+    set<SgFunctionDefinition*> reversed;
+    
+    foreach (SgFunctionDefinition* f, funcDefs)
+        toBeReversed.push(f);
 
-    foreach (SgFunctionDefinition* funcDef, funcDefs)
+    while (!toBeReversed.empty())
     {
+        SgFunctionDefinition* funcDef = toBeReversed.top();
+        toBeReversed.pop();
+        
         // Don't reverse ctor or dtor now.
         const SgSpecialFunctionModifier& specialModifier = 
             funcDef->get_declaration()->get_specialFunctionModifier();
@@ -2302,13 +2329,19 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
 
         
         Backstroke::EventReverser reverser(ssa);
-        reverser.reverseEvent(funcDef);
-
-        
+        set<SgFunctionDefinition*> moreToBeReversed = reverser.reverseEvent(funcDef);
         
         //reverser.valueGraphToDot(vgFileName);
-
         cout << "\nFunction " << funcName << " is processed.\n\n";
+        
+        reversed.insert(funcDef);
+        
+        foreach (SgFunctionDefinition* f, moreToBeReversed)
+        {
+            if (reversed.count(f) == 0)
+                toBeReversed.push(f);
+        }
+
     }
 
     

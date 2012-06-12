@@ -247,7 +247,7 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
  
     // 6/7/2012
     // Set canBeReversed to false then we don't reverse function calls.
-#if 0
+#if 1
             
     funcDecl = funcCall->getAssociatedFunctionDeclaration();
     // In some cases, such as function pointers and virtual functions, the function 

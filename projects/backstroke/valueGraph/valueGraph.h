@@ -153,6 +153,10 @@ private:
     
     ////! All backedges in the CFG.
     //std::set<CFGEdge> backEdges_;
+    
+    //! More functions to be reversed. This set will be passed out when reversing 
+    //! the current function.
+    std::set<SgFunctionDefinition*> functionsToBeReversed_;
 
 
 public:
@@ -162,7 +166,7 @@ public:
     //! The destructor.
     ~EventReverser();
     
-    void reverseEvent(SgFunctionDefinition* funcDef);
+    std::set<SgFunctionDefinition*> reverseEvent(SgFunctionDefinition* funcDef);
     
     void postProcess();
 
