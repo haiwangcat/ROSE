@@ -1390,7 +1390,7 @@ void EventReverser::addStateSavingEdges(const VarName& varName, SgNode* astNode)
     if (isSgInitializedName(astNode)) return;
     
     
-    cout << "******SS edge added for: " << varName[0]->unparseToString() << ' ' << astNode->unparseToString() << endl;
+    //cout << "******SS edge added for: " << varName[0]->unparseToString() << ' ' << astNode->unparseToString() << endl;
     //cout << "******SS edge added for: " << getVersionedVariable(astNode, false) << endl;
     
     // Once a variable is defined, it may kill it previous def. Here we detect

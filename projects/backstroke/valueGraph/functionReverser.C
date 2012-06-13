@@ -1388,15 +1388,48 @@ void EventReverser::generateCodeForBasicBlock(
             SgFunctionDeclaration* fDecl = isSgFunctionDeclaration(
                     funcCallExp->getAssociatedFunctionDeclaration()->
                     get_definingDeclaration());
+            
+            if (fDecl == NULL)
+            {
+                SgMemberFunctionRefExp* funcRef = NULL;
+        
+                if (SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function()))
+                    funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
+
+                if (funcRef)
+                {
+                    fDecl = funcRef->getAssociatedMemberFunctionDeclaration();
+                }
+            }
+            
             if (fDecl)
             {
                 if (SgFunctionDefinition* fDef = fDecl->get_definition())
                     functionsToBeReversed_.insert(fDef);
+                
+                // Here we detect all function definitions in the project with the 
+                // same name (it is apparently not enough, so this part may be refined
+                // later), and add each of them to the to-be-reversed list.
+                
+                SgName funcName = fDecl->get_name();
+                SgProject* project = SageInterface::getProject();
+                
+                cout << '######### ' << funcName << endl;
+                
+                vector<SgFunctionDefinition*> funcDefs = 
+                    BackstrokeUtility::querySubTree<SgFunctionDefinition>(project);
+                foreach (SgFunctionDefinition* f, funcDefs)
+                {
+                    cout << '######### ' << isSgFunctionDeclaration(f->get_declaration())->get_name() << 
+                            ' ' << funcName << endl;
+                    if (isSgFunctionDeclaration(f->get_declaration())->get_name() == funcName)
+                        functionsToBeReversed_.insert(f);
+                }
             }
             else
             {
                 cout << "The declaration of the following function cannot be found:\n" <<
-                        funcCallExp->unparseToString();
+                        funcCallExp->unparseToString() << endl;
             }
             
             //cout << "Function: " << funcCallExp->unparseToString() << endl;

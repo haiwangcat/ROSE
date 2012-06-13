@@ -312,7 +312,9 @@ NEXT:
     } // end of foreach (VGVertex valNode, valuesToRestore)
     
     //map<VGVertex, vector<RouteWithCost> > allRoutes;
+    
     typedef map<VGVertex, vector<Route> >::value_type VertexWithRoute;
+#if 0
     foreach (const VertexWithRoute& nodeWithRoutes, allRoutes)
     {
         cout << "\n\n\n" << valueGraph_[nodeWithRoutes.first]->toString() << "\n\n";
@@ -324,6 +326,7 @@ NEXT:
             cout << "\n";
         }
     }
+#endif
 
     
     
@@ -429,7 +432,7 @@ NEXT:
         PathSet paths;
         foreach (const Route& route, routes)
         {
-            cout << ">>>" << route.paths << " cost: " << route.cost << endl;
+            //cout << ">>>" << route.paths << " cost: " << route.cost << endl;
             if (paths.empty())
                 paths = route.paths;
             else
@@ -459,6 +462,7 @@ NEXT:
     }
     
     
+#if 0
     typedef map<EventReverser::VGEdge, PathInfo>::value_type T;
     cout << "\n\n";
     foreach (const T& edgeWithPaths, edgesInRoute)
@@ -466,6 +470,7 @@ NEXT:
         cout << edgeWithPaths.first << " : " << edgeWithPaths.second << "\n";
     }
     cout << "\n\n";
+#endif
 
     return edgesInRoute;
 }
