@@ -2313,11 +2313,13 @@ namespace
 
 void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
 {
+#if 0
     // Preprocessing of the events
     foreach (SgFunctionDefinition* funcDef, funcDefs)
     {
         preprocess(funcDef);
     }
+#endif
     
     SgProject* project = SageInterface::getProject();
     
@@ -2351,6 +2353,8 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
 
         cout << "\nNow processing " << funcName << "\tfrom\n";
         funcDef->get_file_info()->display();
+        
+        preprocess(funcDef);
 
         //string cfgFileName = "CFG" + boost::lexical_cast<string > (counter) + ".dot";
         //string vgFileName = "VG" + boost::lexical_cast<string > (counter) + ".dot";
