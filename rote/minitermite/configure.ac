@@ -27,6 +27,13 @@ AC_PROG_LIBTOOL
 LLNL_ENABLE_REGRESSION
 LLNL_ENABLE_DOCUMENTATION
 
+# Support "doc only" option
+AC_ARG_ENABLE([doc_only],
+	AS_HELP_STRING([--enable-doc-only],
+	[use this if you *only* want to run `make doc']),
+	[DOC_ONLY=1],
+	[DOC_ONLY=0])
+
 # DOXYGEN
 AX_WITH_PROG(DOXYGEN, doxygen)
 AS_IF([test -n "$DOXYGEN" -a -x "$DOXYGEN"], 
@@ -166,6 +173,10 @@ AS_IF([test "x$with_swi_prolog" = xyes],
 AM_CONDITIONAL(WITH_SWI_PROLOG, [test "x$with_swi_prolog" = xyes])
 AC_SUBST(have_swi_prolog)
 
+AS_IF([test $DOC_ONLY -eq 1],
+	    AC_MSG_RESULT([DOC_ONLY: Skipping test for boost library])
+	    AC_MSG_RESULT([DOC_ONLY: Skipping test for ROSE library]),
+[
 # Checks for libraries.
 #-----------------------------------
 AC_CHECK_FILE(${BOOST_LIB_DIR}/libboost_filesystem${BOOST_COMPILER_STRING}.so,
@@ -179,6 +190,7 @@ AC_CHECK_LIB([rose], [ROSE_NUMERIC_VERSION], AC_MSG_RESULT([found ROSE]),
      echo "Please consider using one of the --with-rose* options."
      exit -1 ],
     [-Wl,--rpath -Wl,${BOOST_LIB_DIR} -L${ROSE_LIB_DIR}])
+])
 
 AC_CONFIG_FILES([
 Makefile
