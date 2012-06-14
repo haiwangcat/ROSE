@@ -1420,8 +1420,8 @@ void EventReverser::generateCodeForBasicBlock(
                     BackstrokeUtility::querySubTree<SgFunctionDefinition>(project);
                 foreach (SgFunctionDefinition* f, funcDefs)
                 {
-                    cout << '######### ' << isSgFunctionDeclaration(f->get_declaration())->get_name() << 
-                            ' ' << funcName << endl;
+                    //cout << '######### ' << isSgFunctionDeclaration(f->get_declaration())->get_name() << 
+                    //        ' ' << funcName << endl;
                     if (isSgFunctionDeclaration(f->get_declaration())->get_name() == funcName)
                         functionsToBeReversed_.insert(f);
                 }

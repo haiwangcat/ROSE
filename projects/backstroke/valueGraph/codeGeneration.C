@@ -144,6 +144,17 @@ SgExpression* buildStoreFunctionCall(SgExpression* para)
 {
 #ifdef ROSS
     SgExpression* lp = SageBuilder::buildVarRefExp("lp");
+    
+    // For a pointer to the class type, we store the dereference of it.
+    if (SgArrowExp* arrowExp = isSgArrowExp(para))
+    {
+        if (SgVarRefExp* varRef = isSgVarRefExp(arrowExp->get_rhs_operand()))
+        {
+            if (isSgPointerType(varRef->get_type()))
+                para = SageBuilder::buildPointerDerefExp(para);
+        }
+    }
+ 
     return buildFunctionCallExp("__store__", buildVoidType(), 
             SageBuilder::buildExprListExp(para, lp));
 #else
@@ -156,6 +167,18 @@ SgExpression* buildRestoreFunctionCall(SgExpression* para)
 {
 #ifdef ROSS
     SgExpression* lp = SageBuilder::buildVarRefExp("lp");
+    
+    // For a pointer to the class type, we store the dereference of it.
+    if (SgArrowExp* arrowExp = isSgArrowExp(para))
+    {
+        if (SgVarRefExp* varRef = isSgVarRefExp(arrowExp->get_rhs_operand()))
+        {
+            if (isSgPointerType(varRef->get_type()))
+                para = SageBuilder::buildPointerDerefExp(para);
+        }
+    }
+    
+    
     return buildFunctionCallExp("__restore__", buildVoidType(), 
             SageBuilder::buildExprListExp(para, lp));
 #else

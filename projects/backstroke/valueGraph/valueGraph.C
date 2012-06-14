@@ -1254,7 +1254,8 @@ EventReverser::VGVertex EventReverser::createFunctionCallNode(SgFunctionCallExp*
     {
         addValueGraphEdge(funcCallVertex, argVertex);
         if (funcCallNode->canBeReversed)
-            addValueGraphEdge(argVertex, rvsFuncCallVertex);
+            addValueGraphEdge(argVertex, rvsFuncCallVertex, 
+                    pathNumManager_->getPathNumbers(funcCallExp));
         
         
         ROSE_ASSERT(isValueNode(valueGraph_[argVertex]));
