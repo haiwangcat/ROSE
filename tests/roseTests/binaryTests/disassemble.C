@@ -70,6 +70,12 @@ Description:\n\
     Convenience switch that is equivalent to --ast-dot and --cfg-dot (or\n\
     --no-ast-dot and --no-cfg-dot).\n\
 \n\
+  --ipd=FILENAME\n\
+  --no-ipd\n\
+    Generate an IPD file from the disassembly results.  The IPD file can be\n\
+    modified by hand and then fed back into another disassembly with the\n\
+    \"-rose:partitioner_config FILENAME\" switch.\n\
+\n\
   --linear\n\
     Organized the output by address rather than hierarchically.  The output\n\
     will be more like traditional disassemblers.\n\
@@ -179,7 +185,7 @@ these switches can be obtained by specifying the \"--rose-help\" switch.\n\
 #include "AsmFunctionIndex.h"
 #include "AsmUnparser.h"
 #include "BinaryLoader.h"
-#include "VirtualMachineSemantics.h"
+#include "PartialSymbolicSemantics.h"
 #include "SMTSolver.h"
 #include "BinaryControlFlow.h"
 #include "BinaryFunctionCall.h"
@@ -214,8 +220,8 @@ block_hash(SgAsmBlock *blk, unsigned char digest[20])
     }
     const SgAsmStatementPtrList &stmts = blk->get_statementList();
 
-    typedef VirtualMachineSemantics::Policy<VirtualMachineSemantics::State, VirtualMachineSemantics::ValueType> Policy;
-    typedef X86InstructionSemantics<Policy, VirtualMachineSemantics::ValueType> Semantics;
+    typedef PartialSymbolicSemantics::Policy<PartialSymbolicSemantics::State, PartialSymbolicSemantics::ValueType> Policy;
+    typedef X86InstructionSemantics<Policy, PartialSymbolicSemantics::ValueType> Semantics;
     Policy policy;
     policy.set_discard_popped_memory(true);
     Semantics semantics(policy);
@@ -239,7 +245,7 @@ block_hash(SgAsmBlock *blk, unsigned char digest[20])
     bool ignore_final_ip = true;
     SgAsmx86Instruction *last_insn = isSgAsmx86Instruction(stmts.back());
     if (last_insn->get_kind()==x86_call || last_insn->get_kind()==x86_farcall) {
-        VirtualMachineSemantics::RenameMap rmap;
+        PartialSymbolicSemantics::RenameMap rmap;
         policy.writeMemory(x86_segreg_ss, policy.readRegister<32>("esp"), policy.number<32>(0), policy.true_());
         ignore_final_ip = false;
     }
@@ -284,7 +290,7 @@ function_hash(SgAsmFunction *func, unsigned char digest[20])
 class ShowFunctions: public AsmFunctionIndex {
 public:
     struct HashCallback: public OutputCallback {
-        HashCallback(): OutputCallback("Hash", 16) {}
+        HashCallback(): OutputCallback("Hash", 16, "Experimental semantic hash of the entire function.") {}
         virtual bool operator()(bool enabled, const DataArgs &args) {
             if (enabled) {
                 unsigned char sha1[20];
@@ -301,6 +307,19 @@ public:
     ShowFunctions(SgNode *ast): AsmFunctionIndex(ast) {
         sort_by_entry_addr();
         output_callbacks.before(&nameCallback, &hashCallback, 1);
+    }
+
+    virtual void print(std::ostream &o) const {
+        static const size_t width = 130;
+        std::string sep_line(width, '=');
+        std::string title("Function Index");
+        std::string title_line(width, ' ');
+        title_line.replace(0, 3, "===");
+        title_line.replace(width-3, 3, "===");
+        title_line.replace((std::max(width, title.size())-title.size())/2, title.size(), title);
+        o <<"\n\n" <<sep_line <<"\n" <<title_line <<"\n" <<sep_line <<"\n";
+        AsmFunctionIndex::print(o);
+        o <<sep_line <<"\n\n";
     }
 };
 
@@ -360,9 +379,9 @@ private:
                         if (isSgAsmInstruction(stmts[int_n])==args.insn)
                             break;
 
-                    typedef VirtualMachineSemantics::Policy<VirtualMachineSemantics::State,
-                                                            VirtualMachineSemantics::ValueType> Policy;
-                    typedef X86InstructionSemantics<Policy, VirtualMachineSemantics::ValueType> Semantics;
+                    typedef PartialSymbolicSemantics::Policy<PartialSymbolicSemantics::State,
+                                                             PartialSymbolicSemantics::ValueType> Policy;
+                    typedef X86InstructionSemantics<Policy, PartialSymbolicSemantics::ValueType> Semantics;
                     Policy policy;
                     Semantics semantics(policy);
 
@@ -539,6 +558,7 @@ dump_function_node(std::ostream &sout, SgAsmFunction *func, BinaryAnalysis::Cont
                 .clear();
 
             basicblock_callbacks.pre
+                .clear()
                 .append(&basicBlockNoopUpdater)         /* calculate no-op subsequences needed by insns */
                 .append(&basicBlockGraphvizNodeStart);  /* beginning of GraphViz node */
             basicblock_callbacks.unparse
@@ -546,6 +566,20 @@ dump_function_node(std::ostream &sout, SgAsmFunction *func, BinaryAnalysis::Cont
             basicblock_callbacks.post
                 .clear()
                 .append(&basicBlockGraphvizNodeEnd);    /* end of GraphViz node */
+
+            datablock_callbacks.pre
+                .clear();
+            datablock_callbacks.unparse
+                .clear();
+            datablock_callbacks.post
+                .clear();
+
+            staticdata_callbacks.pre
+                .clear();
+            staticdata_callbacks.unparse
+                .clear();
+            staticdata_callbacks.post
+                .clear();
 
             function_callbacks.pre
                 .clear();
@@ -735,16 +769,16 @@ dump_CFG_CG(SgNode *ast)
 
 /* Returns true for any anonymous memory region containing more than a certain size. */
 static rose_addr_t large_anonymous_region_limit = 8192;
-static bool
-large_anonymous_region_p(const MemoryMap::MapElement &me)
-{
-    if (me.is_anonymous() && me.get_size()>large_anonymous_region_limit) {
-        fprintf(stderr, "ignoring zero-mapped memory at va 0x%08"PRIx64" + 0x%08"PRIx64" = 0x%08"PRIx64"\n",
-                me.get_va(), me.get_size(), me.get_va()+me.get_size());
-        return true;
+static struct LargeAnonymousRegion: public MemoryMap::Visitor {
+    virtual bool operator()(const MemoryMap*, const Extent &range, const MemoryMap::Segment &segment) {
+        if (range.size()>large_anonymous_region_limit && segment.get_buffer()->is_zero()) {
+            fprintf(stderr, "ignoring zero-mapped memory at va 0x%08"PRIx64" + 0x%08"PRIx64" = 0x%08"PRIx64"\n",
+                    range.first(), range.size(), range.last()+1);
+            return true;
+        }
+        return false;
     }
-    return false;
-}
+} large_anonymous_region_p;
 
 int
 main(int argc, char *argv[]) 
@@ -765,6 +799,7 @@ main(int argc, char *argv[])
     bool do_omit_anon = true;                   /* see large_anonymous_region_limit global for actual limit */
     bool do_syscall_names = true;
     bool do_linear = false;                     /* organized output linearly rather than hierarchically */
+    std::string do_generate_ipd;
 
     Disassembler::AddressSet raw_entries;
     MemoryMap raw_map;
@@ -802,6 +837,10 @@ main(int argc, char *argv[])
         } else if (!strcmp(argv[i], "--no-dot")) {
             do_ast_dot = false;
             do_cfg_dot = false;
+        } else if (!strncmp(argv[i], "--ipd=", 6)) {
+            do_generate_ipd = argv[i]+6;
+        } else if (!strcmp(argv[i], "--no-ipd")) {
+            do_generate_ipd = "";
         } else if (!strcmp(argv[i], "--dos")) {                 /* use MS-DOS header in preference to PE when both exist */
             do_dos = true;
         } else if (!strcmp(argv[i], "--no-dos")) {
@@ -997,24 +1036,11 @@ main(int argc, char *argv[])
                         default: fprintf(stderr, "%s: invalid map permissions: %s\n", arg0, suffix-1); exit(1);
                     }
                 }
-                if (!perm) perm = MemoryMap::MM_PROT_READ|MemoryMap::MM_PROT_EXEC;
-                int fd = open(raw_filename, O_RDONLY);
-                if (fd<0) {
-                    fprintf(stderr, "%s: cannot open %s: %s\n", arg0, raw_filename, strerror(errno));
-                    exit(1);
-                }
-                struct stat sb;
-                if (fstat(fd, &sb)<0) {
-                    fprintf(stderr, "%s: cannot stat %s: %s\n", arg0, raw_filename, strerror(errno));
-                    exit(1);
-                }
-                uint8_t *buffer = new uint8_t[sb.st_size];
-                ssize_t nread = read(fd, buffer, sb.st_size);
-                ROSE_ASSERT(nread==sb.st_size);
-                close(fd);
-                MemoryMap::MapElement melmt(start_va, sb.st_size, buffer, 0, perm);
-                melmt.set_name(strrchr(raw_filename, '/')?strrchr(raw_filename, '/')+1:raw_filename);
-                raw_map.insert(melmt);
+                if (!perm) perm = MemoryMap::MM_PROT_RX;
+
+                MemoryMap::BufferPtr buffer = MemoryMap::ByteBuffer::create_from_file(raw_filename);
+                raw_map.insert(Extent(start_va, buffer->size()),
+                               MemoryMap::Segment(buffer, 0, perm, raw_filename));
             }
         } else {
             nposargs++;
@@ -1260,7 +1286,6 @@ main(int argc, char *argv[])
     /*------------------------------------------------------------------------------------------------------------------------
      * Show the results
      *------------------------------------------------------------------------------------------------------------------------*/
-
     printf("disassembled %zu instruction%s and %zu failure%s",
            insns.size(), 1==insns.size()?"":"s", bad.size(), 1==bad.size()?"":"s");
     if (!bad.empty()) {
@@ -1285,6 +1310,7 @@ main(int argc, char *argv[])
         unparser.add_function_labels(block);
         unparser.set_organization(do_linear ? AsmUnparser::ORGANIZED_BY_ADDRESS : AsmUnparser::ORGANIZED_BY_AST);
         unparser.add_control_flow_graph(cfg);
+        fputs("\n\n", stdout);
         unparser.unparse(std::cout, block);
         fputs("\n\n", stdout);
     }
@@ -1323,6 +1349,11 @@ main(int argc, char *argv[])
             }
             printf("Disassembled coverage: %0.1f%%\n", disassembled_coverage);
         }
+    }
+
+    if (!do_generate_ipd.empty()) {
+        std::ofstream ipdfile(do_generate_ipd.c_str());
+        Partitioner::IPDParser::unparse(ipdfile, block);
     }
 
     /*------------------------------------------------------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 
 #include "x86InstructionSemantics.h"
 #include "BaseSemantics.h"
+#include "NullSemantics.h"
 
 namespace BinaryAnalysis {                      // documented elsewhere
     namespace InstructionSemantics {            // documented elsewhere
@@ -17,20 +18,20 @@ namespace BinaryAnalysis {                      // documented elsewhere
          *
          * A multi-policy is created by listing all the sub-policy value types, state types, and policy types in the
          * MultiPolicy template class.  For instance, to declare a multi-policy that does both full-symbolic semantics
-         * (SymbolicSemantics) and partial-symbolic semantics (VirtualMachineSemantics) do this:
+         * (SymbolicSemantics) and partial-symbolic semantics (PartialSymbolicSemantics) do this:
          *
          * @code
          *  #include "MultiSemantics.h"
          *  #include "SymbolicSemantics.h"
-         *  #include "VirtualMachineSemantics.h"
+         *  #include "PartialSymbolicSemantics.h"
          *
          *  typedef MultiSemantics<
          *      SymbolicSemantics::ValueType,           // first data type
          *      SymbolicSemantics::State,               // first state
          *      SymbolicSemantics::Policy,              // first policy
-         *      VirtualMachineSemantics::ValueType,     // second data type
-         *      VirtualMachineSemantics::State,         // second state
-         *      VirtualMachineSemantics::Policy         // second policy
+         *      PartialSymbolicSemantics::ValueType,    // second data type
+         *      PartialSymbolicSemantics::State,        // second state
+         *      PartialSymbolicSemantics::Policy        // second policy
          *      // etc.
          *                         >::Policy Policy;
          * @endcode
@@ -43,8 +44,8 @@ namespace BinaryAnalysis {                      // documented elsewhere
          * The sub-policies are identified by the tag types SP0, SP1, etc.:
          *
          * @code
-         *  SymbolicSemantics::Policy<>       &sp0 = get_subpolicy(SP0());
-         *  VirtualMachineSemantics::Policy<> &sp1 = get_subpolicy(SP1());
+         *  SymbolicSemantics::Policy<>        &sp0 = get_subpolicy(SP0());
+         *  PartialSymbolicSemantics::Policy<> &sp1 = get_subpolicy(SP1());
          * @endcode
          *
          * A multi-value has one sub-value for each sub-policy. Like the sub-policies themselves, the sub-values are identified
@@ -52,8 +53,8 @@ namespace BinaryAnalysis {                      // documented elsewhere
          * 
          * @code
          *  ValueType<32> v = ....; // the multi-policy value, or "multi-value"
-         *  SymbolicSemantics::ValueType<32>       v0 = v.get_subvalue(SP0());
-         *  VirtualMachineSemantics::ValueType<32> v1 = v.get_subvalue(SP1());
+         *  SymbolicSemantics::ValueType<32>        v0 = v.get_subvalue(SP0());
+         *  PartialSymbolicSemantics::ValueType<32> v1 = v.get_subvalue(SP1());
          * @endcode
          *
          * Individual sub-values of a multi-value can be marked as invalid.  A sub-value must still necessarily be stored at
@@ -236,6 +237,18 @@ namespace BinaryAnalysis {                      // documented elsewhere
                 }
                 /** @} */
 
+                /** Print the value. Prints subvalues that are marked as valid. */
+                void print(std::ostream &o) const {
+                    if (is_valid(SP0()))
+                        o <<get_subvalue(SP0());
+                    if (is_valid(SP1()))
+                        o <<get_subvalue(SP1());
+                    if (is_valid(SP2()))
+                        o <<get_subvalue(SP2());
+                    if (is_valid(SP3()))
+                        o <<get_subvalue(SP3());
+                }
+
             protected:
                 // Internal function to help set sub-value validity.
                 void set_valid(unsigned mask, bool valid) {
@@ -246,6 +259,13 @@ namespace BinaryAnalysis {                      // documented elsewhere
                     }
                 }
             };
+
+            /** Print the value. Prints subvalues that are marked as valid. */
+            template<template <size_t X> class ValueType, size_t nBits>
+            friend std::ostream& operator<<(std::ostream &o, const ValueType<nBits> &v) {
+                v.print(o);
+                return o;
+            }
 
 
 

@@ -162,6 +162,8 @@ fi
 
   ROSE_SUPPORT_UPC
   ROSE_SUPPORT_COMPASS2
+  ROSE_SUPPORT_GMP
+  ROSE_SUPPORT_ISL
 
 ##
 #########################################################################################
@@ -327,6 +329,14 @@ AC_SUBST(ROSE_EDG_MINOR_VERSION_NUMBER)
 AM_CONDITIONAL(ROSE_USE_NEW_EDG_INTERFACE, [test "x$enable_new_edg_interface" = xyes])
 AM_CONDITIONAL(ROSE_USE_EDG_VERSION_4, [test "x$enable_edg_version4" = xyes])
 AM_CONDITIONAL(ROSE_USE_EDG_VERSION_4_3, [test "x$enable_edg_version43" = xyes])
+
+AC_ARG_ENABLE(clang-frontend, AS_HELP_STRING([--enable-clang-frontend], [Use Clang frontend instead of EDG]))
+AM_CONDITIONAL(ROSE_USE_CLANG_FRONTEND, [test "x$enable_clang_frontend" = xyes])
+if test "x$enable_clang_frontend" = "xyes"; then
+  ROSE_SUPPORT_CLANG
+else
+  AC_MSG_NOTICE([Clang frontend support disabled])
+fi
 
 # DQ (1/4/2009) Added support for optional GNU language extensions in new EDG/ROSE interface.
 # This value will be substituted into EDG/4.0/src/rose_lang_feat.h in the future (not used at present!)
@@ -581,8 +591,12 @@ if test x$enable_new_edg_interface = xyes; then
   GENERATE_BACKEND_C_COMPILER_SPECIFIC_HEADERS
   GENERATE_BACKEND_CXX_COMPILER_SPECIFIC_HEADERS
 else
-  GENERATE_BACKEND_C_COMPILER_SPECIFIC_HEADERS
-  GENERATE_BACKEND_CXX_COMPILER_SPECIFIC_HEADERS
+  if test x$enable_clang_frontend = xyes; then
+    INSTALL_CLANG_SPECIFIC_HEADERS
+  else
+    GENERATE_BACKEND_C_COMPILER_SPECIFIC_HEADERS
+    GENERATE_BACKEND_CXX_COMPILER_SPECIFIC_HEADERS
+  fi
 fi
 
 # End macro ROSE_SUPPORT_ROSE_BUILD_INCLUDE_FILES.
@@ -1900,6 +1914,7 @@ src/frontend/SageIII/GENERATED_CODE_DIRECTORY_Cxx_Grammar/Makefile
 src/frontend/SageIII/astFromString/Makefile
 src/frontend/SageIII/includeDirectivesProcessing/Makefile
 src/frontend/CxxFrontend/Makefile
+src/frontend/CxxFrontend/Clang/Makefile
 src/frontend/OpenFortranParser_SAGE_Connection/Makefile
 src/frontend/ECJ_ROSE_Connection/Makefile
 src/frontend/PHPFrontend/Makefile
@@ -1999,6 +2014,7 @@ projects/DatalogAnalysis/tests/Makefile
 projects/DistributedMemoryAnalysisCompass/Makefile
 projects/DocumentationGenerator/Makefile
 projects/FiniteStateModelChecker/Makefile
+projects/graphColoring/Makefile
 projects/HeaderFilesInclusion/HeaderFilesGraphGenerator/Makefile
 projects/HeaderFilesInclusion/HeaderFilesNotIncludedList/Makefile
 projects/HeaderFilesInclusion/Makefile
@@ -2031,14 +2047,10 @@ projects/RTED/Makefile
 projects/RoseQt/AstViewer/Makefile
 projects/RoseQt/Makefile
 projects/SatSolver/Makefile
-projects/SemanticSignatureVectors/Makefile
-projects/SemanticSignatureVectors/tests/Makefile
 projects/UpcTranslation/Makefile
 projects/UpcTranslation/tests/Makefile
 projects/arrayOptimization/Makefile
 projects/arrayOptimization/test/Makefile
-projects/assemblyToSourceAst/Makefile
-projects/assemblyToSourceAst/tests/Makefile
 projects/autoParallelization/Makefile
 projects/autoParallelization/tests/Makefile
 projects/autoTuning/Makefile
@@ -2096,6 +2108,8 @@ projects/compass/tools/compassVerifier/Makefile
 projects/compass/tools/sampleCompassSubset/Makefile
 projects/dataStructureGraphing/Makefile
 projects/extractMPISkeleton/Makefile
+projects/extractMPISkeleton/src/Makefile
+projects/extractMPISkeleton/tests/Makefile
 projects/haskellport/Makefile
 projects/haskellport/Setup.hs
 projects/haskellport/rose.cabal.in
@@ -2112,6 +2126,7 @@ projects/roseToLLVM/Makefile
 projects/roseToLLVM/src/Makefile
 projects/roseToLLVM/src/rosetollvm/Makefile
 projects/roseToLLVM/tests/Makefile
+projects/RosePolly/Makefile
 projects/simulator/Makefile
 projects/symbolicAnalysisFramework/Makefile
 projects/symbolicAnalysisFramework/src/chkptRangeAnalysis/Makefile
@@ -2141,6 +2156,12 @@ projects/PolyhedralModel/docs/Makefile
 projects/PolyhedralModel/tests/Makefile
 projects/PolyhedralModel/tests/rose-pragma/Makefile
 projects/PolyhedralModel/tests/rose-max-cover/Makefile
+projects/PolyhedralModel/tests/cuda-kernel/Makefile
+projects/PolyhedralModel/projects/Makefile
+projects/PolyhedralModel/projects/loop-ocl/Makefile
+projects/PolyhedralModel/projects/spmd-generator/Makefile
+projects/PolyhedralModel/projects/polygraph/Makefile
+projects/PolyhedralModel/projects/utils/Makefile
 tests/Makefile
 tests/RunTests/Makefile
 tests/RunTests/A++Tests/Makefile

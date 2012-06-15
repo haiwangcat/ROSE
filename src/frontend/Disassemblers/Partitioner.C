@@ -6,7 +6,7 @@
 #include "Assembler.h"
 #include "AssemblerX86.h"
 #include "AsmUnparser_compat.h"
-#include "VirtualMachineSemantics.h"
+#include "PartialSymbolicSemantics.h"
 #include "stringify.h"
 
 #include <errno.h>
@@ -49,290 +49,6 @@ Partitioner::isSgAsmx86Instruction(SgNode *node)
 {
     return ::isSgAsmx86Instruction(node);
 }
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// These SgAsmFunction methods have no other home, so they're here for now. Do not move them into
-// src/ROSETTA/Grammar/BinaryInstruction.code because then they can't be indexed by C-aware tools.
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static void
-add_to_reason_string(std::string &result, bool isset, bool do_pad, const std::string &abbr, const std::string &full) {
-    if (isset) {
-        if (do_pad) {
-            result += abbr;
-        } else {
-            if (result.size()>0) result += ", ";
-            result += full;
-        }
-    } else if (do_pad) {
-        for (size_t i=0; i<abbr.size(); ++i)
-            result += ".";
-    }
-}
-
-/** Returns a multi-line string describing the letters used for function reasons.  The letters are returned by the padding
- *  version of reason_str(). */
-std::string
-SgAsmFunction::reason_key(const std::string &prefix)
-{
-    return (prefix + "E = entry address         H = CFG head             C = function call(*)\n" +
-            prefix + "X = exception frame       T = thunk                I = imported/dyn-linked\n" +
-            prefix + "S = function symbol       P = instruction pattern  G = CFG graph analysis\n" +
-            prefix + "U = user-def detection    N = NOP/zero padding     D = discontiguous blocks\n" +
-            prefix + "V = intra-function block  L = leftover blocks" +
-            prefix + "Mxxx are miscellaneous reasons (at most one misc reason per function):\n" +
-            prefix + "      M001 = code between function padding bytes\n" +
-            prefix + "Note: \"c\" means this is the target of a call-like instruction or instruction\n" +
-            prefix + "      sequence but the call is not present in the global control flow graph, while\n" +
-            prefix + "      \"C\" means the call is in the CFG.\n");
-}
-
-/** Returns reason string for this function. */
-std::string
-SgAsmFunction::reason_str(bool do_pad) const
-{
-    return reason_str(do_pad, get_reason());
-}
-
-/** Class method that converts a reason bit vector to a human-friendly string. The second argument is the bit vector of
- *  SgAsmFunction::FunctionReason bits. */
-std::string
-SgAsmFunction::reason_str(bool do_pad, unsigned r)
-{
-    std::string result;
-
-    /* entry point and instruction heads are mutually exclusive, so we use the same column for both when padding. */
-    if (r & FUNC_ENTRY_POINT) {
-        add_to_reason_string(result, true, do_pad, "E", "entry point");
-    } else {
-        add_to_reason_string(result, (r & FUNC_INSNHEAD), do_pad, "H", "insn head");
-    }
-
-    /* Function call:
-     *   "C" means the function was detected because we saw a call-like instructon (such as x86 CALL or FARCALL) or instruction
-     *       sequence (such as pushing the return value and then branching) in code that was determined to be reachable by
-     *       analyzing the control flow graph.
-     *
-     *   "c" means this function is the target of some call-like instruction (such as x86 CALL or FARCALL) but could not
-     *       determine whether the instruction is actually executed.
-     */
-    if (r & FUNC_CALL_TARGET) {
-        add_to_reason_string(result, true, do_pad, "C", "function call");
-    } else {
-        add_to_reason_string(result, (r & FUNC_CALL_INSN), do_pad, "c", "call instruction");
-    }
-
-    if (r & FUNC_EH_FRAME) {
-        add_to_reason_string(result, true,                 do_pad, "X", "exception frame");
-    } else {
-        add_to_reason_string(result, (r & FUNC_THUNK),     do_pad, "T", "thunk");
-    }
-    add_to_reason_string(result, (r & FUNC_IMPORT),        do_pad, "I", "import");
-    add_to_reason_string(result, (r & FUNC_SYMBOL),        do_pad, "S", "symbol");
-    add_to_reason_string(result, (r & FUNC_PATTERN),       do_pad, "P", "pattern");
-    add_to_reason_string(result, (r & FUNC_GRAPH),         do_pad, "G", "graph");
-    add_to_reason_string(result, (r & FUNC_USERDEF),       do_pad, "U", "user defined");
-    add_to_reason_string(result, (r & FUNC_PADDING),       do_pad, "N", "padding");
-    add_to_reason_string(result, (r & FUNC_DISCONT),       do_pad, "D", "discontiguous");
-    add_to_reason_string(result, (r & FUNC_LEFTOVERS),     do_pad, "L", "leftovers");
-    add_to_reason_string(result, (r & FUNC_INTRABLOCK),    do_pad, "V", "intrablock");
-
-    /* The miscellaneous marker is special. It's a single letter like the others, but is followed by a fixed width
-     * integer indicating the (user-defined) algorithm that added the function. */
-    {
-        char abbr[32], full[64];
-        int width = snprintf(abbr, sizeof abbr, "%u", FUNC_MISCMASK);
-        snprintf(abbr, sizeof abbr, "M%0*u", width, (r & FUNC_MISCMASK));
-        abbr[sizeof(abbr)-1] = '\0';
-        if (!do_pad) {
-            std::string miscname = stringifySgAsmFunctionFunctionReason((r & FUNC_MISCMASK), "FUNC_");
-            if (miscname.empty() || miscname[0]=='(') {
-                snprintf(full, sizeof full, "misc-%u", (r & FUNC_MISCMASK));
-            } else {
-                for (size_t i=0; i<miscname.size(); ++i)
-                    miscname[i] = tolower(miscname[i]);
-                strncpy(full, miscname.c_str(), sizeof full);
-            }
-            full[sizeof(full)-1] = '\0';
-        } else {
-            full[0] = '\0';
-        }
-        add_to_reason_string(result, (r & FUNC_MISCMASK), do_pad, abbr, full);
-    }
-
-    return result;
-}
-
-/** Returns information about the function addresses.  Every non-empty function has a minimum (inclusive) and maximum
- *  (exclusive) address which are returned by reference, but not all functions own all the bytes within that range of
- *  addresses. Therefore, the exact bytes are returned by adding them to the optional ExtentMap argument.  This function
- *  returns the number of nodes (instructions and static data items) in the function.  If the function contains no nodes then
- *  the extent map is not modified and the low and high addresses are both set to zero.
- *
- *  If an @p exclude functor is provided, then any node for which it returns true is not considered part of the function.  This
- *  can be used for such things as filtering out data blocks that are marked as padding.  For example:
- *
- *  @code
- *  class NotPadding: public SgAsmFunction::NodeSelector {
- *  public:
- *      virtual bool operator()(SgNode *node) {
- *          SgAsmStaticData *data = isSgAsmStaticData(node);
- *          SgAsmBlock *block = SageInterface::getEnclosingNode<SgAsmBlock>(data);
- *          return !data || !block || block->get_reason()!=SgAsmBlock::BLK_PADDING;
- *      }
- *  } notPadding;
- *
- *  ExtentMap extents;
- *  function->get_extent(&extents, NULL, NULL, &notPadding);
- *  @endcode
- *
- *  Here's another example that calculates the extent of only the padding data, based on the negation of the filter in the
- *  previous example:
- *
- *  @code
- *  class OnlyPadding: public NotPadding {
- *  public:
- *      virtual bool operator()(SgNode *node) {
- *          return !NotPadding::operator()(node);
- *      }
- *  } onlyPadding;
- *
- *  ExtentMap extents;
- *  function->get_extent(&extents, NULL, NULL, &onlyPadding);
- *  @endcode
- */
-size_t
-SgAsmFunction::get_extent(ExtentMap *extents, rose_addr_t *lo_addr, rose_addr_t *hi_addr, NodeSelector *selector)
-{
-    struct T1: public AstSimpleProcessing {
-        ExtentMap *extents;
-        rose_addr_t *lo_addr, *hi_addr;
-        NodeSelector *selector;
-        size_t nnodes;
-        T1(ExtentMap *extents, rose_addr_t *lo_addr, rose_addr_t *hi_addr, NodeSelector *selector)
-            : extents(extents), lo_addr(lo_addr), hi_addr(hi_addr), selector(selector), nnodes(0) {
-            if (lo_addr)
-                *lo_addr = 0;
-            if (hi_addr)
-                *hi_addr = 0;
-        }
-        void visit(SgNode *node) {
-            if (selector && !(*selector)(node))
-                return;
-            SgAsmInstruction *insn = isSgAsmInstruction(node);
-            SgAsmStaticData *data = isSgAsmStaticData(node);
-            rose_addr_t lo, hi;
-            if (insn) {
-                lo = insn->get_address();
-                hi = lo + insn->get_size();
-            } else if (data) {
-                lo = data->get_address();
-                hi = lo + data->get_size();
-            } else {
-                return;
-            }
-
-            if (0==nnodes++) {
-                if (lo_addr)
-                    *lo_addr = lo;
-                if (hi_addr)
-                    *hi_addr = hi;
-            } else {
-                if (lo_addr)
-                    *lo_addr = std::min(*lo_addr, lo);
-                if (hi_addr)
-                    *hi_addr = std::max(*hi_addr, hi);
-            }
-            if (extents && hi>lo)
-                extents->insert(Extent(lo, hi-lo));
-        }
-    } t1(extents, lo_addr, hi_addr, selector);
-    t1.traverse(this, preorder);
-    return t1.nnodes;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// These SgAsmBlock methods have no other home, so they're here for now. Do not move them into
-// src/ROSETTA/Grammar/BinaryInstruction.code because then they can't be indexed by C-aware tools.
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/** Returns a multi-line string describing the letters used for basic block reasons.  The letters are returned by the padding
- *  version of reason_str(). */
-std::string
-SgAsmBlock::reason_key(const std::string &prefix)
-{
-    return (prefix + "L = left over blocks    N = NOP/zero padding     F = fragment\n" +
-            prefix + "J = jump table          E = Function entry\n" +
-            prefix + "H = CFG head            U = user-def reason      M = miscellaneous\n" +
-            prefix + "1 = first CFG traversal 2 = second CFG traversal 3 = third CFG traversal\n");
-}
-
-/** Returns reason string for this block. */
-std::string
-SgAsmBlock::reason_str(bool do_pad) const
-{
-    return reason_str(do_pad, get_reason());
-}
-
-/** Class method that converts a reason bit vector to a human-friendly string. The second argument is the bit vector of
- *  SgAsmBlock::Reason bits.  Some of the positions in the padded return value are used for more than one bit.  For instance,
- *  the first character can be "L" for leftovers, "N" for padding, "E" for entry point, or "-" for none of the above. */
-std::string
-SgAsmBlock::reason_str(bool do_pad, unsigned r)
-{
-    std::string result;
-
-    if (r & BLK_LEFTOVERS) {
-        add_to_reason_string(result, true, do_pad, "L", "leftovers");
-    } else if (r & BLK_PADDING) {
-        add_to_reason_string(result, true, do_pad, "N", "padding");
-    } else if (r & BLK_FRAGMENT) {
-        add_to_reason_string(result, true, do_pad, "F", "fragment");
-    } else if (r & BLK_JUMPTABLE) {
-        add_to_reason_string(result, true, do_pad, "J", "jumptable");
-    } else {
-        add_to_reason_string(result, (r & BLK_ENTRY_POINT),  do_pad, "E", "entry point");
-    }
-
-    if (r & BLK_CFGHEAD) {
-        add_to_reason_string(result, true, do_pad, "H", "CFG head");
-    } else if (r & BLK_GRAPH1) {
-        add_to_reason_string(result, true, do_pad, "1", "graph-1");
-    } else if (r & BLK_GRAPH2) {
-        add_to_reason_string(result, true, do_pad, "2", "graph-2");
-    } else {
-        add_to_reason_string(result, (r & BLK_GRAPH3), do_pad, "3", "graph-3");
-    }
-
-    if (r & BLK_USERDEF) {
-        add_to_reason_string(result, true, do_pad, "U", "user defined");
-    } else {
-        char abbr[32], full[64];
-        int width = snprintf(abbr, sizeof abbr, "%u", BLK_MISCMASK);
-        snprintf(abbr, sizeof abbr, "M%0*u", width, (r & BLK_MISCMASK));
-        abbr[sizeof(abbr)-1] = '\0';
-        if (!do_pad) {
-            std::string miscname = stringifySgAsmBlockReason((r & BLK_MISCMASK), "BLK_");
-            if (miscname.empty() || miscname[0]=='(') {
-                snprintf(full, sizeof full, "misc-%u", (r & BLK_MISCMASK));
-            } else {
-                for (size_t i=0; i<miscname.size(); ++i)
-                    miscname[i] = tolower(miscname[i]);
-                strncpy(full, miscname.c_str(), sizeof full);
-            }
-            full[sizeof(full)-1] = '\0';
-        } else {
-            full[0] = '\0';
-        }
-        add_to_reason_string(result, (r & BLK_MISCMASK), do_pad, abbr, full);
-    }
-    return result;
-}
-/*
- *
- *******************************************************************************************************************************/
 
 /* Progress report class variables. */
 time_t Partitioner::progress_interval = 10;
@@ -488,9 +204,9 @@ Partitioner::discover_jump_table(BasicBlock *bb, bool do_create, ExtentMap *tabl
         return Disassembler::AddressSet(); // no indirection
 
     /* Evaluate the basic block semantically to get an expression for the final EIP. */
-    typedef VirtualMachineSemantics::ValueType<32> RegisterValueType;
-    typedef VirtualMachineSemantics::Policy<> Policy;
-    typedef X86InstructionSemantics<Policy, VirtualMachineSemantics::ValueType> Semantics;
+    typedef PartialSymbolicSemantics::ValueType<32> RegisterValueType;
+    typedef PartialSymbolicSemantics::Policy<> Policy;
+    typedef X86InstructionSemantics<Policy, PartialSymbolicSemantics::ValueType> Semantics;
     Policy policy;
     policy.set_map(&ro_map);
     Semantics semantics(policy);
@@ -526,8 +242,7 @@ Partitioner::discover_jump_table(BasicBlock *bb, bool do_create, ExtentMap *tabl
                     rose_addr_t target_va = 0;
                     for (size_t i=0; i<entry_size; i++)
                         target_va |= buf[i] << (i*8);
-                    const MemoryMap::MapElement *me = map->find(target_va);
-                    if (!me || 0==(me->get_mapperms() & MemoryMap::MM_PROT_EXEC))
+                    if (!map->exists(target_va, MemoryMap::MM_PROT_EXEC))
                         break;
                     successors.insert(target_va);
                     ++nentries;
@@ -697,11 +412,11 @@ Partitioner::pops_return_address(rose_addr_t va)
 
         SgAsmx86Instruction *last_insn = isSgAsmx86Instruction(bb->last_insn());
 
-        typedef VirtualMachineSemantics::Policy<> Policy;
-        typedef X86InstructionSemantics<Policy, VirtualMachineSemantics::ValueType> Semantics;
+        typedef PartialSymbolicSemantics::Policy<> Policy;
+        typedef X86InstructionSemantics<Policy, PartialSymbolicSemantics::ValueType> Semantics;
         Policy policy;
         policy.set_map(get_map());
-        VirtualMachineSemantics::ValueType<32> orig_retaddr;
+        PartialSymbolicSemantics::ValueType<32> orig_retaddr;
         policy.writeMemory(x86_segreg_ss, policy.readRegister<32>("esp"), orig_retaddr, policy.true_());
         Semantics semantics(policy);
 
@@ -837,17 +552,17 @@ Partitioner::Function::move_data_blocks_from(Function *other)
 
 /* Increase knowledge about may-return property. */
 void
-Partitioner::Function::promote_may_return(MayReturn new_value) {
+Partitioner::Function::promote_may_return(SgAsmFunction::MayReturn new_value) {
     switch (get_may_return()) {
-        case RET_UNKNOWN:
+        case SgAsmFunction::RET_UNKNOWN:
             set_may_return(new_value);
             break;
-        case RET_SOMETIMES:
-            if (RET_ALWAYS==new_value || RET_NEVER==new_value)
+        case SgAsmFunction::RET_SOMETIMES:
+            if (SgAsmFunction::RET_ALWAYS==new_value || SgAsmFunction::RET_NEVER==new_value)
                 set_may_return(new_value);
             break;
-        case RET_ALWAYS:
-        case RET_NEVER:
+        case SgAsmFunction::RET_ALWAYS:
+        case SgAsmFunction::RET_NEVER:
             break;
     }
 }
@@ -856,7 +571,7 @@ void
 Partitioner::Function::show_properties(FILE *debug) const
 {
     if (debug) {
-        std::string may_return_str = stringifyPartitionerFunctionMayReturn(get_may_return(), "RET_");
+        std::string may_return_str = stringifySgAsmFunctionMayReturn(get_may_return(), "RET_");
         for (size_t i=0; i<may_return_str.size(); ++i)
             may_return_str[i] = tolower(may_return_str[i]);
         fprintf(debug, "{nbblocks=%zu, ndblocks=%zu, may-return=%s}",
@@ -1033,7 +748,7 @@ Partitioner::append(Function* f, BasicBlock *bb, unsigned reason, bool keep/*=fa
      * here). */
     update_analyses(bb);
     if (bb->cache.function_return)
-        f->promote_may_return(Function::RET_SOMETIMES);
+        f->promote_may_return(SgAsmFunction::RET_SOMETIMES);
 }
 
 /** Append data region to function.  This method is a bit of a misnomer because the order that the data blocks are appended to
@@ -1336,10 +1051,12 @@ Partitioner::mark_ipd_configuration()
             std::string block_name = block_name_str;
             if (debug) fprintf(stderr, "running successors program for %s\n", block_name_str);
 
+            // FIXME: Use a copy (COW) version of the map so we don't need to modify the real map and so that the simulated
+            // program can't accidentally modify the stuff being disassembled. [RPM 2012-05-07]
             MemoryMap *map = get_map();
             assert(map!=NULL);
-            typedef VirtualMachineSemantics::Policy<> Policy;
-            typedef X86InstructionSemantics<Policy, VirtualMachineSemantics::ValueType> Semantics;
+            typedef PartialSymbolicSemantics::Policy<> Policy;
+            typedef X86InstructionSemantics<Policy, PartialSymbolicSemantics::ValueType> Semantics;
             Policy policy;
             policy.set_map(map);
             Semantics semantics(policy);
@@ -1357,25 +1074,24 @@ Partitioner::mark_ipd_configuration()
 
             /* Load the instructions to execute */
             rose_addr_t text_va = map->find_free(0, bconf->sucs_program.size(), 4096);
-            MemoryMap::MapElement text_me(text_va, bconf->sucs_program.size(), &(bconf->sucs_program[0]), 0,
-                                          MemoryMap::MM_PROT_READ|MemoryMap::MM_PROT_EXEC);
-            text_me.set_name(block_name + " successors program text");
-            map->insert(text_me);
+            MemoryMap::Segment text_sgmt(MemoryMap::ExternBuffer::create(&(bconf->sucs_program[0]), bconf->sucs_program.size()),
+                                         0, MemoryMap::MM_PROT_RX, block_name + " successors program text");
+            map->insert(Extent(text_va, bconf->sucs_program.size()), text_sgmt);
 
             /* Create a stack */
             static const size_t stack_size = 8192;
             rose_addr_t stack_va = map->find_free(text_va+bconf->sucs_program.size()+1, stack_size, 4096);
-            MemoryMap::MapElement stack_me(stack_va, stack_size, MemoryMap::MM_PROT_READ|MemoryMap::MM_PROT_WRITE);
-            stack_me.set_name(block_name + " successors stack");
-            map->insert(stack_me);
+            MemoryMap::Segment stack_sgmt(MemoryMap::AnonymousBuffer::create(stack_size), 0,
+                                          MemoryMap::MM_PROT_RW, block_name + " successors stack");
+            map->insert(Extent(stack_va, stack_size), stack_sgmt);
             rose_addr_t stack_ptr = stack_va + stack_size;
 
             /* Create an area for the returned vector of successors */
             static const size_t svec_size = 8192;
             rose_addr_t svec_va = map->find_free(stack_va+stack_size+1, svec_size, 4096);
-            MemoryMap::MapElement svec_me(svec_va, svec_size, MemoryMap::MM_PROT_READ|MemoryMap::MM_PROT_WRITE);
-            svec_me.set_name(block_name + " successors vector");
-            map->insert(svec_me);
+            MemoryMap::Segment svec_sgmt(MemoryMap::AnonymousBuffer::create(svec_size), 0,
+                                         MemoryMap::MM_PROT_RW, block_name + " successors vector");
+            map->insert(Extent(svec_va, svec_size), svec_sgmt);
 
             /* What is the "return" address. Eventually the successors program will execute a "RET" instruction that will
              * return to this address.  We can choose something arbitrary as long as it doesn't conflict with anything else.
@@ -1442,15 +1158,15 @@ Partitioner::mark_ipd_configuration()
 
             /* Extract the list of successors. The number of successors is the first element of the list. */
             if (debug) fprintf(stderr, "  extracting program return values...\n");
-            VirtualMachineSemantics::ValueType<32> nsucs = policy.readMemory<32>(x86_segreg_ss, policy.number<32>(svec_va),
-                                                                                 policy.true_());
+            PartialSymbolicSemantics::ValueType<32> nsucs = policy.readMemory<32>(x86_segreg_ss, policy.number<32>(svec_va),
+                                                                                  policy.true_());
             assert(nsucs.is_known());
             if (debug) fprintf(stderr, "    number of successors: %"PRId64"\n", nsucs.known_value());
             assert(nsucs.known_value()*4 <= svec_size-4); /*first entry is size*/
             for (size_t i=0; i<nsucs.known_value(); i++) {
-                VirtualMachineSemantics::ValueType<32> suc_va = policy.readMemory<32>(x86_segreg_ss,
-                                                                                      policy.number<32>(svec_va+4+i*4),
-                                                                                      policy.true_());
+                PartialSymbolicSemantics::ValueType<32> suc_va = policy.readMemory<32>(x86_segreg_ss,
+                                                                                       policy.number<32>(svec_va+4+i*4),
+                                                                                       policy.true_());
                 if (suc_va.is_known()) {
                     if (debug) fprintf(stderr, "    #%zu: 0x%08"PRIx64"\n", i, suc_va.known_value());
                     bb->cache.sucs.insert(suc_va.known_value());
@@ -1462,9 +1178,9 @@ Partitioner::mark_ipd_configuration()
 
             /* Unmap the program */
             if (debug) fprintf(stderr, "  unmapping the program...\n");
-            map->erase(text_me);
-            map->erase(stack_me);
-            map->erase(svec_me);
+            map->erase(text_sgmt);
+            map->erase(stack_sgmt);
+            map->erase(svec_sgmt);
 
             if (debug) fprintf(stderr, "  done.\n");
         }
@@ -1579,9 +1295,9 @@ Partitioner::mark_elf_plt_entries(SgAsmGenericHeader *fhdr)
         if ("abort@plt"!=name && "execl@plt"!=name && "execlp@plt"!=name && "execv@plt"!=name && "execvp@plt"!=name &&
             "exit@plt"!=name && "_exit@plt"!=name && "fexecve@plt"!=name &&
             "longjmp@plt"!=name && "__longjmp@plt"!=name && "siglongjmp@plt"!=name) {
-            plt_func->set_may_return(Function::RET_ALWAYS);
+            plt_func->set_may_return(SgAsmFunction::RET_ALWAYS);
         } else {
-            plt_func->set_may_return(Function::RET_NEVER);
+            plt_func->set_may_return(SgAsmFunction::RET_NEVER);
         }
     }
 }
@@ -2852,6 +2568,11 @@ Partitioner::name_import_entries(SgAsmGenericHeader *fhdr)
 void
 Partitioner::pre_cfg(SgAsmInterpretation *interp/*=NULL*/)
 {
+    if (debug) {
+        fprintf(debug, "Function reasons referenced by Partitioner debugging output:\n%s",
+                SgAsmFunction::reason_key("  ").c_str());
+    }
+
     mark_ipd_configuration();   /*seed partitioner based on IPD configuration information*/
 
     if (interp) {
@@ -3120,7 +2841,7 @@ Partitioner::analyze_cfg(SgAsmBlock::Reason reason)
                      *    function_B:
                      *        RET
                      */
-                    bb->function->promote_may_return(Function::RET_SOMETIMES);
+                    bb->function->promote_may_return(SgAsmFunction::RET_SOMETIMES);
                     if (debug) {
                         fprintf(debug, "  Function F%08"PRIx64" may return by virtue of call fall-through at B%08"PRIx64"\n",
                                 bb->function->entry_va, bb->address());
@@ -3144,7 +2865,7 @@ Partitioner::analyze_cfg(SgAsmBlock::Reason reason)
                          * We don't need to set function_A->pending because the reachability of the instruction after its JMP
                          * won't change regardless of whether the "called" function returns (i.e., the return is to the caller
                          * of function_A, not to function_A itself. */
-                        bb->function->promote_may_return(Function::RET_SOMETIMES);
+                        bb->function->promote_may_return(SgAsmFunction::RET_SOMETIMES);
                         if (debug) {
                             fprintf(debug, "  F%08"PRIx64" may return by virtue of branching to function F%08"PRIx64
                                     " which may return\n", bb->function->entry_va, target_bb->function->entry_va);
@@ -3154,7 +2875,7 @@ Partitioner::analyze_cfg(SgAsmBlock::Reason reason)
             } else if (!bb->function->possible_may_return() && !is_function_call(bb, NULL) && !succs_complete) {
                 /* If the basic block's successor is not known, then we must assume that it branches to something that could
                  * return. */
-                bb->function->promote_may_return(Function::RET_SOMETIMES);
+                bb->function->promote_may_return(SgAsmFunction::RET_SOMETIMES);
                 if (debug) {
                     fprintf(debug, "  F%08"PRIx64" may return by virtue of incomplete successors\n",
                             bb->function->entry_va);
@@ -4096,7 +3817,11 @@ Partitioner::build_ast(Function* f)
 
     /* Set the SgAsmFunction::can_return property.  If we've never indicated that a function might return then assume it
      * doesn't return.  We're all done with analysis now, so it must not return. */
-    retval->set_can_return(Function::RET_SOMETIMES==f->get_may_return() || Function::RET_ALWAYS==f->get_may_return());
+    if (SgAsmFunction::RET_UNKNOWN==f->get_may_return()) {
+        retval->set_may_return(SgAsmFunction::RET_NEVER);
+    } else {
+        retval->set_may_return(f->get_may_return());
+    }
 
     for (NodeMap::iterator ni=nodes.begin(); ni!=nodes.end(); ++ni) {
         retval->get_statementList().push_back(ni->second);
