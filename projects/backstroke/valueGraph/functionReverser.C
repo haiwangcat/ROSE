@@ -2258,10 +2258,13 @@ namespace
                 if (classT == NULL)
                     continue;
                 
-                SgClassDefinition* classDef = 
-                        isSgClassDeclaration(classT->get_declaration()->
-                            get_definingDeclaration())->get_definition();
-                ROSE_ASSERT(classDef);
+                SgClassDeclaration* classDecl = isSgClassDeclaration(classT->get_declaration()->
+                            get_definingDeclaration());
+                if (classDecl == NULL)
+                    continue;
+                SgClassDefinition* classDef = classDecl->get_definition();
+                if (classDef == NULL)
+                    continue;
 
                 foreach (SgDeclarationStatement* decl, classDef->get_members())
                 {
@@ -2313,21 +2316,65 @@ namespace
 
 void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
 {
-#if 0
+    
+    set<SgFunctionDefinition*> funcDefsToBePreprocessed;
+    
     // Preprocessing of the events
     foreach (SgFunctionDefinition* funcDef, funcDefs)
     {
+        funcDefsToBePreprocessed.insert(funcDef);
+        
+        
+        vector<SgFunctionCallExp*> funcCalls = BackstrokeUtility::querySubTree<SgFunctionCallExp>(funcDef);
+        foreach (SgFunctionCallExp* funcCallExp, funcCalls)
+        {
+            // When we generate a fwd/rvs function call, we need to reverse that
+            // function also. Here we add that function to the to-do list.
+            SgFunctionDeclaration* fDecl = isSgFunctionDeclaration(
+                    funcCallExp->getAssociatedFunctionDeclaration()->
+                    get_definingDeclaration());
+            
+            if (fDecl == NULL)
+            {
+                SgMemberFunctionRefExp* funcRef = NULL;
+        
+                if (SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function()))
+                    funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
+
+                if (funcRef)
+                {
+                    fDecl = funcRef->getAssociatedMemberFunctionDeclaration();
+                }
+            }
+            
+            if (fDecl)
+            {
+                if (SgFunctionDefinition* fDef = fDecl->get_definition())
+                    funcDefsToBePreprocessed.insert(fDef);
+                
+                // Here we detect all function definitions in the project with the 
+                // same name (it is apparently not enough, so this part may be refined
+                // later), and add each of them to the to-be-reversed list.
+                
+                SgName funcName = fDecl->get_name();
+                SgProject* project = SageInterface::getProject();
+                
+                vector<SgFunctionDefinition*> funcDefs = 
+                    BackstrokeUtility::querySubTree<SgFunctionDefinition>(project);
+                foreach (SgFunctionDefinition* f, funcDefs)
+                {
+                    if (isSgFunctionDeclaration(f->get_declaration())->get_name() == funcName)
+                        funcDefsToBePreprocessed.insert(f);
+                }
+            }
+        }
+    }
+    
+    foreach (SgFunctionDefinition* funcDef, funcDefsToBePreprocessed)
+    {        
         preprocess(funcDef);
     }
-#endif
     
-    SgProject* project = SageInterface::getProject();
-    
-    //AstTests::runAllTests(project);
-    //project->unparse();
-    
-    StaticSingleAssignment* ssa = new StaticSingleAssignment(project);
-    ssa->run(true, true);
 
     set<SgGlobal*> globalScopes;
     
@@ -2337,6 +2384,15 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     foreach (SgFunctionDefinition* f, funcDefs)
         toBeReversed.push(f);
 
+    
+    SgProject* project = SageInterface::getProject();
+    //AstTests::runAllTests(project);
+    //project->unparse();
+
+    StaticSingleAssignment* ssa = new StaticSingleAssignment(project);
+    ssa->run(true, true);
+        
+        
     while (!toBeReversed.empty())
     {
         SgFunctionDefinition* funcDef = toBeReversed.top();
@@ -2354,8 +2410,7 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
         cout << "\nNow processing " << funcName << "\tfrom\n";
         funcDef->get_file_info()->display();
         
-        preprocess(funcDef);
-
+        
         //string cfgFileName = "CFG" + boost::lexical_cast<string > (counter) + ".dot";
         //string vgFileName = "VG" + boost::lexical_cast<string > (counter) + ".dot";
         string cfgFileName = funcName + "_CFG.dot";
@@ -2393,6 +2448,7 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     foreach (SgGlobal* globalScope, globalScopes)
         SageInterface::insertHeader("rctypes.h", PreprocessingInfo::after, false, globalScope);
     
+        
     delete ssa;
 }
 
