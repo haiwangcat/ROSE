@@ -213,7 +213,7 @@ bool canBeReordered(SgExpression* exp1, SgExpression* exp2)
 }
 
 // If a type is a STL container type.
-bool isSTLContainer(SgType* type)
+bool isSTLContainer(SgType* type, const char* name)
 {
 	SgType* real_type = type->stripTypedefsAndModifiers();
 	SgClassType* class_t = isSgClassType(real_type);
@@ -230,25 +230,32 @@ bool isSTLContainer(SgType* type)
 		return false;
 
 	// Check the class name
-	string name = class_t->get_name();
-	if (starts_with(name, "vector <") ||
-			starts_with(name, "deque <") ||
-			starts_with(name, "list <") ||
-			starts_with(name, "set <") ||
-			starts_with(name, "multiset <") ||
-			starts_with(name, "map <") ||
-			starts_with(name, "multimap <") ||
-			starts_with(name, "stack <") ||
-			starts_with(name, "queue <") ||
-			starts_with(name, "priority_queue <") ||
-			//starts_with(name, "pair <") ||
-			starts_with(name, "valarray <") ||
-			starts_with(name, "complex <") ||
-			starts_with(name, "bitset <"))
-		return true;
+	string className = class_t->get_name();
+    string containerName = name;
+    if (containerName == "")
+    {
+        if (starts_with(className, "vector <") ||
+                starts_with(className, "deque <") ||
+                starts_with(className, "list <") ||
+                starts_with(className, "set <") ||
+                starts_with(className, "multiset <") ||
+                starts_with(className, "map <") ||
+                starts_with(className, "multimap <") ||
+                starts_with(className, "stack <") ||
+                starts_with(className, "queue <") ||
+                starts_with(className, "priority_queue <") ||
+                //starts_with(className, "pair <") ||
+                starts_with(className, "valarray <") ||
+                starts_with(className, "complex <") ||
+                starts_with(className, "bitset <"))
+            return true;
+    }
+    else if (starts_with(className, containerName + " <"))
+        return true;
 
 	return false;
 }
+
 
 // Get the defined copy constructor in a given class. Returns NULL if the copy constructor is implicit.
 std::vector<SgMemberFunctionDeclaration*> getCopyConstructors(SgClassDeclaration* class_decl)

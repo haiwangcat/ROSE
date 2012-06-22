@@ -42,8 +42,8 @@ namespace BackstrokeUtility
 	/** If two expressions can be reordered (in other word, reordering does not change the result). */
 	bool canBeReordered(SgExpression* exp1, SgExpression* exp2);
 
-	/** Tell if a type is a STL container type. */
-	bool isSTLContainer(SgType* type);
+	/** Tell if a type is a STL container type. The second parameter is the name of the STL container. */
+	bool isSTLContainer(SgType* type, const char* containerName = "");
 
 	/** Get the defined copy constructors in a given class. Returns empty vector if the copy constructor is implicit. */
 	std::vector<SgMemberFunctionDeclaration*> getCopyConstructors(SgClassDeclaration* class_decl);
