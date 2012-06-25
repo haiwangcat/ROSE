@@ -85,38 +85,6 @@ namespace
     }
 }
 
-std::string VersionedVariable::toString() const
-{
-	if (name.empty())
-		return "TEMP";
-    string str;
-    foreach (SgInitializedName* n, name)
-        str += n->get_name() + "_";
-    str += boost::lexical_cast<string>(version);
-    return str;
-}
-
-SgExpression* VersionedVariable::getVarRefExp() const
-{
-    if (name.empty())
-        return NULL;
-    //ROSE_ASSERT(!name.empty());
-    
-    SgExpression* var = SageBuilder::buildVarRefExp(name[0]);
-    
-    for (int i = 1, s = name.size(); i < s; ++i)
-    {
-        SgType* type = var->get_type();
-        
-        SgExpression* exp = SageBuilder::buildVarRefExp(name[i]);
-        if (isSgPointerType(type))
-            var = SageBuilder::buildArrowExp(var, exp);
-        else
-            var = SageBuilder::buildDotExp(var, exp);
-    }
-    
-    return var;
-}
 
 std::string ValueNode::toString() const
 {
@@ -133,6 +101,35 @@ std::string ValueNode::toString() const
 		os << "TEMP";
     else
         os << var << " ";
+	return os.str();
+}
+
+
+VectorElementNode::VectorElementNode(const VersionedVariable& vec, 
+    const VersionedVariable& index, SgFunctionCallExp* funcCallExp)
+: ValueGraphNode(funcCallExp), vecVar(vec), indexVar(index), indexVal(NULL)
+{
+    SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function());
+    ROSE_ASSERT(binExp);
+    vecExp = binExp->get_lhs_operand();
+    indexExp = funcCallExp->get_args()->get_expressions()[0];
+    if (SgCastExp* castExp = isSgCastExp(indexExp))
+        indexVal = isSgValueExp(castExp->get_operand());
+    else
+        indexVal = isSgValueExp(indexExp);
+}
+
+
+std::string VectorElementNode::toString() const
+{
+	ostringstream os;
+    os << vecVar << '[';
+    if (indexVal)
+        os << indexVal->unparseToString();
+    else 
+        os << indexVar;
+    os << "]\\n";
+
 	return os.str();
 }
 

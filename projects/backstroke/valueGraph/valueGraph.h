@@ -282,6 +282,10 @@ private:
     //! value node and function call node.
     VGVertex createFunctionCallNode(SgFunctionCallExp* funcCallExp);
     
+    
+    //! Create an VG node representing an element of a vector.
+    VGVertex createVectorElementNode(SgFunctionCallExp* funcCallExp);
+    
     //! Create an VG node for this expression.
     VGVertex createThisExpNode(SgThisExp* thisExp);
     
@@ -346,6 +350,16 @@ private:
 	 */
     VGEdge addValueGraphEdge(VGVertex src, VGVertex tar, ValueGraphEdge* edgeToCopy = NULL);
     
+    
+    /** Add a new edge between two array nodes to the value graph.
+	 *
+	 *  @param src The source vertex.
+	 *  @param tar The target vertex.
+	 *  @param region The array region information on the new edge.
+	 *  @returns The new added edge.
+	 */
+    VGEdge addValueGraphEdge(VGVertex src, VGVertex tar, const ArrayRegion& region);
+    
     /** Add a new edge to the value graph.
 	 *
 	 *  @param src The source vertex.
@@ -361,8 +375,18 @@ private:
 	 *  @param tar The target vertex.
 	 *  @param cfgEdges CFG edges from which the path information is calculated.
 	 */
-    void addValueGraphPhiEdge(VGVertex src, VGVertex tar,
+    VGEdge addValueGraphPhiEdge(VGVertex src, VGVertex tar,
         const BackstrokeCFG::CFGEdgeType& cfgEdge);
+    
+    /** Add a new edge between two array nodes or an array node and an array element node.
+	 *
+	 *  @param src The source vertex.
+	 *  @param tar The target vertex.
+	 *  @param interval The interval representing .
+	 */
+    VGEdge addValueGraphArrayRegionEdge(EventReverser::VGVertex src, 
+        EventReverser::VGVertex tar,
+        const PathInfos& paths, const ArrayRegion& region);
 
 	/** Add a new ordered edge to the value graph.
 	 *

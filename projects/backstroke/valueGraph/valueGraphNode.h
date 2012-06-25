@@ -2,6 +2,7 @@
 #define	BACKSTROKE_VALUEGRAPHNODE_H
 
 #include "types.h"
+#include "arrayRegion.h"
 #include <slicing/backstrokeCDG.h>
 #include <rose.h>
 #include <boost/lexical_cast.hpp>
@@ -13,74 +14,6 @@ namespace Backstroke
 typedef std::vector<SgInitializedName*> VarName;
 
 
-struct PhiNodeDependence
-{
-//	enum ControlDependenceType
-//	{
-//		cdTrue,
-//		cdFalse,
-//		cdCase,
-//		cdDefault
-//	};
-
-	explicit PhiNodeDependence(int v)
-	: version(v) {}
-
-	//! One version member of the phi function.
-	int version;
-
-	//!  The SgNode on which the phi function has a control dependence for the version.
-	SgNode* cdNode;
-
-	////! The control dependence type.
-	//ControlDependenceType cdType;
-
-	////! If the control dependence is cdCase, this is the case value.
-	//int caseValue;
-};
-
-
-struct VersionedVariable
-{
-	VersionedVariable() {}
-	VersionedVariable(const VarName& varName, int ver, bool pseudoDef = false)
-	: name(varName), version(ver), isPseudoDef(pseudoDef) {}
-
-	std::string toString() const;
-
-    bool isNull() const { return name.empty(); }
-    SgType* getType() const { return name.back()->get_type(); }
-    SgExpression* getVarRefExp() const;
-	
-	//! The unique name of this variable.
-	VarName name;
-
-	//! The version of this variable in the SSA form.
-	int version;
-
-	//! Indicated if this variable is defined by a phi function.
-	bool isPseudoDef;
-
-	//! All versions it dependes if this variable is a pseudo def.
-	std::vector<PhiNodeDependence> phiVersions;
-};
-
-
-inline bool operator == (const VersionedVariable& var1, const VersionedVariable& var2)
-{
-	return var1.name == var2.name && var1.version == var2.version;
-}
-
-inline bool operator < (const VersionedVariable& var1, const VersionedVariable& var2)
-{
-	return var1.name < var2.name ||
-		(var1.name == var2.name && var1.version < var2.version);
-}
-
-inline std::ostream& operator << (std::ostream& os, const VersionedVariable& var)
-{
-	return os << var.toString();
-}
 
 
 /**********************************************************************************************************/
@@ -135,6 +68,40 @@ struct ValueNode : ValueGraphNode
     
     //! Indicates if the variable is a state one.
     bool isStateVar;
+};
+
+    
+struct ArrayElementNode : ValueGraphNode
+{
+    explicit ArrayElementNode(SgNode* node = NULL)
+    : ValueGraphNode(node) {}
+};
+
+struct VectorElementNode : ValueGraphNode
+{
+#if 0
+    explicit VectorElementNode(SgFunctionCallExp* funcCallExp)
+    : ValueGraphNode(funcCallExp), indexExp(NULL)
+    {
+        SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function());
+        ROSE_ASSERT(binExp);
+        vecExp = binExp->get_lhs_operand();
+        indexExp = funcCallExp->get_args()->get_expressions()[0];
+    }
+#endif
+    
+    VectorElementNode(const VersionedVariable& vec, 
+        const VersionedVariable& index, SgFunctionCallExp* funcCallExp);
+    
+	virtual std::string toString() const;
+    
+    
+    SgExpression* vecExp;
+    SgExpression* indexExp;
+    
+	VersionedVariable vecVar;
+	VersionedVariable indexVar;
+	SgValueExp* indexVal;
 };
 
 //! This node represents a phi node in the SSA form CFG. The AST node inside (actually
@@ -283,7 +250,7 @@ struct BinaryOperaterNode : OperatorNode
 struct ValueGraphEdge
 {
     ValueGraphEdge() : cost(TRIVIAL_COST) {}
-    ValueGraphEdge(int cst, const PathInfos& pths)
+    explicit ValueGraphEdge(const PathInfos& pths, int cst = TRIVIAL_COST)
     : cost(cst), paths(pths) {}
     
     //ValueGraphEdge(int cst, const PathInfos& pths, const ControlDependences& cd)
@@ -304,6 +271,9 @@ struct ValueGraphEdge
     
     //! All paths on which this relationship exists.
     PathInfos paths;
+    
+    //! For array nodes. Indicates which region of two arrays are identical.
+    ArrayRegion region;
     
     ////! All immediate control dependences representing conditions in VG.
     //ControlDependences controlDependences;
@@ -329,7 +299,7 @@ struct OrderedEdge : ValueGraphEdge
 struct PhiEdge : ValueGraphEdge
 {
     PhiEdge(int cst, const PathInfos& pths)
-    : ValueGraphEdge(cst, pths), muEdge(false) {}
+    : ValueGraphEdge(pths, cst), muEdge(false) {}
     //PhiEdge(const std::set<ReachingDef::FilteredCfgEdge>* edges)
     //: ValueGraphEdge(0, dagIdx, paths), visiblePathNum(visibleNum) {}
     //! A set of edges indicating where the target def comes from in CFG.
@@ -345,6 +315,20 @@ struct PhiEdge : ValueGraphEdge
 };
 #endif
 
+
+#if 0
+//! An edge connecting two array nodes or an array and an array element node.
+struct ArrayRegionEdge : ValueGraphEdge
+{
+    ArrayRegionEdge() {}
+    ArrayRegionEdge(const ArrayRegion& reg, const PathInfos& pths) 
+    : ValueGraphEdge(pths), region(reg) {}
+    
+    ArrayRegion region;
+};
+#endif
+
+
 //! An edge going to the root node.
 struct StateSavingEdge : ValueGraphEdge
 {
@@ -356,7 +340,7 @@ struct StateSavingEdge : ValueGraphEdge
     
     StateSavingEdge(int cost, const PathInfos& paths,
                     SgNode* killerNode, bool isKillerScope = false)
-    :   ValueGraphEdge(cost, paths), 
+    :   ValueGraphEdge(paths, cost), 
         killer(killerNode), 
         scopeKiller(isKillerScope),
         varStored(false) 
@@ -365,7 +349,7 @@ struct StateSavingEdge : ValueGraphEdge
     StateSavingEdge(int cost, const PathInfos& paths,
                     const std::map<int, PathSet> visiblePaths, 
                     SgNode* killerNode, bool isKillerScope = false)
-    :   ValueGraphEdge(cost, paths), 
+    :   ValueGraphEdge(paths, cost), 
         visiblePaths(visiblePaths), 
         killer(killerNode), 
         scopeKiller(isKillerScope),
@@ -409,6 +393,16 @@ inline PhiNode* isPhiNode(ValueGraphNode* node)
 inline OperatorNode* isOperatorNode(ValueGraphNode* node)
 {
 	return dynamic_cast<OperatorNode*>(node);
+}
+
+inline ArrayElementNode* isArrayElementNode(ValueGraphNode* node)
+{
+	return dynamic_cast<ArrayElementNode*>(node);
+}
+
+inline VectorElementNode* isVectorElementNode(ValueGraphNode* node)
+{
+	return dynamic_cast<VectorElementNode*>(node);
 }
 
 inline ValueNode* isValueNode(ValueGraphNode* node)

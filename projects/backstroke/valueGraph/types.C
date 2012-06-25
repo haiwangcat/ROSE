@@ -8,6 +8,41 @@ using namespace std;
 #define foreach         BOOST_FOREACH
 
 
+
+std::string VersionedVariable::toString() const
+{
+	if (name.empty())
+		return "TEMP";
+    string str;
+    foreach (SgInitializedName* n, name)
+        str += n->get_name() + "_";
+    str += boost::lexical_cast<string>(version);
+    return str;
+}
+
+SgExpression* VersionedVariable::getVarRefExp() const
+{
+    if (name.empty())
+        return NULL;
+    //ROSE_ASSERT(!name.empty());
+    
+    SgExpression* var = SageBuilder::buildVarRefExp(name[0]);
+    
+    for (int i = 1, s = name.size(); i < s; ++i)
+    {
+        SgType* type = var->get_type();
+        
+        SgExpression* exp = SageBuilder::buildVarRefExp(name[i]);
+        if (isSgPointerType(type))
+            var = SageBuilder::buildArrowExp(var, exp);
+        else
+            var = SageBuilder::buildDotExp(var, exp);
+    }
+    
+    return var;
+}
+
+
 PathInfo PathInfo::operator&(const PathInfo& p) const
 {
     PathInfo path = *this;
