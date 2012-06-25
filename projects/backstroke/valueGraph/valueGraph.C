@@ -278,6 +278,25 @@ void EventReverser::processExpression(SgExpression* expr)
 #endif
         
         createFunctionCallNode(funcCall);
+        
+        
+        // Check if this function call is the operator [] of a vector, which
+        // is treated as an array element.
+        
+        if (SgFunctionDeclaration* funcDecl = funcCall->getAssociatedFunctionDeclaration())
+        {
+            if (SgBinaryOp* binExp = isSgBinaryOp(funcCall->get_function()))
+            {               
+                SgType* type = binExp->get_lhs_operand()->get_type();
+                
+                if (BackstrokeUtility::isSTLContainer(type, "vector") && 
+                        funcDecl->get_name() == "operator[]")
+                {
+                    //cout << ">>> VECTOR function call: " << funcDecl->get_name() << endl;
+                    createVectorElementNode(funcCall);
+                }
+            }
+        }
     }
     
     else if (SgDeleteExp* delExp = isSgDeleteExp(expr))
@@ -357,6 +376,12 @@ void EventReverser::processExpression(SgExpression* expr)
                 VGVertex result = createValueNode(lhs, rhs);
                 // Update the node-vertex table.
                 nodeVertexMap_[binOp] = result;
+            }
+            else if (nodeVertexMap_.count(lhs) && nodeVertexMap_.count(rhs))
+            {
+                // It is possible that the lhs expression is not a variable reference.
+                // e.g. an element of a vector.
+                addValueGraphEdge(nodeVertexMap_[lhs], nodeVertexMap_[rhs]);
             }
             else
             {
@@ -519,6 +544,7 @@ void EventReverser::processVariableReference(SgExpression* expr)
             nodeVertexMap_[castExp] = nodeVertexMap_[castExp->get_operand()];
     }
 
+#if 0
     else if (SgPointerDerefExp* ptrDerefExp = isSgPointerDerefExp(expr))
     {
         // ...
@@ -529,6 +555,7 @@ void EventReverser::processVariableReference(SgExpression* expr)
     {
        
     }
+#endif
 
     else if (SgVarRefExp* varRefExp = isSgVarRefExp(expr))
     {
@@ -1007,8 +1034,18 @@ EventReverser::VGEdge EventReverser::addValueGraphEdge(
     //valueGraph_[e] = new ValueGraphEdge(valNode->getCost(), dagIndex, paths);
     //valueGraph_[newEdge] = new ValueGraphEdge(0, dagIndex, paths);
     
-    valueGraph_[newEdge] = new ValueGraphEdge(ValueGraphEdge::TRIVIAL_COST, paths);
+    valueGraph_[newEdge] = new ValueGraphEdge(paths);
     
+    return newEdge;
+}
+
+EventReverser::VGEdge EventReverser::addValueGraphEdge(
+        EventReverser::VGVertex src, 
+        EventReverser::VGVertex tar,
+        const ArrayRegion& region)
+{
+    VGEdge newEdge = addValueGraphEdge(src, tar);
+    valueGraph_[newEdge]->region = region;
     return newEdge;
 }
 
@@ -1018,11 +1055,11 @@ EventReverser::VGEdge EventReverser::addValueGraphEdge(
         const PathInfos& paths)
 {
     VGEdge newEdge = boost::add_edge(src, tar, valueGraph_).first;
-    valueGraph_[newEdge] = new ValueGraphEdge(ValueGraphEdge::TRIVIAL_COST, paths);
+    valueGraph_[newEdge] = new ValueGraphEdge(paths);
     return newEdge;
 }
 
-void EventReverser::addValueGraphPhiEdge(
+EventReverser::VGEdge EventReverser::addValueGraphPhiEdge(
         EventReverser::VGVertex src, EventReverser::VGVertex tar,
         const BackstrokeCFG::CFGEdgeType& cfgEdge)
 {
@@ -1046,6 +1083,19 @@ void EventReverser::addValueGraphPhiEdge(
     PathInfos paths = pathNumManager_->getPathNumbers(node1, node2);
     //ControlDependences controlDeps = cdg_->getControlDependences(node1);
     valueGraph_[newEdge] = new PhiEdge(0, paths);
+    return newEdge;
+}
+
+EventReverser::VGEdge EventReverser::addValueGraphArrayRegionEdge(
+        EventReverser::VGVertex src, EventReverser::VGVertex tar,
+        const PathInfos& paths, const ArrayRegion& region)
+{
+    VGEdge newEdge = boost::add_edge(src, tar, valueGraph_).first;
+    //PathInfos paths = pathNumManager_->getPathNumbers(node1, node2);
+    ValueGraphEdge* e = new ValueGraphEdge(paths);
+    e->region = region;
+    valueGraph_[newEdge] = e;
+    return newEdge;
 }
 
 EventReverser::VGEdge EventReverser::addValueGraphOrderedEdge(
@@ -1171,12 +1221,105 @@ EventReverser::VGVertex EventReverser::createThisExpNode(SgThisExp* thisExp)
     return newNode;
 }
 
-EventReverser::VGVertex EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
+
+EventReverser::VGVertex 
+EventReverser::createVectorElementNode(SgFunctionCallExp* funcCallExp)
+{
+    // If the function called is a member one, also connect an edge from the pointer or object
+    // calling this function to the function call node.
+    SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function());
+    ROSE_ASSERT(binExp);
+    VarName varName = SSA::getVarName(binExp->get_lhs_operand());
+
+    
+    SgExpression* vecExp = binExp->get_lhs_operand();
+    SgExpression* indexExp = funcCallExp->get_args()->get_expressions()[0];
+
+
+    VectorElementNode* eleNode = new VectorElementNode(
+            getVersionedVariable(vecExp),
+            getVersionedVariable(indexExp),
+            funcCallExp);
+    VGVertex eleVertex = addValueGraphNode(eleNode);
+    
+    // Add this new created vertex to the map.
+    nodeVertexMap_[funcCallExp] = eleVertex;
+
+
+
+
+
+    // Get all uses and defs from this function call.
+    const SSA::NodeReachingDefTable& useTable = ssa_->getUsesAtNode(funcCallExp);
+    const SSA::NodeReachingDefTable& defTable = ssa_->getDefsAtNode(funcCallExp);
+    
+    VGVertex useVertex, defVertex;
+    
+    typedef map<VarName, SSA::ReachingDefPtr>::value_type PT;
+    
+    foreach (const PT& nameDef, useTable)
+    {
+        if (nameDef.first == varName)
+        {
+            VersionedVariable var(varName, nameDef.second->getRenamingNumber());
+            ROSE_ASSERT(varVertexMap_.count(var));
+            useVertex = varVertexMap_[var];
+        }
+    }
+    
+    foreach (const PT& nameDef, defTable)
+    {
+        if (nameDef.first == varName)
+        {
+            VersionedVariable var(varName, nameDef.second->getRenamingNumber());
+            ROSE_ASSERT(varVertexMap_.count(var));
+            defVertex = varVertexMap_[var];
+        }
+    }
+    
+    //cout << "### Adding two edges between two vectors...\n";
+    VGEdge newEdge = addValueGraphEdge(useVertex, defVertex);
+    
+    SymbolicRepresentation indexSymbol;
+    
+    // Add an edge between the vector and the element.
+    if (eleNode->indexVal)
+        indexSymbol.setValue(eleNode->indexVal);
+    else
+        indexSymbol.setVariable(eleNode->indexVar);
+    
+    
+    // Add an edge between the vector and the element.
+    addValueGraphEdge(eleVertex, defVertex,indexSymbol);
+    
+    
+    // Now we only consider that an access of a vector is defined by an assignment.
+    if (SgAssignOp* assOp = isSgAssignOp(funcCallExp->get_parent()))
+    {
+        if (funcCallExp == assOp->get_lhs_operand())
+        {
+#if 0
+            if (nodeVertexMap_.count(assOp->get_rhs_operand()))
+            {
+            VGVertex rhs = nodeVertexMap_[assOp->get_rhs_operand()];
+            addValueGraphEdge(rhs, eleVertex);
+            }
+#endif
+            valueGraph_[newEdge]->region = ArrayRegion(indexSymbol, true);
+        }
+    }
+    
+    
+    return eleVertex;
+}
+
+EventReverser::VGVertex 
+EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
 {
     //cout << funcCallExp->unparseToString() << endl;
     
     // Build a node for this function call in VG.
-    FunctionCallNode* funcCallNode    = new FunctionCallNode(funcCallExp);
+    FunctionCallNode* funcCallNode = new FunctionCallNode(funcCallExp);
     FunctionCallNode* rvsFuncCallNode;
     if (funcCallNode->canBeReversed)
         rvsFuncCallNode = new FunctionCallNode(funcCallExp, true);
@@ -1240,7 +1383,7 @@ EventReverser::VGVertex EventReverser::createFunctionCallNode(SgFunctionCallExp*
         const VarName& name = nameDef.first;
         ROSE_ASSERT(reachingDefTable.count(name));
         VersionedVariable var(name, reachingDefTable.find(name)->second->getRenamingNumber());
-        cout << funcCallExp->unparseToString() << " " << var << "\n\n";
+        //cout << funcCallExp->unparseToString() << " " << var << "\n\n";
         
         if (varVertexMap_.count(var) == 0)
             createForgottenValueNode(var);
@@ -2348,6 +2491,8 @@ void EventReverser::writeValueGraphNode(std::ostream& out, VGVertex node) const
         out << ", color=green";
     else if (isOperatorNode(vgNode))
         out << ", color=blue";
+    else if (isArrayElementNode(vgNode) || isVectorElementNode(vgNode))
+        out << ", color=brown";
     
     out << "]";
 }

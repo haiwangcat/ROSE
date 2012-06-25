@@ -1,6 +1,6 @@
 include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 
-SUBDIRS = . headerUnparser
+#SUBDIRS = . headerUnparser
 
 INCLUDES = $(ROSE_INCLUDES) -I$(top_srcdir)/projects/backstroke
 #LINK	 = $(CXXLINK)
@@ -12,10 +12,10 @@ noinst_LTLIBRARIES = libBackstrokeFunctionReverser.la
 
 libBackstrokeFunctionReverser_la_DEPENDENCIES =
 libBackstrokeFunctionReverser_la_SOURCES = valueGraphNode.C valueGraph.C graphSearch.C functionReverser.C \
-		pathNumGenerator.C CFGFilter.C codeGeneration.C types.C 
+		pathNumGenerator.C CFGFilter.C codeGeneration.C types.C arrayRegion.C
 libBackstrokeFunctionReverser_la_includedir = $(includedir)/backstroke
 libBackstrokeFunctionReverser_la_include_HEADERS = valueGraph.h valueGraphNode.h pathNumGenerator.h functionReverser.h \
-			CFGFilter.h types.h
+			CFGFilter.h types.h arrayRegion.h
 libBackstrokeFunctionReverser_la_LIBADD = 
 
 noinst_PROGRAMS= functionReverserTest
