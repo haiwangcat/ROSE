@@ -57,7 +57,7 @@ struct PhiNodeDependence
 
 struct VersionedVariable
 {
-	VersionedVariable() {}
+	VersionedVariable() : version(0), isPseudoDef(false) {}
 	VersionedVariable(const VarName& varName, int ver, bool pseudoDef = false)
 	: name(varName), version(ver), isPseudoDef(pseudoDef) {}
 
@@ -116,6 +116,8 @@ struct PathInfo : PathSet
     std::vector<std::vector<std::pair<int, int> > > pathCond;
     
     bool isEmpty() const { return !any(); }
+    
+    PathInfo makeFullPath() const { return PathInfo(*this).set(); }
     
     PathInfo operator&(const PathInfo& p) const;
     

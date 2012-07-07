@@ -6,6 +6,7 @@
 //#include <boost/graph/graphviz.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/tuple/tuple.hpp>
 
 namespace Backstroke
 {
@@ -102,9 +103,26 @@ namespace // anonymous namespace
             paths = route.paths;
             return *this;
         }
+        
+        void addEdge(VGEdge e, const ArrayRegion& region = ArrayRegion())
+        { 
+            edges.push_back(e);
+            regions.push_back(region);
+        }
+        
+        void addVertices(VGVertex v1, VGVertex v2, const ArrayRegion& region = ArrayRegion())
+        {
+            nodes.push_back(boost::make_tuple(v1, v2, region));
+        }
 
-        vector<VGEdge>   edges;
-        vector<pair<VGVertex, VGVertex> >  nodes;
+        vector<VGEdge> edges;
+        
+        // For each edge this vector records the array region information on it.
+        // Note the size of this vector should always be the same at the vector 
+        // of edges.
+        vector<ArrayRegion> regions;
+        
+        vector<boost::tuple<VGVertex, VGVertex, ArrayRegion> > nodes;
         int cost;
         PathInfo paths;
     };
@@ -114,13 +132,13 @@ namespace // anonymous namespace
 
     // Returns if the vector contains the second parameter
     // at the first member of each element.
-    bool containsVertex(const vector<pair<VGVertex, VGVertex> >& nodes,
+    bool containsVertex(const vector<boost::tuple<VGVertex, VGVertex, ArrayRegion> >& nodes,
                         VGVertex node)
     {
-        typedef pair<VGVertex, VGVertex> VertexPair;
+        typedef boost::tuple<VGVertex, VGVertex, ArrayRegion> VertexPair;
         foreach (const VertexPair& vpair, nodes)
         {
-            if (vpair.second == node)
+            if (vpair.get<1>() == node)
                 return true;
         }
         return false;
@@ -140,7 +158,7 @@ namespace // anonymous namespace
 } // end of anonymous
 
 
-map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
+map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
         int dagIndex,
         const set<VGVertex>& valsToRestore)
 {
@@ -179,6 +197,16 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
         // This stack stores all possible routes for the state variable.
         stack<Route> unfinishedRoutes;
         
+#if 1
+        {
+            Route route;
+            route.addVertices(valToRestore, VGVertex());
+            VGEdge edge = *(boost::out_edges(valToRestore, valueGraph_).first);
+            route.paths = valueGraph_[edge]->paths[dagIndex].makeFullPath();
+            unfinishedRoutes.push(route);
+        }
+        
+#else        
         // Initialize the stack.
         foreach (const VGEdge& edge, boost::out_edges(valToRestore, valueGraph_))
         {
@@ -197,6 +225,7 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
             if (!route.paths.isEmpty())
                 unfinishedRoutes.push(route);
         }
+#endif
 
         while (!unfinishedRoutes.empty())
         {
@@ -212,7 +241,9 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
             //    continue;
 
             // Get the node on the top, and find it out edges.
-            VGVertex node = unfinishedRoute.nodes.back().first;
+            VGVertex node = unfinishedRoute.nodes.back().get<0>();
+            ArrayRegion region = unfinishedRoute.nodes.back().get<2>();
+                cout << "Node:" << valueGraph_[node]->toString() << " R: " << region << endl;
             
             
             // Currently, we forbid the route graph includes any function call nodes
@@ -235,10 +266,12 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
                 VGVertex parent;
                 do
                 {
-                    parent = newRoute.nodes.back().second;
+                    parent = newRoute.nodes.back().get<1>();
                     newRoute.nodes.pop_back();
-                    if (newRoute.nodes.empty()) break;
-                } while (parent == newRoute.nodes.back().first);
+                    if (newRoute.nodes.empty()) 
+                        break;
+                } 
+                while (parent == newRoute.nodes.back().get<0>());
 
                 if (!newRoute.nodes.empty())
                 {
@@ -247,14 +280,31 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
                 }
 
                 // If there is no nodes in this route, this route is finished.
-                foreach (const VGEdge& edge, newRoute.edges)
-                    newRoute.cost += valueGraph_[edge]->cost;
+                for (size_t i = 0, s = newRoute.edges.size(); i < s; ++i)
+                {
+                    VGEdge edge = newRoute.edges[i];
+                    int cost = valueGraph_[edge]->cost;
+                    const ArrayRegion& region = newRoute.regions[i];
+                    
+                    // Make an approximation of the cost for partial array.
+                    if (region.type == SingleElement)
+                    {
+                        if (region.diff)
+                            cost *= 0.9;
+                        else
+                            cost *= 0.1;
+                        cout << "!!!" << cost << "\n";
+                    }
+                    newRoute.cost += cost;
+                }
 
                 vector<Route>& routes = allRoutes[valToRestore];
                 routes.push_back(Route());
                 // Swap instead of copy for performance.
                 routes.back().edges.swap(newRoute.edges);
+                routes.back().regions.swap(newRoute.regions);
                 routes.back().paths = newRoute.paths;
+                routes.back().cost = newRoute.cost;
 
                 continue;
             }
@@ -278,10 +328,109 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
                 foreach (const VGEdge& edge, boost::out_edges(node, valueGraph_))
                 {
                     VGVertex tar = boost::target(edge, valueGraph_);
-                    newRoute.edges.push_back(edge);
-                    newRoute.nodes.push_back(make_pair(tar, node));
+                    newRoute.addEdge(edge);
+                    newRoute.addVertices(tar, node);
                 }
                 unfinishedRoutes.push(newRoute);
+                continue;
+            }
+            
+            // For a vector/array node, we have to make sure to retrieve all its
+            // elements' values. 
+            if (isArrayNode(valueGraph_[node]))
+            {
+                // Now we only assume that there are three regions on edges: universal, single
+                // element and its difference. Later we will consider to extend this limitation.
+                
+                vector<VGEdge> edges;
+                foreach (const VGEdge& edge, boost::out_edges(node, valueGraph_))
+                    edges.push_back(edge);
+                
+                //cout << "R: " << region << endl;
+                
+                size_t s = edges.size();
+                for (size_t i = 0; i < s; ++i)
+                {
+                    VGVertex tar = boost::target(edges[i], valueGraph_);
+                    ArrayRegion region1 = valueGraph_[edges[i]]->region & region;
+                    //cout << "R1: " << region1 << endl;
+                    
+                    
+                    if (containsVertex(unfinishedRoute.nodes, tar))
+                        continue;
+                    
+                    if (region1.isEmpty())
+                        continue;
+                    
+                    if (region1 == region)
+                    {
+                        Route newRoute = unfinishedRoute;
+                        newRoute.addEdge(edges[i], region1);
+                        newRoute.addVertices(tar, node, region1);
+                        newRoute.paths &= valueGraph_[edges[i]]->paths[dagIndex];
+                        if (!newRoute.paths.isEmpty())
+                            unfinishedRoutes.push(newRoute);
+                        continue;
+                    }
+                                            
+                    
+                    // Here we temporarily assume that the region is either a single
+                    // element or its difference.
+                    ROSE_ASSERT(valueGraph_[edges[i]]->region.type == SingleElement);
+                    //cout << ">>> VECTOR <<<\n";
+                    
+                    
+                    bool indexUnknown = false;
+                    VGVertex indexVertex;
+                    if (!region1.var1.isConst())
+                    {
+                        indexUnknown = true;
+                        VersionedVariable var = valueGraph_[edges[i]]->region.var1.var;
+                        ROSE_ASSERT(varVertexMap_.count(var));
+                        indexVertex = varVertexMap_[var];
+                    }
+                    
+                    for (size_t j = 0; j < s; ++j)
+                    {
+                        if (i == j)
+                            continue;
+                        
+                        // Make sure the edge has the same path set.
+                        if (valueGraph_[edges[i]]->paths[dagIndex] !=
+                            valueGraph_[edges[j]]->paths[dagIndex])
+                            continue;
+                        
+                        VGVertex tar2 = boost::target(edges[j], valueGraph_);
+                        ArrayRegion region2 = valueGraph_[edges[j]]->region & !region1;
+                        //cout << "R2: " << region2 << endl;
+                        //cout << "R12: " << (region2 | region1) << endl;
+                        //cout << ((region1 | region2) == region) << endl;
+                        
+                        
+                        if (containsVertex(unfinishedRoute.nodes, tar2))
+                            continue;
+                        
+                        if (region2.isEmpty())
+                            continue;
+                    
+                        if ((region1 | region2) == region)
+                        {
+                            Route newRoute = unfinishedRoute;
+                            newRoute.addEdge(edges[i], region1);
+                            newRoute.addEdge(edges[j], region2);
+                            newRoute.addVertices(tar, node, region1);
+                            newRoute.addVertices(tar2, node, region2);
+                            if (indexUnknown)
+                            {
+                                cout << ">>> Add index: " << valueGraph_[indexVertex]->toString() << endl;
+                                newRoute.addVertices(indexVertex, VGVertex());
+                            }
+                            newRoute.paths &= valueGraph_[edges[i]]->paths[dagIndex];
+                            if (!newRoute.paths.isEmpty())
+                                unfinishedRoutes.push(newRoute);
+                        }
+                    }
+                }
                 continue;
             }
 
@@ -295,13 +444,13 @@ map<EventReverser::VGEdge, PathInfo> EventReverser::getReversalRoute(
                     continue;
                 
                 // The the following function returns true if adding
-                // this edge will form a circle.
+                // this edge will form a cycle.
                 if (containsVertex(unfinishedRoute.nodes, tar))
                     continue;
 
                 Route newRoute = unfinishedRoute;
-                newRoute.edges.push_back(edge);
-                newRoute.nodes.push_back(make_pair(tar, node));
+                newRoute.addEdge(edge);
+                newRoute.addVertices(tar, node);
                 newRoute.paths &= valueGraph_[edge]->paths[dagIndex];
                 if (!newRoute.paths.isEmpty())
                     unfinishedRoutes.push(newRoute);
@@ -314,15 +463,23 @@ NEXT:
     //map<VGVertex, vector<RouteWithCost> > allRoutes;
     
     typedef map<VGVertex, vector<Route> >::value_type VertexWithRoute;
-#if 0
+#if 1
     foreach (const VertexWithRoute& nodeWithRoutes, allRoutes)
     {
         cout << "\n\n\n" << valueGraph_[nodeWithRoutes.first]->toString() << "\n\n";
         foreach (const Route& route, nodeWithRoutes.second)
         {
             cout << '\n' << route.paths << " " << route.cost << "\n";
-            foreach (const VGEdge& edge, route.edges)
-                cout << edge << " ==> ";
+            ROSE_ASSERT(route.edges.size() == route.regions.size());
+            for (size_t i = 0, s = route.edges.size(); i < s; ++i)
+            //foreach (const VGEdge& edge, route.edges)
+            {
+                VGEdge edge = route.edges[i];
+                VGVertex src = boost::source(edge, valueGraph_);
+                VGVertex tgt = boost::target(edge, valueGraph_);
+                cout << "<" << valueGraph_[src]->toString() << ", " <<
+                        valueGraph_[tgt]->toString() << "> " << route.regions[i] << " ==> ";
+            }
             cout << "\n";
         }
     }
@@ -337,7 +494,7 @@ NEXT:
     //pair<int, int> path = make_pair(dagIndex, pathIndex);
     //set<VGVertex>& nodesInRoute = routeNodesAndEdges_[path].first;
     //set<VGEdge>&   edgesInRoute = routeNodesAndEdges_[path].second;
-    map<VGEdge, PathInfo> edgesInRoute;
+    map<VGEdge, EdgeInfo> edgesInRoute;
     
     // The following map stores the cost of each edge and how many times it's shared
     // by different to-store values.
@@ -345,7 +502,21 @@ NEXT:
     
     // Collect cost information.
     foreach (const VGEdge& edge, boost::edges(valueGraph_))
-        costForEdges[edge] = make_pair(valueGraph_[edge]->cost, 0);
+    {
+        int cost = valueGraph_[edge]->cost;
+        const ArrayRegion& region = valueGraph_[edge]->region;
+
+        // Make an approximation of the cost for partial array.
+        if (region.type == SingleElement)
+        {
+            if (region.diff)
+                cost *= 0.9;
+            else
+                cost *= 0.1;
+        }
+        
+        costForEdges[edge] = make_pair(cost, 0);
+    }
     
     // Make stats how many times an edge is shared by different to-store values.
     foreach (VertexWithRoute& nodeWithRoute, allRoutes)
@@ -382,10 +553,21 @@ NEXT:
             float cost = 0;
             
             //RouteWithPaths& route = nodeWithRoute.second[i];
-            foreach (const VGEdge& edge, route.edges)
+            for (size_t i = 0, s = route.edges.size(); i < s; ++i)
             {
+                VGEdge& edge = route.edges[i];
                 //route.second += subgraph[edge]->cost;
                 pair<int, int> costWithCounter = costForEdges[edge];
+                
+                // Make an approximation of the cost for partial array.
+                if (route.regions[i].type == SingleElement)
+                {
+                    if (route.regions[i].diff)
+                        costWithCounter.first *= 0.9;
+                    else
+                        costWithCounter.first *= 0.1;
+                }
+
                 // In this way we make an approximation of the real cost in the
                 // final route graph.
                 cost += float(costWithCounter.first) / costWithCounter.second;
@@ -445,9 +627,12 @@ NEXT:
             if (!route.paths.any())
                 continue;
             
-            foreach (const VGEdge& edge, route.edges)
+            for (size_t i = 0, s = route.edges.size(); i < s; ++i)
+            //foreach (const VGEdge& edge, route.edges)
             {
-                PathInfo& paths = edgesInRoute[edge];
+                VGEdge edge = route.edges[i];
+                edgesInRoute[edge].region = route.regions[i];
+                PathInfo& paths = edgesInRoute[edge].paths[dagIndex];
                 if (paths.empty())
                     paths = route.paths;
                 else
@@ -514,7 +699,7 @@ set<EventReverser::VGEdge> EventReverser::getReversalRoute(
         
         
         Route route;
-        route.nodes.push_back(make_pair(valToRestore, valToRestore));
+        route.addVertices(valToRestore, valToRestore);
 
         vector<Route> routes(1, route);
 
@@ -536,7 +721,7 @@ set<EventReverser::VGEdge> EventReverser::getReversalRoute(
             //    continue;
 
             // Get the node on the top, and find it out edges.
-            VGVertex node = unfinishedRoute.nodes.back().first;
+            VGVertex node = unfinishedRoute.nodes.back().get<0>();
             
             
             // Currently, we forbid the route graph includes any function call nodes
@@ -559,10 +744,10 @@ set<EventReverser::VGEdge> EventReverser::getReversalRoute(
                 VGVertex parent;
                 do
                 {
-                    parent = newRoute.nodes.back().second;
+                    parent = newRoute.nodes.back().get<1>();
                     newRoute.nodes.pop_back();
                     if (newRoute.nodes.empty()) break;
-                } while (parent == newRoute.nodes.back().first);
+                } while (parent == newRoute.nodes.back().get<0>());
 
                 if (!newRoute.nodes.empty())
                 {
@@ -608,7 +793,7 @@ set<EventReverser::VGEdge> EventReverser::getReversalRoute(
                 {
                     VGVertex tar = boost::target(edge, subgraph);
                     newRoute.edges.push_back(edge);
-                    newRoute.nodes.push_back(make_pair(tar, node));
+                    newRoute.addVertices(tar, node);
                 }
                 unfinishedRoutes.push(newRoute);
                 continue;
@@ -680,7 +865,7 @@ set<EventReverser::VGEdge> EventReverser::getReversalRoute(
 
                 Route newRoute = unfinishedRoute;
                 newRoute.edges.push_back(edge);
-                newRoute.nodes.push_back(make_pair(tar, node));
+                newRoute.addVertices(tar, node);
                 unfinishedRoutes.push(newRoute);
             } // end of foreach (const VGEdge& edge, boost::out_edges(node, subgraph))
 NEXT:

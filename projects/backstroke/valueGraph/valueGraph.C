@@ -1229,24 +1229,13 @@ EventReverser::createVectorElementNode(SgFunctionCallExp* funcCallExp)
     // calling this function to the function call node.
     SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function());
     ROSE_ASSERT(binExp);
-    VarName varName = SSA::getVarName(binExp->get_lhs_operand());
-
     
     SgExpression* vecExp = binExp->get_lhs_operand();
-    SgExpression* indexExp = funcCallExp->get_args()->get_expressions()[0];
-
-
-    VectorElementNode* eleNode = new VectorElementNode(
-            getVersionedVariable(vecExp),
-            getVersionedVariable(indexExp),
-            funcCallExp);
-    VGVertex eleVertex = addValueGraphNode(eleNode);
+    if (SgPointerDerefExp* derefExp = isSgPointerDerefExp(vecExp))
+        vecExp = derefExp->get_operand();
     
-    // Add this new created vertex to the map.
-    nodeVertexMap_[funcCallExp] = eleVertex;
-
-
-
+    SgExpression* indexExp = funcCallExp->get_args()->get_expressions()[0];
+    VarName varName = SSA::getVarName(vecExp);
 
 
     // Get all uses and defs from this function call.
@@ -1257,6 +1246,9 @@ EventReverser::createVectorElementNode(SgFunctionCallExp* funcCallExp)
     
     typedef map<VarName, SSA::ReachingDefPtr>::value_type PT;
     
+    bool foundUse = false;
+    bool foundDef = false;
+    
     foreach (const PT& nameDef, useTable)
     {
         if (nameDef.first == varName)
@@ -1264,6 +1256,8 @@ EventReverser::createVectorElementNode(SgFunctionCallExp* funcCallExp)
             VersionedVariable var(varName, nameDef.second->getRenamingNumber());
             ROSE_ASSERT(varVertexMap_.count(var));
             useVertex = varVertexMap_[var];
+            foundUse = true;
+            break;
         }
     }
     
@@ -1274,8 +1268,46 @@ EventReverser::createVectorElementNode(SgFunctionCallExp* funcCallExp)
             VersionedVariable var(varName, nameDef.second->getRenamingNumber());
             ROSE_ASSERT(varVertexMap_.count(var));
             defVertex = varVertexMap_[var];
+            foundDef = true;
+            break;
         }
     }
+    
+    if (!(foundUse && foundDef))
+    {
+        cout << "We cannot find both the use and def of the vector: " << endl;
+        cout << binExp->unparseToString() << endl;
+        foreach (SgInitializedName* name, varName)
+            cout << name->get_name() << ' ';
+        cout << endl;
+        ROSE_ASSERT(0);
+        return VGVertex();
+    }
+    
+    
+    // Create a new array element node in the VG, and connect and edge between it
+    // and the array/vector.
+    VersionedVariable v = getVersionedVariable(indexExp);
+    //cout << valueGraph_[defVertex]->toString() << endl;
+    
+    if (!isValueNode(valueGraph_[defVertex]))
+    {
+        return VGVertex();
+    }
+    
+    
+    cout << isValueNode(valueGraph_[defVertex]) << ' ' << isValueNode(valueGraph_[defVertex])->var.toString() << endl;
+    cout << v.toString() << endl;;
+    VectorElementNode* eleNode = new VectorElementNode(
+            isValueNode(valueGraph_[defVertex])->var,
+            getVersionedVariable(indexExp),
+            funcCallExp);
+    VGVertex eleVertex = addValueGraphNode(eleNode);
+    
+    // Add this new created vertex to the map.
+    nodeVertexMap_[funcCallExp] = eleVertex;
+
+    
     
     //cout << "### Adding two edges between two vectors...\n";
     VGEdge newEdge = addValueGraphEdge(useVertex, defVertex);

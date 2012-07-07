@@ -223,7 +223,7 @@ private:
         SgScopeStatement* cmtScope);
     
     //! Build the route graph representing search result.
-    void buildRouteGraph(const std::map<VGEdge, PathInfos>& routes);
+    void buildRouteGraph(const std::map<VGEdge, EdgeInfo>& routes);
     
     //! Remove phi nodes from the route graph to facilitate code generation.
     void removePhiNodesFromRouteGraph();
@@ -314,7 +314,7 @@ private:
      *  @param valuesToRestore All variables to restore in the subgraph.
      *  @returns reversalRoute The search result.
 	 */
-    std::map<VGEdge, PathInfo> getReversalRoute(
+    std::map<VGEdge, EdgeInfo> getReversalRoute(
         int dagIndex,
         const std::set<VGVertex>& valsToRestore);
 

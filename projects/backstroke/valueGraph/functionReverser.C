@@ -162,7 +162,7 @@ void EventReverser::generateCode()
     cout << "Start search.\n";
     
     // The following table collects which VG edges are in the final route graph.
-    map<VGEdge, PathInfos> routes;
+    map<VGEdge, EdgeInfo> routes;
     
     // Process the whole function first to see which variables are needed in loops.
     size_t pathNum = pathNumManager_->getNumberOfPath(0);
@@ -170,11 +170,11 @@ void EventReverser::generateCode()
     
     
     
-    map<VGEdge, PathInfo> routeWithPaths = getReversalRoute(0, valuesToRestore_[0]);
+    map<VGEdge, EdgeInfo> routeWithPaths = getReversalRoute(0, valuesToRestore_[0]);
     //cout << ">>>> number of edges: " << routeWithPaths.size() << ' ' << valuesToRestore_[0].size() << endl;
-    typedef map<VGEdge, PathInfo>::value_type T;
+    typedef map<VGEdge, EdgeInfo>::value_type T;
     foreach (const T& edgeAndPaths, routeWithPaths)
-        routes[edgeAndPaths.first][0] = edgeAndPaths.second;
+        routes[edgeAndPaths.first] = edgeAndPaths.second;
     
     // Process other DAGs.
     int dagNum = pathNumManager_->getNumberOfDags();
@@ -342,15 +342,15 @@ void EventReverser::buildPathNumDeclForRvsCmtFunc(
     SageInterface::prependStatement(SageInterface::copyStatement(pathNumDecl), cmtScope);
 }
 
-void EventReverser::buildRouteGraph(const map<VGEdge, PathInfos>& routes)
+void EventReverser::buildRouteGraph(const map<VGEdge, EdgeInfo>& routes)
 {
     map<VGVertex, VGVertex> nodeTable;
     
-    typedef map<VGEdge, PathInfos>::value_type EdgePathPair;
+    typedef map<VGEdge, EdgeInfo>::value_type EdgePathPair;
     foreach (const EdgePathPair& edgePath, routes)
     {
         const VGEdge& edge = edgePath.first;
-        const PathInfos& paths = edgePath.second;
+        const PathInfos& paths = edgePath.second.paths;
         
         VGVertex src = boost::source(edge, valueGraph_);
         VGVertex tgt = boost::target(edge, valueGraph_);
@@ -382,6 +382,9 @@ void EventReverser::buildRouteGraph(const map<VGEdge, PathInfos>& routes)
         VGEdge e = boost::add_edge(newSrc, newTgt, routeGraph_).first;
         
         ValueGraphEdge* newEdge = valueGraph_[edge]->clone();
+        
+        // Set the region.
+        newEdge->region = edgePath.second.region;
         
         // For SS edge, keep its original paths.
         if (isStateSavingEdge(newEdge))
@@ -1272,19 +1275,48 @@ void EventReverser::generateCodeForBasicBlock(
 
             //cout << killer->unparseToString() << ' ' << valNode->toString() << endl;
 
+            
+            SgExpression* varExp = valNode->var.getVarRefExp();
+            
+            
+            if (ssEdge->region.hasSingleElement())
+            {
+                SgExpression* indexExp = ssEdge->region.var1.buildVarExpression();
+                
+                
+                SgType* varType = varExp->get_type();
+                if (SgPointerType* pt = isSgPointerType(varType))
+                {
+                    varType = pt->get_base_type();
+                    varExp = buildPointerDerefExp(varExp);
+                }
+                
+                // For a vector variable, if the SS edge indicates that only one element 
+                // needs to be save, we just save it instead of the whole vector.
+                if (BackstrokeUtility::isSTLContainer(varType, "vector"))
+                {
+                    using namespace SageBuilder;
+                    varExp = buildDotExp(varExp, buildFunctionCallExp(
+                            "at", buildVoidType(),
+                            buildExprListExp(indexExp)));
+                }
+                else
+                    ROSE_ASSERT(false);
+            }
+                
             // Since a SS edge can appear in several DAGs, the flag varStored indicates
             // if this variable is already stored in forward function. But in reverse function,
             // several restores are needed.
             if (!ssEdge->varStored)
             {
                 pushFuncStmt = buildExprStatement(
-                        buildStoreFunctionCall(valNode->var.getVarRefExp()));
+                        buildStoreFunctionCall(varExp));
                 ssEdge->varStored = true;
             }
 
             //instrumentPushFunction(valNode, funcDef_);
             rvsStmt = buildExprStatement(
-                    buildRestoreFunctionCall(valNode->var.getVarRefExp()));
+                    buildRestoreFunctionCall(varExp));
 
             // Build the commit statement.
             cmtStmt = buildPopStatement(valNode->getType());

@@ -1,4 +1,5 @@
 #include "valueGraphNode.h"
+#include <utilities/utilities.h>
 #include <staticSingleAssignment.h>
 #include <sageBuilder.h>
 #include <boost/assign/list_inserter.hpp>
@@ -423,7 +424,8 @@ std::string ValueGraphEdge::toString() const
     
 #if 1
     str += "cost:" + boost::lexical_cast<std::string>(cost) + "\\n";
-    str += paths.toString();
+    str += paths.toString() + "\\n";
+    str += region.toString();
 #endif
     
 #if 0
@@ -455,6 +457,30 @@ std::string StateSavingEdge::toString() const
     if (killer)
         str += killer->class_name() + "\\n";// + boost::lexical_cast<std::string>(visiblePathNum) + "\\n";
     return str + ValueGraphEdge::toString();
+}
+
+bool isArrayNode(ValueGraphNode* node)
+{
+    if (ValueNode* valNode = isValueNode(node))
+    {
+        if (valNode->var.name.empty())
+            return false;
+        
+        SgType* t = valNode->var.name.back()->get_type();
+        if (SgPointerType* pt = isSgPointerType(t))
+            t = pt->get_base_type();
+        
+        if (BackstrokeUtility::isSTLContainer(t, "vector"))
+            return true;
+        
+        if (SgExpression* exp = isSgExpression(valNode->astNode))
+        {
+            if (BackstrokeUtility::isSTLContainer(exp->get_type(), "vector"))
+                return true;
+            // TODO: check if it is an array type.
+        }
+    }
+    return false;    
 }
 
 } // End of namespace Backstroke

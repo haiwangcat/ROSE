@@ -316,6 +316,14 @@ struct PhiEdge : ValueGraphEdge
 #endif
 
 
+//! A structure storing the information of each edge during the search.
+struct EdgeInfo
+{
+    PathInfos paths;
+    ArrayRegion region;
+};
+
+
 #if 0
 //! An edge connecting two array nodes or an array and an array element node.
 struct ArrayRegionEdge : ValueGraphEdge
@@ -414,6 +422,8 @@ inline MuNode* isMuNode(ValueGraphNode* node)
 {
 	return dynamic_cast<MuNode*>(node);
 }
+
+bool isArrayNode(ValueGraphNode* node);
 
 inline FunctionCallNode* isFunctionCallNode(ValueGraphNode* node)
 {
