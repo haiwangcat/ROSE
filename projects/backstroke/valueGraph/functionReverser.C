@@ -278,7 +278,7 @@ void EventReverser::generateCode()
     }
     
     
-    pathNumManager_->insertLoopCounterToFwdFunc(loopHeaders);
+    //pathNumManager_->insertLoopCounterToFwdFunc(loopHeaders);
     if (pathNumNeeded)
         pathNumManager_->insertPathNumToFwdFunc();
 
@@ -1769,6 +1769,8 @@ bool EventReverser::generateCode(
             cmtScope = cmtScopeTable[rvsCFG[node].paths];
         }
         
+        // 7/10/2012 Disable generating loops in the reverse function.
+#if 0
         // If a loop is needed at the beginning of this basic block.
         int dagIndexInBasicBlock = rvsCFG[node].dagIndex;
         if (dagIndexInBasicBlock != dagIndex && dagIndexInBasicBlock > 0)
@@ -1792,6 +1794,7 @@ bool EventReverser::generateCode(
                     isSgScopeStatement(cmtForStmt->get_loop_body()), 
                     pathNumName);
         }
+#endif
 
         // Generate all code in the scope of this node.
         generateCodeForBasicBlock(rvsCFG[node].edges, rvsScope, cmtScope);

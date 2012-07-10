@@ -803,6 +803,9 @@ void PathNumManager::insertPathNumToFwdFunc()
             // Insert the path num update on the CFG edge.
             insertPathNumberOnEdge(src, tgt, pathNumName, edgeVal.second);
         }
+        
+        // 7/10/2012 Disable path num record in loops.
+        break;
     }
 
     // In the forward event, push the path number variable to the stack just before
@@ -816,7 +819,7 @@ void PathNumManager::insertPathNumToFwdFunc()
             buildStoreFunctionCall(pathNumVar));
     popScopeStack();
     
-    // For each in edges to exit node of CFG, insert the push functin on that edge.
+    // For each in edges to exit node of CFG, insert the push function on that edge.
     foreach (BackstrokeCFG::Vertex cfgNode, 
             boost::inv_adjacent_vertices(cfg_->getExit(), *cfg_))
     {

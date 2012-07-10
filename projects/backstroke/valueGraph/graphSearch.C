@@ -201,9 +201,12 @@ map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
         {
             Route route;
             route.addVertices(valToRestore, VGVertex());
-            VGEdge edge = *(boost::out_edges(valToRestore, valueGraph_).first);
-            route.paths = valueGraph_[edge]->paths[dagIndex].makeFullPath();
-            unfinishedRoutes.push(route);
+            if (boost::out_degree(valToRestore, valueGraph_) > 0)
+            {
+                VGEdge edge = *(boost::out_edges(valToRestore, valueGraph_).first);
+                route.paths = valueGraph_[edge]->paths[dagIndex].makeFullPath();
+                unfinishedRoutes.push(route);
+            }
         }
         
 #else        
