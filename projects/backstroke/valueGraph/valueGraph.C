@@ -638,7 +638,7 @@ void EventReverser::assignNameToNodes()
     set<string> names;
     foreach (VGVertex node, boost::vertices(valueGraph_))
     {
-        ValueNode* valNode = isValueNode(valueGraph_[node]);
+        ScalarValueNode* valNode = isScalarValueNode(valueGraph_[node]);
         if (valNode == NULL) continue;
         if (valNode->isAvailable()) continue;
 
@@ -679,7 +679,7 @@ void EventReverser::addPathsToEdges()
             continue;
         }
 
-        if (ValueNode* valNode = isValueNode(valueGraph_[src]))
+        if (ScalarValueNode* valNode = isScalarValueNode(valueGraph_[src]))
         {
             edge->paths = pathNumManager_->getPathNumbers(valNode->astNode);
         }
@@ -705,7 +705,7 @@ void EventReverser::addPathsToEdges()
                 stateSavingEdge = edge;
             else
             {
-                ValueNode* valNode = isValueNode(node);
+                ScalarValueNode* valNode = isScalarValueNode(node);
                 ROSE_ASSERT(valNode);
                 boost::tie(edge->dagIndex, edge->paths) =
                     pathNumManager_->getPathNumbers(valNode->astNode);
@@ -744,7 +744,7 @@ EventReverser::PathSetWithIndex EventReverser::addPathsForPhiNodes(
             if (processedPhiNodes.count(phiNode) == 0)
                 addPathsForPhiNodes(tar, processedPhiNodes);
         }
-        if (isValueNode(valueGraph_[tar]))
+        if (isScalarValueNode(valueGraph_[tar]))
         {
             
         }
@@ -812,7 +812,7 @@ void EventReverser::addAvailableAndTargetValues()
     // Collect all target values.
     foreach (VGVertex node, boost::vertices(valueGraph_))
     {
-        ValueNode* valNode = isValueNode(valueGraph_[node]);
+        ScalarValueNode* valNode = isScalarValueNode(valueGraph_[node]);
         if (!valNode) continue;
         if (valNode->var.name.empty()) continue;
         
@@ -908,8 +908,8 @@ void EventReverser::addExtraNodesAndEdges()
             ValueGraphNode* lhsNode = valueGraph_[lhs];
             ValueGraphNode* rhsNode = valueGraph_[rhs];
 
-            ValueNode* lhsValNode = isValueNode(lhsNode);
-            ValueNode* rhsValNode = isValueNode(rhsNode);
+            ScalarValueNode* lhsValNode = isScalarValueNode(lhsNode);
+            ScalarValueNode* rhsValNode = isScalarValueNode(rhsNode);
 
             // If the operand is a constant, we don't have to build the relationship.
             if (!(lhsValNode && lhsValNode->isAvailable()))
@@ -1195,7 +1195,7 @@ EventReverser::addValueGraphStateSavingEdges(VGVertex src)
     VGEdge newEdge = boost::add_edge(src, root_, valueGraph_).first;
 
     SgNode* astNode = NULL;
-    if (ValueNode* valNode = isValueNode(valueGraph_[src]))
+    if (ScalarValueNode* valNode = isScalarValueNode(valueGraph_[src]))
         astNode = valNode->astNode;
     ROSE_ASSERT(astNode);
 
@@ -1216,7 +1216,7 @@ set<EventReverser::VGVertex> EventReverser::getKillers(VGVertex killedNode)
 
 EventReverser::VGVertex EventReverser::createThisExpNode(SgThisExp* thisExp)
 {
-    VGVertex newNode = addValueGraphNode(new ValueNode(thisExp));
+    VGVertex newNode = addValueGraphNode(new ScalarValueNode(thisExp));
     nodeVertexMap_[thisExp] = newNode;        
     return newNode;
 }
@@ -1290,16 +1290,16 @@ EventReverser::createVectorElementNode(SgFunctionCallExp* funcCallExp)
     VersionedVariable v = getVersionedVariable(indexExp);
     //cout << valueGraph_[defVertex]->toString() << endl;
     
-    if (!isValueNode(valueGraph_[defVertex]))
+    if (!isScalarValueNode(valueGraph_[defVertex]))
     {
         return VGVertex();
     }
     
     
-    cout << isValueNode(valueGraph_[defVertex]) << ' ' << isValueNode(valueGraph_[defVertex])->var.toString() << endl;
+    cout << isScalarValueNode(valueGraph_[defVertex]) << ' ' << isScalarValueNode(valueGraph_[defVertex])->var.toString() << endl;
     cout << v.toString() << endl;;
     VectorElementNode* eleNode = new VectorElementNode(
-            isValueNode(valueGraph_[defVertex])->var,
+            isScalarValueNode(valueGraph_[defVertex])->var,
             getVersionedVariable(indexExp),
             funcCallExp);
     VGVertex eleVertex = addValueGraphNode(eleNode);
@@ -1433,8 +1433,8 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
                     pathNumManager_->getPathNumbers(funcCallExp));
         
         
-        ROSE_ASSERT(isValueNode(valueGraph_[argVertex]));
-        VersionedVariable var = isValueNode(valueGraph_[argVertex])->var;
+        ROSE_ASSERT(isScalarValueNode(valueGraph_[argVertex]));
+        VersionedVariable var = isScalarValueNode(valueGraph_[argVertex])->var;
         
         //VarName varName = SSA::getVarName(arg);
         SSA::NodeReachingDefTable::const_iterator iter = defTable.find(var.name);
@@ -1449,7 +1449,7 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
             else
             {
                 //createValueNode(arg, NULL);
-                ValueNode* valNode = new ValueNode(var, funcCallExp);
+                ScalarValueNode* valNode = new ScalarValueNode(var, funcCallExp);
                 argVertex = addValueGraphNode(valNode);
                 varVertexMap_[var] = argVertex;
                 
@@ -1474,8 +1474,8 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     {
         // If the function called is a virtual one, add two dummy value nodes then its
         // inverse can be generated temporarily. This is a workaround!
-        ValueNode* valueNodeIn  = new ValueNode(funcCallExp);
-        ValueNode* valueNodeOut = new ValueNode(funcCallExp);
+        ScalarValueNode* valueNodeIn  = new ScalarValueNode(funcCallExp);
+        ScalarValueNode* valueNodeOut = new ScalarValueNode(funcCallExp);
         VGVertex inVertex  = addValueGraphNode(valueNodeIn);
         VGVertex outVertex = addValueGraphNode(valueNodeOut);
 
@@ -1544,7 +1544,7 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
         
         // Here we set the AST node of this value to be the function call expression
         // in order to get its correct path information.
-        ValueNode* valNode = new ValueNode(var, funcCallExp);
+        ScalarValueNode* valNode = new ScalarValueNode(var, funcCallExp);
         VGVertex lhsVertex = addValueGraphNode(valNode);
         varVertexMap_[var] = lhsVertex;
         
@@ -1621,7 +1621,7 @@ EventReverser::VGVertex EventReverser::createForgottenValueNode(const VersionedV
     if (varVertexMap_.count(var) == 0)
     {
         //ROSE_ASSERT(!"Infeasible path???");
-        newVertex = addValueGraphNode(new ValueNode(var, funcDef_));
+        newVertex = addValueGraphNode(new ScalarValueNode(var, funcDef_));
         //nodeVertexMap_[node] = newVertex;
         if (!var.isNull())
             varVertexMap_[var] = newVertex;
@@ -1641,7 +1641,7 @@ EventReverser::VGVertex EventReverser::createValueNode(SgNode* node)
     {
         //ROSE_ASSERT(!"Infeasible path???");
         VersionedVariable var = getVersionedVariable(node, true);
-        newVertex = addValueGraphNode(new ValueNode(var, node));
+        newVertex = addValueGraphNode(new ScalarValueNode(var, node));
         nodeVertexMap_[node] = newVertex;
         if (!var.isNull())
             varVertexMap_[var] = newVertex;
@@ -1673,7 +1673,7 @@ EventReverser::VGVertex EventReverser::createValueNode(SgNode* lhsNode, SgNode* 
         {
             //ROSE_ASSERT(!"Infeasible path???");
             VersionedVariable rhsVar = getVersionedVariable(rhsNode, true);
-            rhsVertex = addValueGraphNode(new ValueNode(rhsVar, rhsNode));
+            rhsVertex = addValueGraphNode(new ScalarValueNode(rhsVar, rhsNode));
             nodeVertexMap_[rhsNode] = rhsVertex;
             if (!rhsVar.isNull())
                 varVertexMap_[rhsVar] = rhsVertex;
@@ -1685,7 +1685,7 @@ EventReverser::VGVertex EventReverser::createValueNode(SgNode* lhsNode, SgNode* 
     // If rhsNode just contains a rvalue, combine those two nodes.
     if (lhsNode && rhsNode)
     {
-        ValueNode* rhsValNode = isValueNode(valueGraph_[rhsVertex]);
+        ScalarValueNode* rhsValNode = isScalarValueNode(valueGraph_[rhsVertex]);
         //ROSE_ASSERT(rhsValNode);
         // It is possible that rhsValNode is NULL when it is a function call node.
         if (rhsValNode && rhsValNode->var.isNull())
@@ -1703,7 +1703,7 @@ EventReverser::VGVertex EventReverser::createValueNode(SgNode* lhsNode, SgNode* 
     {
         //VersionedVariable var = getVersionedVariable(lhsNode, false);
 
-        ValueNode* valNode = new ValueNode(var, lhsNode);
+        ScalarValueNode* valNode = new ScalarValueNode(var, lhsNode);
         lhsVertex = addValueGraphNode(valNode);
 
         varVertexMap_[var] = lhsVertex;
@@ -1952,7 +1952,7 @@ void EventReverser::addStateSavingEdges()
         ValueGraphNode* node = valueGraph_[v];
 
         // SS edges are only added to phi nodes and value nodes.
-        ValueNode* valNode = isValueNode(node);
+        ScalarValueNode* valNode = isScalarValueNode(node);
         if (valNode == NULL) continue;
         
 #if 0
@@ -2053,7 +2053,7 @@ void EventReverser::addStateSavingEdges()
     // no out SS edges, we add one for it. This is for local variables mainly.
     foreach (VGVertex v, boost::vertices(valueGraph_))
     {
-        ValueNode* valNode = isValueNode(valueGraph_[v]);
+        ScalarValueNode* valNode = isScalarValueNode(valueGraph_[v]);
         if (!valNode || valNode->var.name.size() != 1)
             continue;
                 
@@ -2112,7 +2112,7 @@ void EventReverser::addStateSavingEdges()
     set<SgInitializedName*> processedVars;
     foreach (VGVertex v, boost::vertices(valueGraph_))
     {
-        ValueNode* valNode = isValueNode(valueGraph_[v]);
+        ScalarValueNode* valNode = isScalarValueNode(valueGraph_[v]);
         if (!valNode || valNode->var.name.size() != 1)
             continue;
         
@@ -2473,7 +2473,7 @@ int EventReverser::RouteGraphEdgeComp::getEdgeValue(const VGEdge& edge) const
         --val;
     
     // A functin call parameter should have lower value than the value of function call node.
-    if (isSgFunctionCallExp(node) && isValueNode(routeGraph[tgt]))
+    if (isSgFunctionCallExp(node) && isScalarValueNode(routeGraph[tgt]))
         --val;
     
     // Make the value of SS edge smaller to make sure the restore is generated later than its killer.
@@ -2517,7 +2517,7 @@ void EventReverser::writeValueGraphNode(std::ostream& out, VGVertex node) const
         out << ", color=blue";
     
     ValueGraphNode* vgNode = valueGraph_[node];
-    if (isValueNode(vgNode))
+    if (isScalarValueNode(vgNode))
         out << ", color=purple";
     else if (isFunctionCallNode(vgNode))
         out << ", color=green";

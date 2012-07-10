@@ -181,7 +181,7 @@ map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
         
 #if 0
         // For dummy nodes.
-        if (ValueNode* v = isValueNode(valueGraph_[valToRestore]))
+        if (ScalarValueNode* v = isScalarValueNode(valueGraph_[valToRestore]))
         {
             if (v->isTemp())
             {
@@ -685,7 +685,7 @@ set<EventReverser::VGEdge> EventReverser::getReversalRoute(
         //bool firstNode = true;
         
         // For dummy nodes.
-        if (ValueNode* v = isValueNode(valueGraph_[valToRestore]))
+        if (ScalarValueNode* v = isScalarValueNode(valueGraph_[valToRestore]))
         {
             if (v->isTemp())
             {

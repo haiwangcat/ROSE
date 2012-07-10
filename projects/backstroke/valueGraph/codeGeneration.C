@@ -27,7 +27,7 @@ SgExpression* buildVariable(ValueNode* node)
 
     SgExpression* var = NULL;
     
-    if (var = node->var.getVarRefExp())
+    if (var = node->buildExpression())
         return var;
 
     if (node->isAvailable())
@@ -35,14 +35,14 @@ SgExpression* buildVariable(ValueNode* node)
     else
     {
         if (node->isStateVar)
-            var = node->var.getVarRefExp();
+            var = node->buildExpression();
         else
-            var = buildVarRefExp(getVarNameString(node->var.name));
+            var = buildVarRefExp(getVarNameString(node->getVarName()));
     }
     return var;
 }
 
-SgStatement* buildVarDeclaration(ValueNode* newVar, SgExpression* expr)
+SgStatement* buildVarDeclaration(ScalarValueNode* newVar, SgExpression* expr)
 {
     SgAssignInitializer* init = expr ? buildAssignInitializer(expr) : NULL;
     return buildVariableDeclaration(newVar->var.name[0]->get_name(),
@@ -65,7 +65,7 @@ void instrumentPushFunction(ValueNode* valNode, SgNode* astNode)
     // Build push function call.
 	//SgExprListExp* parameters = buildExprListExp(valNode->var.getVarRefExp());
 	//SgExpression* pushFunc = buildFunctionCallExp("push", buildVoidType(), parameters);    
-    SgExpression* pushFunc = buildPushFunctionCall(valNode->var.getVarRefExp());
+    SgExpression* pushFunc = buildPushFunctionCall(valNode->buildExpression());
     SgStatement* pushFuncStmt = buildExprStatement(pushFunc);
     
     SgStatement* stmt = SageInterface::getEnclosingStatement(astNode);
@@ -77,7 +77,7 @@ void instrumentPushFunction(ValueNode* valNode, SgFunctionDefinition* funcDef)
     // Build push function call.
 	//SgExprListExp* parameters = buildExprListExp(valNode->var.getVarRefExp());
 	//SgExpression* pushFunc = buildFunctionCallExp("push", buildVoidType(), parameters);
-    SgExpression* pushFunc = buildPushFunctionCall(valNode->var.getVarRefExp());
+    SgExpression* pushFunc = buildPushFunctionCall(valNode->buildExpression());
     //return buildExprStatement(pushFunc);
 
     SgNode* varNode = valNode->astNode;
@@ -189,7 +189,7 @@ SgExpression* buildRestoreFunctionCall(SgExpression* para)
 
 SgStatement* buildPushStatement(ValueNode* valNode)
 {
-    return buildExprStatement(buildPushFunctionCall(valNode->var.getVarRefExp()));
+    return buildExprStatement(buildPushFunctionCall(valNode->buildExpression()));
 }
 
 SgStatement* buildPushStatementForPointerType(ValueNode* valNode)
@@ -207,7 +207,7 @@ SgStatement* buildPushStatementForPointerType(ValueNode* valNode)
         
     return buildExprStatement(
             buildPushFunctionCall(
-                buildCloneFunctionCall(valNode->var.getVarRefExp(), valNode->getType())));
+                buildCloneFunctionCall(valNode->buildExpression(), valNode->getType())));
 }
 
 SgExpression* buildCloneFunctionCall(SgExpression* exp, SgType* type)
@@ -259,7 +259,7 @@ SgStatement* buildAssignOpertaion(ValueNode* lhs, ValueNode* rhs)
     SgExpression* expr;
     // If rhs is NULL, it's an assignment to itself, like a_1 = a;
     if (rhs == NULL)
-        expr = lhs->var.getVarRefExp();
+        expr = lhs->buildExpression();
     else
         expr = buildVariable(rhs);
     

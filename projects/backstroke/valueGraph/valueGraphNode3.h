@@ -154,7 +154,7 @@ struct PhiNode : VariableNode
 	}
 };
 
-struct ValueNode : VariableNode
+struct ScalarValueNode : VariableNode
 {
 	ValueNode(SgValueExp* exp) : VariableNode(), valueExp(exp) {}
 
@@ -275,9 +275,9 @@ inline OperatorNode* isOperatorNode(ValueGraphNode* node)
 	return dynamic_cast<OperatorNode*>(node);
 }
 
-inline ValueNode* isValueNode(ValueGraphNode* node)
+inline ScalarValueNode* isScalarValueNode(ValueGraphNode* node)
 {
-	return dynamic_cast<ValueNode*>(node);
+	return dynamic_cast<ScalarValueNode*>(node);
 }
 
 inline OrderedEdge* isOrderedEdge(ValueGraphEdge* edge)

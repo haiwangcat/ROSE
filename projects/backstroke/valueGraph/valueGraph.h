@@ -448,7 +448,7 @@ private:
             const SubValueGraph& subgraph) const;
 
     //! Get all operands of an operator node.
-    std::pair<ValueNode*, ValueNode*>
+    std::pair<ScalarValueNode*, ScalarValueNode*>
     getOperands(VGVertex opNode) const;
 
     //! Generate the reverse function.

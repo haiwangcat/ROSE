@@ -87,7 +87,7 @@ namespace
 }
 
 
-std::string ValueNode::toString() const
+std::string ScalarValueNode::toString() const
 {
 	ostringstream os;
 	if (SgValueExp* valueExp = isSgValueExp(astNode))
@@ -108,7 +108,7 @@ std::string ValueNode::toString() const
 
 VectorElementNode::VectorElementNode(const VersionedVariable& vec, 
     const VersionedVariable& index, SgFunctionCallExp* funcCallExp)
-: ValueGraphNode(funcCallExp), vecVar(vec), indexVar(index), indexVal(NULL)
+: ValueNode(funcCallExp), vecVar(vec), indexVar(index), indexVal(NULL)
 {
     SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function());
     ROSE_ASSERT(binExp);
@@ -134,6 +134,14 @@ std::string VectorElementNode::toString() const
 	return os.str();
 }
 
+SgExpression* VectorElementNode::buildExpression() const
+{
+    return SageBuilder::buildDotExp(
+            vecVar.getVarRefExp(), 
+            SageBuilder::buildFunctionCallExp(
+                "at", SageBuilder::buildVoidType(),
+                SageBuilder::buildExprListExp(indexVar.getVarRefExp())));
+}
 
 //void ValueNode::addVariable(const VersionedVariable& newVar)
 //{
@@ -161,7 +169,7 @@ int PhiNode::getCost() const
     return getCostFromType(getType());
 }
 
-SgType* ValueNode::getType() const
+SgType* ScalarValueNode::getType() const
 {
     SgType* type;
     if (!var.isNull())
@@ -178,7 +186,7 @@ SgType* ValueNode::getType() const
     return type;
 }
 
-int ValueNode::getCost() const
+int ScalarValueNode::getCost() const
 {
     if (isAvailable())
         return 0;
@@ -461,7 +469,7 @@ std::string StateSavingEdge::toString() const
 
 bool isArrayNode(ValueGraphNode* node)
 {
-    if (ValueNode* valNode = isValueNode(node))
+    if (ScalarValueNode* valNode = isScalarValueNode(node))
     {
         if (valNode->var.name.empty())
             return false;

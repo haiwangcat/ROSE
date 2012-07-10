@@ -8,12 +8,13 @@ namespace Backstroke
 {
 
 class ValueNode;
+class ScalarValueNode;
 
 //! Build a variable expression from a value node in the value graph.
 SgExpression* buildVariable(ValueNode* node);
 
 //! Build a variable declaration.
-SgStatement* buildVarDeclaration(ValueNode* newVar, SgExpression* expr = 0);
+SgStatement* buildVarDeclaration(ScalarValueNode* newVar, SgExpression* expr = 0);
 
 
 //! Build a local variable fron the given var name.

@@ -34,16 +34,43 @@ struct ValueGraphNode
     SgNode* astNode;
 };
 
-//! A value node can hold a lvalue and a rvalue.
+
 struct ValueNode : ValueGraphNode
-{    
+{
 	explicit ValueNode(SgNode* node = NULL)
-    : ValueGraphNode(node), isStateVar(false) {}
-    explicit ValueNode(const VersionedVariable& v, SgNode* node = NULL)
-    : ValueGraphNode(node), var(v), isStateVar(false) {}
+    : ValueGraphNode(node), isStateVar(false) {}   
+    
+    virtual SgExpression* buildExpression() const = 0;
+    virtual VarName getVarName() const = 0;
+	virtual bool isAvailable() const { return false; }
+    virtual SgType* getType() const {return NULL; }
+    
+    //! Indicates if the variable is a state one.
+    bool isStateVar;
+};
+
+//! A value node can hold a lvalue and a rvalue.
+struct ScalarValueNode : ValueNode
+{    
+	explicit ScalarValueNode(SgNode* node = NULL)
+    : ValueNode(node) {}
+    explicit ScalarValueNode(const VersionedVariable& v, SgNode* node = NULL)
+    : ValueNode(node), var(v) {}
 
 	virtual std::string toString() const;
     virtual int getCost() const;
+    
+    
+    virtual SgExpression* buildExpression() const
+    {
+        return var.getVarRefExp();
+    }
+    
+    
+    virtual VarName getVarName() const
+    {
+        return var.name;
+    }
 
     //void addVariable(const VersionedVariable& newVar);
 
@@ -53,7 +80,7 @@ struct ValueNode : ValueGraphNode
 	bool isAvailable() const { return isSgValueExp(astNode) != NULL; }
 
     //! Get the type of the value.
-    SgType* getType() const;
+    virtual SgType* getType() const;
     
 
 //    SgNode* getNode() const { return astNode; }
@@ -66,18 +93,16 @@ struct ValueNode : ValueGraphNode
     //! the name of the corresponding variable
     std::string str;
     
-    //! Indicates if the variable is a state one.
-    bool isStateVar;
 };
 
     
-struct ArrayElementNode : ValueGraphNode
+struct ArrayElementNode : ValueNode
 {
     explicit ArrayElementNode(SgNode* node = NULL)
-    : ValueGraphNode(node) {}
+    : ValueNode(node) {}
 };
 
-struct VectorElementNode : ValueGraphNode
+struct VectorElementNode : ValueNode
 {
 #if 0
     explicit VectorElementNode(SgFunctionCallExp* funcCallExp)
@@ -94,6 +119,13 @@ struct VectorElementNode : ValueGraphNode
         const VersionedVariable& index, SgFunctionCallExp* funcCallExp);
     
 	virtual std::string toString() const;
+    virtual SgExpression* buildExpression() const;
+    
+    
+    virtual VarName getVarName() const
+    {
+        return vecVar.name;
+    }
     
     
     SgExpression* vecExp;
@@ -106,7 +138,7 @@ struct VectorElementNode : ValueGraphNode
 
 //! This node represents a phi node in the SSA form CFG. The AST node inside (actually
 //! from its parent class ValueNode) only describe the place of this Phi node in the CFG.
-struct PhiNode : ValueNode
+struct PhiNode : ScalarValueNode
 {
 //    enum GateType
 //    {
@@ -116,7 +148,7 @@ struct PhiNode : ValueNode
 //    };
 
 	PhiNode(const VersionedVariable& v, SgNode* node)
-    : ValueNode(v, node) {}
+    : ScalarValueNode(v, node) {}
 
 	//std::vector<ValueGraphNode*> nodes;
 
@@ -416,6 +448,11 @@ inline VectorElementNode* isVectorElementNode(ValueGraphNode* node)
 inline ValueNode* isValueNode(ValueGraphNode* node)
 {
 	return dynamic_cast<ValueNode*>(node);
+}
+
+inline ScalarValueNode* isScalarValueNode(ValueGraphNode* node)
+{
+	return dynamic_cast<ScalarValueNode*>(node);
 }
 
 inline MuNode* isMuNode(ValueGraphNode* node)

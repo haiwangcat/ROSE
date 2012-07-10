@@ -140,7 +140,7 @@ void EventReverser::generateCode()
     // Declare all temporary variables at the beginning of the reverse events.
     foreach (VGVertex node, boost::vertices(valueGraph_))
     {
-        ValueNode* valNode = isValueNode(valueGraph_[node]);
+        ScalarValueNode* valNode = isScalarValueNode(valueGraph_[node]);
         if (valNode == NULL) continue;
         if (valNode->isAvailable()) continue;
 
@@ -299,7 +299,7 @@ void EventReverser::collectAvailableValues()
     // Get all values which are needed or available for all DAGs here.
     foreach (VGVertex node, boost::vertices(valueGraph_))
     {
-        if (ValueNode* valNode = isValueNode(valueGraph_[node]))
+        if (ScalarValueNode* valNode = isScalarValueNode(valueGraph_[node]))
         {
             // Add all constants to available values.
             if (valNode->isAvailable())
@@ -460,7 +460,7 @@ void EventReverser::removePhiNodesFromRouteGraph()
                 VGVertex src = boost::source(inEdge, routeGraph_);
                 
                 // At least one of src and tgt should be a value node.
-                if (!isValueNode(routeGraph_[src]) && !isValueNode(routeGraph_[tgt]))
+                if (!isScalarValueNode(routeGraph_[src]) && !isScalarValueNode(routeGraph_[tgt]))
                     continue;
 
                 // Multiple state saving edges with cost 0 can be merged.
@@ -686,17 +686,17 @@ EventReverser::getGraphNodesInTopologicalOrder(
     return nodes;
 }
 
-pair<ValueNode*, ValueNode*>
+pair<ScalarValueNode*, ScalarValueNode*>
 EventReverser::getOperands(VGVertex opNode) const
 {
-    ValueNode* lhsNode = NULL;
-    ValueNode* rhsNode = NULL;
+    ScalarValueNode* lhsNode = NULL;
+    ScalarValueNode* rhsNode = NULL;
 
     // If it's a unary operation.
     if (boost::out_degree(opNode, valueGraph_) == 1)
     {
         VGVertex lhs = *(boost::adjacent_vertices(opNode, valueGraph_).first);
-        lhsNode = isValueNode(valueGraph_[lhs]);
+        lhsNode = isScalarValueNode(valueGraph_[lhs]);
     }
     else
     {
@@ -704,9 +704,9 @@ EventReverser::getOperands(VGVertex opNode) const
         {
             VGVertex tar = boost::target(edge, valueGraph_);
             if (isOrderedEdge(valueGraph_[edge])->index == 0)
-                lhsNode = isValueNode(valueGraph_[tar]);
+                lhsNode = isScalarValueNode(valueGraph_[tar]);
             else
-                rhsNode = isValueNode(valueGraph_[tar]);
+                rhsNode = isScalarValueNode(valueGraph_[tar]);
         }
     }
     return make_pair(lhsNode, rhsNode);
@@ -1215,7 +1215,7 @@ void EventReverser::generateCodeForBasicBlock(
         if (!isStateSavingEdge(valueGraph_[edge]))
             continue;
         
-        ValueNode* valNode = isValueNode(valueGraph_[boost::source(edge, valueGraph_)]);
+        ScalarValueNode* valNode = isScalarValueNode(valueGraph_[boost::source(edge, valueGraph_)]);
         
         //if (valNode->isAvailable()) continue;
         if (valNode == NULL || valNode->var.name.empty()) continue;
@@ -1240,7 +1240,7 @@ void EventReverser::generateCodeForBasicBlock(
         VGVertex src = boost::source(edge, routeGraph_);
         VGVertex tgt = boost::target(edge, routeGraph_);
         
-        //cout << routeGraph_[src]->toString() << "-------->" << routeGraph_[tgt]->toString() << "\n\n";
+        cout << routeGraph_[src]->toString() << "-------->" << routeGraph_[tgt]->toString() << "\n\n";
 
         ValueNode* valNode = isValueNode(routeGraph_[src]);
         if (valNode == NULL)        continue;
@@ -1276,7 +1276,7 @@ void EventReverser::generateCodeForBasicBlock(
             //cout << killer->unparseToString() << ' ' << valNode->toString() << endl;
 
             
-            SgExpression* varExp = valNode->var.getVarRefExp();
+            SgExpression* varExp = valNode->buildExpression();
             
             
             if (ssEdge->region.hasSingleElement())
@@ -1363,7 +1363,7 @@ void EventReverser::generateCodeForBasicBlock(
 
             if (pushFuncStmt)
             {
-                cout << "*** __store__ added: " << valNode->var.getVarRefExp()->unparseToString() << endl;
+                cout << "*** __store__ added: " << valNode->buildExpression()->unparseToString() << endl;
                 if (!pushLocation && ssEdge->scopeKiller)
                 {
                     ROSE_ASSERT(isSgScopeStatement(killer));
@@ -1384,24 +1384,31 @@ void EventReverser::generateCodeForBasicBlock(
             //cmtStmt = buildPopStatement(valNode->getType());
         }
         
-        else if (ValueNode* rhsValNode = isValueNode(routeGraph_[tgt]))
+        else if (ScalarValueNode* rhsValNode = isScalarValueNode(routeGraph_[tgt]))
         {
             // Don't generate the expression like a = a.
-            if (valNode->var.name == rhsValNode->var.name)
+            if (valNode->getVarName() == rhsValNode->getVarName())
                 continue;
             // Simple assignment.
             
-            valNode->isStateVar = isStateVariable(valNode->var.name);
+            valNode->isStateVar = isStateVariable(valNode->getVarName());
             rhsValNode->isStateVar = isStateVariable(rhsValNode->var.name);
             
             rvsStmt = buildAssignOpertaion(valNode, rhsValNode);
         }
         
+        else if (VectorElementNode* vectorElementNode = isVectorElementNode(routeGraph_[tgt]))
+        {
+            rvsStmt = SageBuilder::buildExprStatement(
+                    SageBuilder::buildAssignOp(buildVariable(valNode), 
+                    vectorElementNode->buildExpression()));            
+        }
+        
         else if (OperatorNode* opNode = isOperatorNode(routeGraph_[tgt]))
         {
             // Rebuild the operation.
-            ValueNode* lhsNode = NULL;
-            ValueNode* rhsNode = NULL;
+            ScalarValueNode* lhsNode = NULL;
+            ScalarValueNode* rhsNode = NULL;
             boost::tie(lhsNode, rhsNode) = getOperands(tgt);
 
             rvsStmt = buildOperationStatement(valNode, opNode->type, lhsNode, rhsNode);
@@ -1618,7 +1625,7 @@ void EventReverser::generateCodeForBasicBlock(
     // Note that those values are held by temporary variables before.
     foreach (VGVertex node, valuesToRestore_)
     {
-        ValueNode* valNode = isValueNode(route[node]);
+        ScalarValueNode* valNode = isScalarValueNode(route[node]);
 
         SgExpression* lhs = valNode->var.getVarRefExp();
         SgExpression* rhs = SageBuilder::buildVarRefExp(valNode->var.toString());
@@ -1722,7 +1729,7 @@ bool EventReverser::generateCode(
     {
         foreach (const VGEdge& edge, rvsCFG[node].edges)
         {
-            ValueNode* valNode = isValueNode(valueGraph_[boost::source(edge, valueGraph_)]);
+            ScalarValueNode* valNode = isScalarValueNode(valueGraph_[boost::source(edge, valueGraph_)]);
             //if (valNode->isAvailable()) continue;
             if (valNode == NULL || valNode->var.isNull()) 
                 continue;
@@ -1938,7 +1945,7 @@ void EventReverser::generateReverseFunction(
     // First, declare all temporary variables at the beginning of the reverse events.
     foreach (VGVertex node, boost::vertices(route))
     {
-        ValueNode* valNode = isValueNode(route[node]);
+        ScalarValueNode* valNode = isScalarValueNode(route[node]);
         if (valNode == NULL) continue;
         if (valNode->isAvailable()) continue;
 
@@ -1952,7 +1959,7 @@ void EventReverser::generateReverseFunction(
     {
         if (node == root_) continue;
 
-        ValueNode* valNode = isValueNode(route[node]);
+        ScalarValueNode* valNode = isScalarValueNode(route[node]);
         if (valNode == NULL)        continue;
         if (valNode->isAvailable()) continue;
 
@@ -1975,7 +1982,7 @@ void EventReverser::generateReverseFunction(
                 rvsStmt = buildRestorationStmt(valNode);
             }
         }
-        else if (ValueNode* rhsValNode = isValueNode(route[tar]))
+        else if (ScalarValueNode* rhsValNode = isScalarValueNode(route[tar]))
         {
             // Simple assignment.
             rvsStmt = buildAssignOpertaion(valNode, rhsValNode);
@@ -1983,8 +1990,8 @@ void EventReverser::generateReverseFunction(
         else if (OperatorNode* opNode = isOperatorNode(route[tar]))
         {
             // Rebuild the operation.
-            ValueNode* lhsNode = NULL;
-            ValueNode* rhsNode = NULL;
+            ScalarValueNode* lhsNode = NULL;
+            ScalarValueNode* rhsNode = NULL;
             boost::tie(lhsNode, rhsNode) = getOperands(tar, route);
 
             rvsStmt = buildOperationStatement(valNode, opNode->type, lhsNode, rhsNode);
@@ -1999,7 +2006,7 @@ void EventReverser::generateReverseFunction(
     // Note that those values are held by temporary variables before.
     foreach (VGVertex node, valuesToRestore_)
     {
-        ValueNode* valNode = isValueNode(route[node]);
+        ScalarValueNode* valNode = isScalarValueNode(route[node]);
 
         SgExpression* lhs = valNode->var.getVarRefExp();
         SgExpression* rhs = SageBuilder::buildVarRefExp(valNode->var.toString());
