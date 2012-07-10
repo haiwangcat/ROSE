@@ -2175,6 +2175,8 @@ namespace
             //SgBasicBlock* ifBlock = SageBuilder::buildBasicBlock();
             SgBasicBlock* currentBlock = newBlock;
             
+            bool hasDefault = false;
+            
             foreach (SgStatement* stmt, switchBody->get_statements())
             {
                 SgCaseOptionStmt* caseStmt = isSgCaseOptionStmt(stmt);
@@ -2182,6 +2184,8 @@ namespace
                 {
                     if (SgDefaultOptionStmt* defaultStmt = isSgDefaultOptionStmt(stmt))
                     {
+                        hasDefault = true;
+                        
                         SgLabelStatement* labelStmt = SageBuilder::buildLabelStatement(
                             "LABEL" + boost::lexical_cast<std::string>(counter++));
 
@@ -2210,6 +2214,17 @@ namespace
                 
                 SageInterface::appendStatement(ifStmt, currentBlock);
                 currentBlock = elseBody;
+            }
+            
+            // If the switch does not have a default label.
+            if (!hasDefault)
+            {
+                SgLabelStatement* labelStmt = SageBuilder::buildLabelStatement(
+                    "LABEL" + boost::lexical_cast<std::string>(counter++));
+                labels.push_back(make_pair(labelStmt, SageBuilder::buildBasicBlock(
+                    SageBuilder::buildNullStatement())));
+                SgGotoStatement* gotoStmt = SageBuilder::buildGotoStatement(labelStmt);
+                SageInterface::appendStatement(gotoStmt, currentBlock);
             }
             
             // Third, build several goto labels corresponding to cases in the switch.
