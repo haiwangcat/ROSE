@@ -1310,7 +1310,8 @@ EventReverser::createVectorElementNode(SgFunctionCallExp* funcCallExp)
     
     
     //cout << "### Adding two edges between two vectors...\n";
-    VGEdge newEdge = addValueGraphEdge(useVertex, defVertex);
+    VGEdge newEdge = addValueGraphEdge(defVertex, useVertex, 
+            pathNumManager_->getPathNumbers(valueGraph_[defVertex]->astNode));
     
     SymbolicRepresentation indexSymbol;
     
@@ -2510,7 +2511,11 @@ void EventReverser::writeValueGraphNode(std::ostream& out, VGVertex node) const
 {
     string str = valueGraph_[node]->toString();
     if (SgNode* astNode = valueGraph_[node]->astNode)
-        str += "\\n" + astNode->class_name() + "\\n" + astNode->unparseToString();
+    {
+        str += "\\n" + astNode->class_name() + "\\n";
+        if (!isSgFunctionDefinition(astNode))
+            str += astNode->unparseToString();
+    }
     out << "[label=\"" << str << "\"";
     
     if (node == root_)
