@@ -1240,7 +1240,7 @@ void EventReverser::generateCodeForBasicBlock(
         VGVertex src = boost::source(edge, routeGraph_);
         VGVertex tgt = boost::target(edge, routeGraph_);
         
-        cout << routeGraph_[src]->toString() << "-------->" << routeGraph_[tgt]->toString() << "\n\n";
+        //cout << routeGraph_[src]->toString() << "-------->" << routeGraph_[tgt]->toString() << "\n\n";
 
         ValueNode* valNode = isValueNode(routeGraph_[src]);
         if (valNode == NULL)        continue;
@@ -1413,6 +1413,8 @@ void EventReverser::generateCodeForBasicBlock(
             // Virtual function call.
             SgFunctionCallExp* funcCallExp = funcCallNode->getFunctionCallExp();
             ROSE_ASSERT(funcCallExp);
+            
+            cout << ">>> Function call: " << funcCallExp->unparseToString() << endl;
             
             
             // When we generate a fwd/rvs function call, we need to reverse that

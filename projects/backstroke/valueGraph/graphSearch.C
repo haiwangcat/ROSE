@@ -255,7 +255,7 @@ map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
             
             //if (availableNodes.count(node) > 0)
             // For a function call node, if its target is itself, keep searching.
-            if ((node == root_ || funcCallNode) && node != valToRestore)
+            if ((node == root_ /* || funcCallNode */) && node != valToRestore)
             {                
                 //cout << "AVAILABLE: " << valueGraph_[node]->toString() << endl;
                 
@@ -463,7 +463,7 @@ NEXT:
     //map<VGVertex, vector<RouteWithCost> > allRoutes;
     
     typedef map<VGVertex, vector<Route> >::value_type VertexWithRoute;
-#if 1
+#if 0
     foreach (const VertexWithRoute& nodeWithRoutes, allRoutes)
     {
         cout << "\n\n\n" << valueGraph_[nodeWithRoutes.first]->toString() << "\n\n";

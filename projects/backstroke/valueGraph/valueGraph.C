@@ -134,12 +134,10 @@ void EventReverser::buildBasicValueGraph()
             {
 #ifdef ROSS
                 // In ROSS, only the first parameter is the state variable.
-                static bool first = true;
-                if (first)
+                if (initName == paraList.front())
                 {
                     valuesToRestore_[0].insert(newNode);
                     addStateVariable(initName);
-                    first = false;
                 }
 #else
                 // Add the variable into wanted set.
@@ -1468,7 +1466,7 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     }
     
     
-#if 1
+#if 0
     // For a virtual function call, its inverse is called in reverse function.
     // Black box style inversion is not used.
     if (funcCallNode->canBeReversed)
