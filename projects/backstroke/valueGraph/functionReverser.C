@@ -1384,7 +1384,7 @@ void EventReverser::generateCodeForBasicBlock(
             //cmtStmt = buildPopStatement(valNode->getType());
         }
         
-        else if (ScalarValueNode* rhsValNode = isScalarValueNode(routeGraph_[tgt]))
+        else if (ValueNode* rhsValNode = isValueNode(routeGraph_[tgt]))
         {
             // Don't generate the expression like a = a.
             if (valNode->getVarName() == rhsValNode->getVarName())
@@ -1392,16 +1392,9 @@ void EventReverser::generateCodeForBasicBlock(
             // Simple assignment.
             
             valNode->isStateVar = isStateVariable(valNode->getVarName());
-            rhsValNode->isStateVar = isStateVariable(rhsValNode->var.name);
+            rhsValNode->isStateVar = isStateVariable(rhsValNode->getVarName());
             
             rvsStmt = buildAssignOpertaion(valNode, rhsValNode);
-        }
-        
-        else if (VectorElementNode* vectorElementNode = isVectorElementNode(routeGraph_[tgt]))
-        {
-            rvsStmt = SageBuilder::buildExprStatement(
-                    SageBuilder::buildAssignOp(buildVariable(valNode), 
-                    vectorElementNode->buildExpression()));            
         }
         
         else if (OperatorNode* opNode = isOperatorNode(routeGraph_[tgt]))
