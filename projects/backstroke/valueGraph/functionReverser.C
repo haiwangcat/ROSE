@@ -87,9 +87,10 @@ void EventReverser::postProcess()
     SageInterface::fixVariableReferences(fwdFuncDef_->get_body());
 }
 
-set<SgFunctionDefinition*> EventReverser::reverseEvent(SgFunctionDefinition* funcDef)
+set<SgFunctionDefinition*> EventReverser::reverseEvent(SgFunctionDefinition* funcDef, bool isEvent)
 {
     funcDef_ = funcDef;
+    isEvent_ = isEvent;
     
     //// Normalize the function.
     //BackstrokeNorm::normalizeEvent(funcDef_->get_declaration());
@@ -538,6 +539,31 @@ void EventReverser::buildFunctionBodies()
     SgFunctionDeclaration* fwdFuncDecl;
     SgFunctionDeclaration* rvsFuncDecl;
     SgFunctionDeclaration* cmtFuncDecl;
+    
+#ifdef ROSS
+    // Find the struct declaration of tw_lp.
+    SgType* lpType = NULL;
+    vector<SgClassDeclaration*> classDecls = BackstrokeUtility::querySubTree<SgClassDeclaration>(
+            SageInterface::getProject());    
+    foreach (SgClassDeclaration* classDecl, classDecls)
+    {
+        if (classDecl->get_name() == "tw_lp")
+            lpType = classDecl->get_type();
+    }
+#endif
+    
+    SgFunctionParameterList* rvsFuncParaList = isEvent_ 
+                        ? isSgFunctionParameterList(
+                            copyStatement(funcDecl->get_parameterList()))
+#ifdef ROSS
+                        : buildFunctionParameterList(
+                            buildInitializedName("lp", 
+                                buildPointerType(lpType)))
+#else
+                        : buildFunctionParameterList()
+#endif
+                        ;
+                        
         
     if (SgMemberFunctionDeclaration* memFuncDecl = isSgMemberFunctionDeclaration(funcDecl))
     {
@@ -559,8 +585,7 @@ void EventReverser::buildFunctionBodies()
                         memFuncType,
                         //funcDecl->get_orig_return_type(),
                         ////buildFunctionParameterList(),
-                        isSgFunctionParameterList(
-                            copyStatement(funcDecl->get_parameterList())),
+                        rvsFuncParaList,
                         funcScope);
 
         //Create the function declaration for the commit method
@@ -591,8 +616,7 @@ void EventReverser::buildFunctionBodies()
         rvsFuncDecl = buildDefiningFunctionDeclaration(
                         rvsFuncName,
                         funcDecl->get_orig_return_type(),
-                        isSgFunctionParameterList(
-                            copyStatement(funcDecl->get_parameterList())),
+                        rvsFuncParaList,
                         funcScope);
 
         //Create the function declaration for the commit method
@@ -1564,6 +1588,14 @@ void EventReverser::generateCodeForBasicBlock(
                 if (SgBinaryOp* binExp = isSgBinaryOp(rvsFuncCall->get_function()))
                     funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
                 funcRef->set_symbol(rvsFuncSymbol);
+                
+                // Remove all args from the reverse function call.
+#ifdef ROSS
+                rvsFuncCall->set_args(buildExprListExp(buildVarRefExp("lp")));
+#else
+                rvsFuncCall->set_args(buildExprListExp());
+#endif
+                        
                 //replaceExpression(arrowExp->get_rhs_operand(), rvsFuncRef);
                 
                 SgFunctionCallExp* cmtFuncCall = isSgFunctionCallExp(copyExpression(funcCallExp));
@@ -2450,6 +2482,8 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     ssa->run(true, true);
         
         
+    bool isEvent = true;
+    
     while (!toBeReversed.empty())
     {
         SgFunctionDefinition* funcDef = toBeReversed.top();
@@ -2485,7 +2519,8 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
 
         
         Backstroke::EventReverser reverser(ssa);
-        set<SgFunctionDefinition*> moreToBeReversed = reverser.reverseEvent(funcDef);
+        set<SgFunctionDefinition*> moreToBeReversed = reverser.reverseEvent(funcDef, isEvent);
+        isEvent = false;
         
         //reverser.valueGraphToDot(vgFileName);
         cout << "\nFunction " << funcName << " is processed.\n\n";

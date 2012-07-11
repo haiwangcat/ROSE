@@ -1346,28 +1346,16 @@ EventReverser::createVectorElementNode(SgFunctionCallExp* funcCallExp)
 
 EventReverser::VGVertex 
 EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
-{
-    //cout << funcCallExp->unparseToString() << endl;
-    
-    // Build a node for this function call in VG.
-    FunctionCallNode* funcCallNode = new FunctionCallNode(funcCallExp);
-    FunctionCallNode* rvsFuncCallNode;
-    if (funcCallNode->canBeReversed)
-        rvsFuncCallNode = new FunctionCallNode(funcCallExp, true);
-    
-    VGVertex funcCallVertex = addValueGraphNode(funcCallNode);
-    VGVertex rvsFuncCallVertex;
-    if (funcCallNode->canBeReversed)
-        rvsFuncCallVertex = addValueGraphNode(rvsFuncCallNode);
-    
-    nodeVertexMap_[funcCallExp] = funcCallVertex;
-    
+{   
     SgExpression* caller = NULL;
+    bool isMemberFunc = false;
+    
     // If the function called is a member one, also connect an edge from the pointer or object
     // calling this function to the function call node.
     if (SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function()))
     {
         caller = binExp->get_lhs_operand();
+        isMemberFunc = true;
         
         // Note that this part will be changed once we get how to represent p and *p.
         if (SgPointerDerefExp* ptrDeref = isSgPointerDerefExp(caller))
@@ -1386,9 +1374,29 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
         }
     }
     
-    SgExpressionPtrList argList = funcCallExp->get_args()->get_expressions();
-    if (caller) 
-        argList.push_back(caller);
+    if (!isMemberFunc)
+        return VGVertex();
+    
+    
+    //cout << funcCallExp->unparseToString() << endl;
+    
+    // Build a node for this function call in VG.
+    FunctionCallNode* funcCallNode = new FunctionCallNode(funcCallExp);
+    FunctionCallNode* rvsFuncCallNode;
+    if (funcCallNode->canBeReversed)
+        rvsFuncCallNode = new FunctionCallNode(funcCallExp, true);
+    
+    VGVertex funcCallVertex = addValueGraphNode(funcCallNode);
+    VGVertex rvsFuncCallVertex;
+    if (funcCallNode->canBeReversed)
+        rvsFuncCallVertex = addValueGraphNode(rvsFuncCallNode);
+    
+    nodeVertexMap_[funcCallExp] = funcCallVertex;
+    
+  
+    //SgExpressionPtrList argList = funcCallExp->get_args()->get_expressions();
+    //if (caller) 
+    //    argList.push_back(caller);
     
     // Get all uses and defs from this function call.
     const SSA::NodeReachingDefTable& useTable = ssa_->getUsesAtNode(funcCallExp);
@@ -1396,6 +1404,11 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     const SSA::NodeReachingDefTable& reachingDefTable = ssa_->getReachingDefsAtNode_(funcCallExp);
     //const SSA::NodeReachingDefTable& defTable = 
     //    ssa_->getOutgoingDefsAtNode(SageInterface::getEnclosingStatement(funcCallExp));
+    
+    
+    VarName callerName = SSA::getVarName(caller);
+    VGVertex callerAsUseVertex = nullVertex();
+    VGVertex callerAsDefVertex = nullVertex();
     
     // Real arguments include those variables which are used or defined 
     // in the function call and may not be the arguments of this function.
@@ -1405,8 +1418,12 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     foreach (const PT& nameDef, useTable)
     {
         VersionedVariable var(nameDef.first, nameDef.second->getRenamingNumber());
+        //cout << funcCallExp->unparseToString() << " USE: " << var << "\n\n";
         ROSE_ASSERT(varVertexMap_.count(var));
         realArgs.insert(varVertexMap_[var]);
+        
+        if (nameDef.first == callerName)
+            callerAsUseVertex = varVertexMap_[var];
     }
     
     foreach (const PT& nameDef, defTable)
@@ -1414,19 +1431,61 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
         const VarName& name = nameDef.first;
         ROSE_ASSERT(reachingDefTable.count(name));
         VersionedVariable var(name, reachingDefTable.find(name)->second->getRenamingNumber());
-        //cout << funcCallExp->unparseToString() << " " << var << "\n\n";
+        //cout << funcCallExp->unparseToString() << " DEF: " << var << "\n\n";
         
         if (varVertexMap_.count(var) == 0)
             createForgottenValueNode(var);
         
         realArgs.insert(varVertexMap_[var]);
+        
+        
+        VersionedVariable defVar(name, nameDef.second->getRenamingNumber());
+        //cout << funcCallExp->unparseToString() << " DEF: " << defVar << "\n\n";
+        
+        // If the defined variable is not added to the VG.
+        if (name == callerName && varVertexMap_.count(defVar) == 0)
+        {
+            //createValueNode(arg, NULL);
+            ScalarValueNode* valNode = new ScalarValueNode(defVar, funcCallExp);
+            varVertexMap_[defVar] = addValueGraphNode(valNode);
+
+            // Add state saving edges for killed defs.
+            addStateSavingEdges(defVar.name, funcCallExp);
+            callerAsDefVertex = varVertexMap_[defVar];
+        }
     }
-    
+
     
     // Add edges from the function call node to its args.
     foreach (VGVertex argVertex, realArgs)
     {
         addValueGraphEdge(funcCallVertex, argVertex);
+    }
+    
+    //if (funcCallNode->isConst)
+    if (callerAsDefVertex == nullVertex())
+        return funcCallVertex;
+    
+        
+    ROSE_ASSERT(callerAsUseVertex != nullVertex());
+    ROSE_ASSERT(callerAsDefVertex != nullVertex());
+    ROSE_ASSERT(callerAsUseVertex != callerAsDefVertex);
+    
+    // Add an edge from the caller as def to the function call node.
+    addValueGraphEdge(callerAsDefVertex, funcCallVertex);
+    
+    // This edge will be added in the next loop.
+    //addValueGraphEdge(funcCallVertex, callerAsUseVertex);
+    
+    // Add edges on the reverse function node.
+    if (funcCallNode->canBeReversed)
+    {
+        addValueGraphEdge(callerAsUseVertex, rvsFuncCallVertex);
+        addValueGraphEdge(rvsFuncCallVertex, callerAsDefVertex);
+    }
+    
+        
+#if 0
         if (funcCallNode->canBeReversed)
             addValueGraphEdge(argVertex, rvsFuncCallVertex, 
                     pathNumManager_->getPathNumbers(funcCallExp));
@@ -1458,12 +1517,24 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
         }
         
         // Add an edge from the value to the function call.
-        addValueGraphEdge(argVertex, funcCallVertex);
+        //addValueGraphEdge(argVertex, funcCallVertex);
         
         // Check if we should connect this argument to the reverse function.
         if (funcCallNode->canBeReversed && rvsFuncCallNode->isNeededByInverse(var.name[0]))
-            addValueGraphEdge(rvsFuncCallVertex, argVertex);
+        {
+            if (isMemberFunc)
+            {
+                ROSE_ASSERT(nodeVertexMap_.count(caller));
+
+                // For a member function, only connect the reverse function call node to its caller.
+                if (nodeVertexMap_[caller] == argVertex)
+                    addValueGraphEdge(rvsFuncCallVertex, argVertex);
+            }
+            else 
+                addValueGraphEdge(rvsFuncCallVertex, argVertex);
+        }
     }
+#endif
     
     
 #if 0
@@ -1746,6 +1817,9 @@ void EventReverser::addPhiEdges()
     vector<SgBasicBlock*> basicBlocks = BackstrokeUtility::querySubTree<SgBasicBlock>(funcDef_);
     foreach (SgBasicBlock* basicBlock, basicBlocks)
     {
+        if (basicBlock->get_statements().empty())
+            continue;
+        
         foreach (const VarNameDefPair& nameDef, 
             ssa_->getReachingDefsAtNode_(basicBlock->get_statements().back()))
         {

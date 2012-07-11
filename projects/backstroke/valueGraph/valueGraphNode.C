@@ -245,12 +245,12 @@ std::string OperatorNode::toString() const
 
 FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
 :   ValueGraphNode(funcCall), isReverse(isRvs), isVirtual(false), 
-    isStd(false), canBeReversed(false)
+    isConst(false), isMemberFunction(false), isStd(false), canBeReversed(false)
 {
     // If this function is declared as const.
-    bool isConst = false;
+    //bool isConst = false;
     bool isInline = false;
-    bool isMemberFunc = false;
+    //bool isMemberFunc = false;
     bool isOperator = false;
     bool isCtorOrDtor = false;
  
@@ -305,7 +305,7 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
         
         // TEMP
         //isVirtual = true;
-        isMemberFunc =true;
+        isMemberFunction =true;
     }
     
     else
@@ -351,7 +351,7 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
             //cout << funcDecl->get_name().str() << "\t: VIRTUAL3\n\n";
             //funcRef->get_file_info()->display();
             
-            isMemberFunc = true;
+            isMemberFunction = true;
         }
         //isVirtual = true;
     }
@@ -370,13 +370,13 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
         canBeReversed = true;
     else if (isConst || isInline || isOperator || isCtorOrDtor || isStd)
         canBeReversed = false;
-    else if (isMemberFunc)
+    else if (isMemberFunction)
         canBeReversed = true;
 
 
     os << funcDecl->get_name() << ":\n";
     os << funcDecl->get_functionModifier() << "\n";
-    os << isMemberFunc << canBeReversed << "\n";
+    os << isMemberFunction << canBeReversed << "\n";
     os << funcDecl->get_specialFunctionModifier() << "\n\n";
     
 #endif

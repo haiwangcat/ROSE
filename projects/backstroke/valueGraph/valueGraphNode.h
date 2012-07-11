@@ -233,6 +233,12 @@ struct FunctionCallNode: ValueGraphNode
     
     //! If this function is declared as virtual.
     bool isVirtual;
+    
+    //! If this function is constant.
+    bool isConst;
+    
+    //! If this function is a member function.
+    bool isMemberFunction;
         
     //! If this function call is from std library.
     bool isStd;

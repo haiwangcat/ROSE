@@ -9,6 +9,10 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 
+
+#define ROSS
+
+
 namespace Backstroke
 {
 
@@ -73,6 +77,9 @@ private:
 private:
     //! The event function definition.
     SgFunctionDefinition* funcDef_;
+    
+    //! If the handled function is an event handler.
+    bool isEvent_;
 
     //! The forward event function definition.
     SgFunctionDefinition* fwdFuncDef_;
@@ -166,7 +173,7 @@ public:
     //! The destructor.
     ~EventReverser();
     
-    std::set<SgFunctionDefinition*> reverseEvent(SgFunctionDefinition* funcDef);
+    std::set<SgFunctionDefinition*> reverseEvent(SgFunctionDefinition* funcDef, bool isEvent = true);
     
     void postProcess();
 

@@ -126,7 +126,6 @@ void instrumentPushFunction(ValueNode* valNode, SgFunctionDefinition* funcDef)
     }
 }
 
-#define ROSS
 
 SgExpression* buildPushFunctionCall(SgExpression* para)
 {
