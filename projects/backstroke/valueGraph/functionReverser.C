@@ -1296,6 +1296,8 @@ void EventReverser::generateCodeForBasicBlock(
                 if (BackstrokeUtility::isSTLContainer(varType, "vector"))
                 {
                     using namespace SageBuilder;
+                    if (isSgPointerType(varExp->get_type()))
+                        varExp = buildPointerDerefExp(varExp);
                     varExp = buildDotExp(varExp, buildFunctionCallExp(
                             "at", buildVoidType(),
                             buildExprListExp(indexExp)));
@@ -1419,9 +1421,9 @@ void EventReverser::generateCodeForBasicBlock(
             
             // When we generate a fwd/rvs function call, we need to reverse that
             // function also. Here we add that function to the to-do list.
-            SgFunctionDeclaration* fDecl = isSgFunctionDeclaration(
-                    funcCallExp->getAssociatedFunctionDeclaration()->
-                    get_definingDeclaration());
+            SgFunctionDeclaration* fDecl = funcCallExp->getAssociatedFunctionDeclaration();
+            if (fDecl)
+                fDecl = isSgFunctionDeclaration(fDecl->get_definingDeclaration());
             
             if (fDecl == NULL)
             {
@@ -2380,13 +2382,16 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
         vector<SgFunctionCallExp*> funcCalls = BackstrokeUtility::querySubTree<SgFunctionCallExp>(funcDef);
         foreach (SgFunctionCallExp* funcCallExp, funcCalls)
         {
+            SgFunctionDeclaration* decl = funcCallExp->getAssociatedFunctionDeclaration();
+            if (decl == NULL) 
+                continue;
+            
             // When we generate a fwd/rvs function call, we need to reverse that
             // function also. Here we add that function to the to-do list.
-            SgFunctionDeclaration* fDecl = isSgFunctionDeclaration(
-                    funcCallExp->getAssociatedFunctionDeclaration()->
-                    get_definingDeclaration());
+            SgFunctionDeclaration* definingDecl = isSgFunctionDeclaration(
+                    decl->get_definingDeclaration());
             
-            if (fDecl == NULL)
+            if (definingDecl == NULL)
             {
                 SgMemberFunctionRefExp* funcRef = NULL;
         
@@ -2395,20 +2400,20 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
 
                 if (funcRef)
                 {
-                    fDecl = funcRef->getAssociatedMemberFunctionDeclaration();
+                    definingDecl = funcRef->getAssociatedMemberFunctionDeclaration();
                 }
             }
             
-            if (fDecl)
+            if (definingDecl)
             {
-                if (SgFunctionDefinition* fDef = fDecl->get_definition())
+                if (SgFunctionDefinition* fDef = definingDecl->get_definition())
                     funcDefsToBePreprocessed.insert(fDef);
                 
                 // Here we detect all function definitions in the project with the 
                 // same name (it is apparently not enough, so this part may be refined
                 // later), and add each of them to the to-be-reversed list.
                 
-                SgName funcName = fDecl->get_name();
+                SgName funcName = definingDecl->get_name();
                 SgProject* project = SageInterface::getProject();
                 
                 vector<SgFunctionDefinition*> funcDefs = 

@@ -136,8 +136,11 @@ std::string VectorElementNode::toString() const
 
 SgExpression* VectorElementNode::buildExpression() const
 {
+    SgExpression* var = vecVar.getVarRefExp();
+    if (isSgPointerType(var->get_type()))
+        var = SageBuilder::buildPointerDerefExp(var);
     return SageBuilder::buildDotExp(
-            vecVar.getVarRefExp(), 
+            var, 
             SageBuilder::buildFunctionCallExp(
                 "at", SageBuilder::buildVoidType(),
                 SageBuilder::buildExprListExp(indexVar.getVarRefExp())));

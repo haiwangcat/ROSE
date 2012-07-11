@@ -246,7 +246,7 @@ map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
             // Get the node on the top, and find it out edges.
             VGVertex node = unfinishedRoute.nodes.back().get<0>();
             ArrayRegion region = unfinishedRoute.nodes.back().get<2>();
-                cout << "Node:" << valueGraph_[node]->toString() << " R: " << region << endl;
+            //cout << "Node:" << valueGraph_[node]->toString() << " R: " << region << endl;
             
             
             // Currently, we forbid the route graph includes any function call nodes
