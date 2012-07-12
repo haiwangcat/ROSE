@@ -250,9 +250,15 @@ std::string OperatorNode::toString() const
     return "OP";
 }
 
+
+std::set<SgMemberFunctionDeclaration*> FunctionCallNode::functionsToReverse;
+std::ofstream FunctionCallNode::os("fileList.txt");
+std::set<std::pair<std::string, std::string> > FunctionCallNode::reversibleStlFunctions;
+
+
 FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
 :   ValueGraphNode(funcCall), isReverse(isRvs), isVirtual(false), 
-    isConst(false), isMemberFunction(false), isStd(false), canBeReversed(false)
+    isConst(false), isMemberFunction(false), isStd(false), canBeReversed(false), caller(NULL)
 {
     // If this function is declared as const.
     //bool isConst = false;
@@ -274,7 +280,10 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
         
         //isVirtual = true;
         if (SgBinaryOp* binExp = isSgBinaryOp(funcCall->get_function()))
+        {
+            caller = binExp->get_lhs_operand();
             funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
+        }
         
             //if (isSgThisExp(arrowExp->get_lhs_operand()))
         if (funcRef)
@@ -319,7 +328,10 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
     {
         SgMemberFunctionRefExp* funcRef = NULL;
         if (SgBinaryOp* binExp = isSgBinaryOp(funcCall->get_function()))
+        {
+            caller = binExp->get_lhs_operand();
             funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
+        }
         
         if (funcRef)
         {
@@ -386,6 +398,24 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
     os << isMemberFunction << canBeReversed << "\n";
     os << funcDecl->get_specialFunctionModifier() << "\n\n";
     
+    
+    // Check if this function is a STL one that can be reversed.
+    if (!canBeReversed && caller != NULL)
+    {
+        typedef pair<string, string> StrPairT;
+        foreach (const StrPairT& strPair, reversibleStlFunctions)
+        {
+            if (BackstrokeUtility::isSTLContainer(caller->get_type(), strPair.first.c_str()))
+            {
+                if (funcDecl && funcDecl->get_name() == strPair.second)
+                {
+                    canBeReversed = true;
+                    break;
+                }
+            }
+        }
+    }
+    
 #endif
 }
 
@@ -411,6 +441,166 @@ FunctionCallNode::FunctionNamesT FunctionCallNode::getFunctionNames() const
     
     return FunctionNamesT(fwdName, rvsName, cmtName);
 }
+
+
+
+std::pair<SgExpression*, SgExpression*> FunctionCallNode::buildFwdAndRvsFuncCalls() const
+{
+    using namespace SageInterface;
+    using namespace SageBuilder;
+    
+    SgFunctionCallExp* funcCallExp = isSgFunctionCallExp(astNode);
+    ROSE_ASSERT(funcCallExp);
+    //ROSE_ASSERT(funcDecl);
+    
+    
+    SgMemberFunctionRefExp* funcRef = NULL;
+    if (SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function()))
+        funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
+    ROSE_ASSERT(funcRef);
+
+    SgMemberFunctionDeclaration* memFunDecl = funcRef->getAssociatedMemberFunctionDeclaration();
+    SgType* returnType = funcCallExp->get_type();
+
+    string funcName = memFunDecl->get_name().str();
+    string fwdFuncName = funcName + "_forward";
+    string rvsFuncName = funcName + "_reverse";
+    //string cmtFuncName = funcName + "_commit";
+    
+    SgFunctionCallExp* fwdFuncCall = NULL;
+    SgFunctionCallExp* rvsFuncCall = NULL;
+
+    if (SgClassDefinition* classDef = memFunDecl->get_class_scope())
+    {
+        SgMemberFunctionSymbol* fwdFuncSymbol = NULL;
+        SgMemberFunctionSymbol* rvsFuncSymbol = NULL;
+        SgMemberFunctionSymbol* cmtFuncSymbol = NULL;
+
+        ROSE_ASSERT(classDef);
+
+        foreach (SgDeclarationStatement* decl, classDef->get_members())
+        {
+            SgMemberFunctionDeclaration* memFuncDecl = 
+                    isSgMemberFunctionDeclaration(decl);
+            if (memFuncDecl == NULL)
+                continue;
+
+            SgName funcName = memFuncDecl->get_name();
+
+            if (funcName == fwdFuncName)
+            {
+                fwdFuncSymbol = isSgMemberFunctionSymbol(
+                        memFuncDecl->get_symbol_from_symbol_table());
+            }
+            else if (funcName == rvsFuncName)
+            {
+                rvsFuncSymbol = isSgMemberFunctionSymbol(
+                        memFuncDecl->get_symbol_from_symbol_table());
+            }
+#if 0
+            else if (funcName == cmtFuncName)
+            {
+                cmtFuncSymbol = isSgMemberFunctionSymbol(
+                        memFuncDecl->get_symbol_from_symbol_table());
+            }
+#endif
+        }
+
+        //cout << "Processing Function Call:\t" << funcName << " : " <<
+        //        funcDecl->get_functionModifier() << " " << 
+        //        funcDecl->get_specialFunctionModifier() << endl;
+
+        if (!(fwdFuncSymbol && rvsFuncSymbol && cmtFuncSymbol))
+        {
+            boost::tie(fwdFuncSymbol, rvsFuncSymbol, cmtFuncSymbol) = 
+                    buildThreeFuncDecl(classDef, memFunDecl);
+        }
+        ROSE_ASSERT(fwdFuncSymbol && rvsFuncSymbol && cmtFuncSymbol);
+
+
+
+        //SgThisExp* thisExp = isSgThisExp(arrowExp->get_lhs_operand());
+        //ROSE_ASSERT(thisExp);
+        //ROSE_ASSERT(copyExpression(thisExp));
+
+        //SgMemberFunctionRefExp* fwdFuncRef = NULL;
+        //SgMemberFunctionRefExp* rvsFuncRef = NULL;
+        //SgMemberFunctionRefExp* cmtFuncRef = NULL;
+
+        // Since the same VG node can be traversed more than once, this 
+        // flag indicate if the replacement of this function call is built
+        // or not.
+        //bool isFwdFuncCallBuilt = replaceTable_.count(funcCallExp);
+
+        //if (!isFwdFuncCallBuilt)
+        //{
+        fwdFuncCall = isSgFunctionCallExp(copyExpression(funcCallExp));
+        if (SgBinaryOp* binExp = isSgBinaryOp(fwdFuncCall->get_function()))
+            funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
+        funcRef->set_symbol(fwdFuncSymbol);
+        //    replaceTable_[funcCallExp] = fwdFuncCall;
+        //}
+        // FIXME The following method does not work!!
+        //replaceExpression(arrowExp->get_rhs_operand(), fwdFuncRef);
+
+        rvsFuncCall = isSgFunctionCallExp(copyExpression(funcCallExp));
+        //replaceExpression(rvsFuncCall->get_args(), buildExprListExp());
+        if (SgBinaryOp* binExp = isSgBinaryOp(rvsFuncCall->get_function()))
+            funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
+        funcRef->set_symbol(rvsFuncSymbol);
+
+        // Remove all args from the reverse function call.
+#ifdef ROSS
+        rvsFuncCall->set_args(buildExprListExp(buildVarRefExp("lp")));
+#else
+        rvsFuncCall->set_args(buildExprListExp());
+#endif
+
+        //replaceExpression(arrowExp->get_rhs_operand(), rvsFuncRef);
+
+#if 0
+        SgFunctionCallExp* cmtFuncCall = isSgFunctionCallExp(copyExpression(funcCallExp));
+        replaceExpression(cmtFuncCall->get_args(), buildExprListExp());
+        if (SgBinaryOp* binExp = isSgBinaryOp(cmtFuncCall->get_function()))
+            funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
+        funcRef->set_symbol(cmtFuncSymbol);
+#endif
+        //replaceExpression(arrowExp->get_rhs_operand(), cmtFuncRef);
+
+#if 0
+        SgExpression* fwdFuncCall = buildFunctionCallExp(buildArrowExp(
+                copyExpression(thisExp), fwdFuncRef));
+        replaceExpression(funcCallExp, fwdFuncCall);
+
+        SgExpression* rvsFuncCall = buildFunctionCallExp(buildArrowExp(
+                copyExpression(thisExp), rvsFuncRef));
+        rvsStmt = buildExprStatement(rvsFuncCall);
+
+        SgExpression* cmtFuncCall = buildFunctionCallExp(buildArrowExp(
+                copyExpression(thisExp), cmtFuncRef));
+        cmtStmt = buildExprStatement(cmtFuncCall);
+#endif
+    }
+    else
+    {
+        ROSE_ASSERT(0);
+#if 0
+        SgExpression* fwdFuncCall = buildFunctionCallExp(fwdFuncName, returnType);
+        //fwdFuncCall = buildArrowExp(SageInterface::copyExpression(thisExp), fwdFuncCall);
+        SageInterface::replaceExpression(funcCallExp, fwdFuncCall);
+
+        SgExpression* rvsFuncCall = buildFunctionCallExp(rvsFuncName, returnType);
+        //SgExpression* rvsFuncCall = buildFunctionCallExp(SageInterface::copyExpression(arrowExp));
+        rvsStmt = buildExprStatement(rvsFuncCall);
+
+        SgExpression* cmtFuncCall = buildFunctionCallExp(cmtFuncName, returnType);
+        cmtStmt = buildExprStatement(cmtFuncCall);
+#endif
+    }
+    
+    return make_pair(fwdFuncCall, rvsFuncCall);
+}
+
 
 std::string FunctionCallNode::toString() const
 {

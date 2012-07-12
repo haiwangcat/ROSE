@@ -1377,19 +1377,19 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     if (!isMemberFunc)
         return VGVertex();
     
-    
-    //cout << funcCallExp->unparseToString() << endl;
-    
     // Build a node for this function call in VG.
     FunctionCallNode* funcCallNode = new FunctionCallNode(funcCallExp);
-    FunctionCallNode* rvsFuncCallNode;
-    if (funcCallNode->canBeReversed)
-        rvsFuncCallNode = new FunctionCallNode(funcCallExp, true);
-    
     VGVertex funcCallVertex = addValueGraphNode(funcCallNode);
+    
+    FunctionCallNode* rvsFuncCallNode;
     VGVertex rvsFuncCallVertex;
-    if (funcCallNode->canBeReversed)
+    
+    bool buildReverseNode = funcCallNode->canBeReversed;
+    if (buildReverseNode)
+    {
+        rvsFuncCallNode = new FunctionCallNode(funcCallExp, true);
         rvsFuncCallVertex = addValueGraphNode(rvsFuncCallNode);
+    }
     
     nodeVertexMap_[funcCallExp] = funcCallVertex;
     
@@ -1480,7 +1480,7 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     //addValueGraphEdge(funcCallVertex, callerAsUseVertex);
     
     // Add edges on the reverse function node.
-    if (funcCallNode->canBeReversed)
+    if (buildReverseNode)
     {
         addValueGraphEdge(callerAsUseVertex, rvsFuncCallVertex, paths);
         addValueGraphEdge(rvsFuncCallVertex, callerAsDefVertex, paths);

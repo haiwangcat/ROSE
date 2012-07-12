@@ -12,8 +12,6 @@ using namespace boost;
 
 #define foreach BOOST_FOREACH
 
-std::set<SgMemberFunctionDeclaration*> Backstroke::FunctionCallNode::functionsToReverse;
-std::ofstream Backstroke::FunctionCallNode::os("fileList.txt");
 
 vector<string> serializeMemberFunction(SgMemberFunctionDeclaration* memFuncDecl)
 {

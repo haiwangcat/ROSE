@@ -6,6 +6,7 @@
 #include <slicing/backstrokeCDG.h>
 #include <dataflowCfgFilter.h>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #define VG_DEBUG 
 
@@ -28,6 +29,12 @@ typedef std::vector<SgInitializedName*> VarName;
 
     
 SgMemberFunctionSymbol* getMemFuncSymbol(SgClassType* t, const std::string& name);
+
+boost::tuple<
+    SgMemberFunctionSymbol*,
+    SgMemberFunctionSymbol*,
+    SgMemberFunctionSymbol*>
+buildThreeFuncDecl(SgClassDefinition* classDef, SgMemberFunctionDeclaration* funcDecl);
 
 
 

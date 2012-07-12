@@ -283,10 +283,12 @@ void EventReverser::generateCode()
     if (pathNumNeeded)
         pathNumManager_->insertPathNumToFwdFunc();
 
+#if 0
     // Replace expressions in replaceTable_.
     typedef pair<SgExpression*, SgExpression*> ExprPair;
     foreach (const ExprPair& exprPair, replaceTable_)
         SageInterface::replaceExpression(exprPair.first, exprPair.second);
+#endif
     
     // Finally insert all functions in the code.
     insertFunctions();
@@ -1163,63 +1165,6 @@ namespace
         return node;
     }
     
-    boost::tuple<
-        SgMemberFunctionSymbol*,
-        SgMemberFunctionSymbol*,
-        SgMemberFunctionSymbol*>
-    buildThreeFuncDecl(SgClassDefinition* classDef, SgMemberFunctionDeclaration* funcDecl)
-    {
-        SgName funcName = funcDecl->get_name();
-        SgScopeStatement* funcScope = funcDecl->get_scope(); 
-        SgType* returnType = funcDecl->get_orig_return_type();
-        
-        SgMemberFunctionSymbol* fwdSymbol = NULL;
-        SgMemberFunctionSymbol* rvsSymbol = NULL;
-        SgMemberFunctionSymbol* cmtSymbol = NULL;
-        
-        SgName fwdFuncName = funcName + "_forward";
-        SgFunctionDeclaration* fwdFuncDecl = buildNondefiningMemberFunctionDeclaration(
-                        fwdFuncName,
-                        returnType,
-                        isSgFunctionParameterList(
-                            copyStatement(funcDecl->get_parameterList())),
-                        funcScope);
-        
-        SgName rvsFuncName = funcName + "_reverse";
-        SgFunctionDeclaration* rvsFuncDecl = buildNondefiningMemberFunctionDeclaration(
-                        rvsFuncName,
-                        returnType,
-                        isSgFunctionParameterList(
-                            copyStatement(funcDecl->get_parameterList())),
-                        funcScope);
-        
-        SgName cmtFuncName = funcName + "_commit";
-        SgFunctionDeclaration* cmtFuncDecl = buildNondefiningMemberFunctionDeclaration(
-                        cmtFuncName,
-                        returnType,
-                        buildFunctionParameterList(),
-                        funcScope);
-        
-        fwdFuncDecl->get_functionModifier() = funcDecl->get_functionModifier();
-        rvsFuncDecl->get_functionModifier() = funcDecl->get_functionModifier();
-        cmtFuncDecl->get_functionModifier() = funcDecl->get_functionModifier();
-
-        fwdSymbol = isSgMemberFunctionSymbol(fwdFuncDecl->get_symbol_from_symbol_table());
-        rvsSymbol = isSgMemberFunctionSymbol(rvsFuncDecl->get_symbol_from_symbol_table());
-        cmtSymbol = isSgMemberFunctionSymbol(cmtFuncDecl->get_symbol_from_symbol_table());
-        
-        SgStatement* firstFuncDecl = funcDecl->get_firstNondefiningDeclaration();
-        if (!firstFuncDecl)
-            firstFuncDecl = funcDecl;
-        
-        //insertStatementAfter(firstFuncDecl, cmtFuncDecl);
-        insertStatementAfter(firstFuncDecl, rvsFuncDecl);
-        insertStatementAfter(firstFuncDecl, fwdFuncDecl);
-        
-        ROSE_ASSERT(fwdSymbol && rvsSymbol && cmtSymbol);
-        
-        return boost::make_tuple(fwdSymbol, rvsSymbol, cmtSymbol);
-    }
 }
 
 void EventReverser::generateCodeForBasicBlock(
@@ -1450,7 +1395,7 @@ void EventReverser::generateCodeForBasicBlock(
             SgFunctionCallExp* funcCallExp = funcCallNode->getFunctionCallExp();
             ROSE_ASSERT(funcCallExp);
             
-            cout << ">>> Function call: " << funcCallExp->unparseToString() << endl;
+            //cout << ">>> Function call: " << funcCallExp->unparseToString() << endl;
             
             
             // When we generate a fwd/rvs function call, we need to reverse that
@@ -1484,7 +1429,7 @@ void EventReverser::generateCodeForBasicBlock(
                 SgName funcName = fDecl->get_name();
                 SgProject* project = SageInterface::getProject();
                 
-                cout << '######### ' << funcName << endl;
+                //cout << '######### ' << funcName << endl;
                 
                 vector<SgFunctionDefinition*> funcDefs = 
                     BackstrokeUtility::querySubTree<SgFunctionDefinition>(project);
@@ -1498,7 +1443,7 @@ void EventReverser::generateCodeForBasicBlock(
             }
             else
             {
-                cout << "The declaration of the following function cannot be found:\n" <<
+                cout << "Warning: The declaration of the following function cannot be found:\n" <<
                         funcCallExp->unparseToString() << endl;
             }
             
@@ -1556,9 +1501,9 @@ void EventReverser::generateCodeForBasicBlock(
                     }
                 }
                 
-                cout << "Processing Function Call:\t" << funcName << " : " <<
-                        funcDecl->get_functionModifier() << " " << 
-                        funcDecl->get_specialFunctionModifier() << endl;
+                //cout << "Processing Function Call:\t" << funcName << " : " <<
+                //        funcDecl->get_functionModifier() << " " << 
+                //        funcDecl->get_specialFunctionModifier() << endl;
                 
                 if (!(fwdFuncSymbol && rvsFuncSymbol && cmtFuncSymbol))
                 {
