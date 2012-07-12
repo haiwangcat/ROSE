@@ -1374,8 +1374,43 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
         }
     }
     
+    
+    
+    // Get all uses and defs from this function call.
+    const SSA::NodeReachingDefTable& useTable = ssa_->getUsesAtNode(funcCallExp);
+    const SSA::NodeReachingDefTable& defTable = ssa_->getDefsAtNode(funcCallExp);
+    const SSA::NodeReachingDefTable& reachingDefTable = ssa_->getReachingDefsAtNode_(funcCallExp);
+    //const SSA::NodeReachingDefTable& defTable = 
+    
+    
+    typedef map<VarName, SSA::ReachingDefPtr>::value_type PT;
+    
+    // If it is not a member function call, only add state saving edges for those modified vars.
     if (!isMemberFunc)
+    {
+        foreach (const PT& nameDef, defTable)
+        {
+            const VarName& name = nameDef.first;
+            ROSE_ASSERT(reachingDefTable.count(name));
+            VersionedVariable var(name, reachingDefTable.find(name)->second->getRenamingNumber());
+
+            if (varVertexMap_.count(var) == 0)
+                createForgottenValueNode(var);
+            
+            addStateSavingEdges(name, funcCallExp);
+
+            VersionedVariable defVar(name, nameDef.second->getRenamingNumber());
+            
+            // If the defined variable is not added to the VG.
+            if (varVertexMap_.count(defVar) == 0)
+            {
+                //createValueNode(arg, NULL);
+                ScalarValueNode* valNode = new ScalarValueNode(defVar, funcCallExp);
+                varVertexMap_[defVar] = addValueGraphNode(valNode);
+            }
+        }
         return VGVertex();
+    }
     
     // Build a node for this function call in VG.
     FunctionCallNode* funcCallNode = new FunctionCallNode(funcCallExp);
@@ -1398,11 +1433,6 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     //if (caller) 
     //    argList.push_back(caller);
     
-    // Get all uses and defs from this function call.
-    const SSA::NodeReachingDefTable& useTable = ssa_->getUsesAtNode(funcCallExp);
-    const SSA::NodeReachingDefTable& defTable = ssa_->getDefsAtNode(funcCallExp);
-    const SSA::NodeReachingDefTable& reachingDefTable = ssa_->getReachingDefsAtNode_(funcCallExp);
-    //const SSA::NodeReachingDefTable& defTable = 
     //    ssa_->getOutgoingDefsAtNode(SageInterface::getEnclosingStatement(funcCallExp));
     
     
@@ -1413,7 +1443,6 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     // Real arguments include those variables which are used or defined 
     // in the function call and may not be the arguments of this function.
     set<VGVertex> realArgs;
-    typedef map<VarName, SSA::ReachingDefPtr>::value_type PT;
     
     foreach (const PT& nameDef, useTable)
     {
@@ -1433,25 +1462,26 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
         VersionedVariable var(name, reachingDefTable.find(name)->second->getRenamingNumber());
         //cout << funcCallExp->unparseToString() << " DEF: " << var << "\n\n";
         
+            
         if (varVertexMap_.count(var) == 0)
             createForgottenValueNode(var);
-        
         realArgs.insert(varVertexMap_[var]);
         
+        
+        // Add state saving edges for killed defs.
+        addStateSavingEdges(name, funcCallExp);
         
         VersionedVariable defVar(name, nameDef.second->getRenamingNumber());
         //cout << funcCallExp->unparseToString() << " DEF: " << defVar << "\n\n";
         
         // If the defined variable is not added to the VG.
-        if (name == callerName && varVertexMap_.count(defVar) == 0)
+        if (varVertexMap_.count(defVar) == 0)
         {
             //createValueNode(arg, NULL);
             ScalarValueNode* valNode = new ScalarValueNode(defVar, funcCallExp);
             varVertexMap_[defVar] = addValueGraphNode(valNode);
-
-            // Add state saving edges for killed defs.
-            addStateSavingEdges(defVar.name, funcCallExp);
-            callerAsDefVertex = varVertexMap_[defVar];
+            if (name == callerName)
+                callerAsDefVertex = varVertexMap_[defVar];
         }
     }
     

@@ -260,6 +260,12 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
 :   ValueGraphNode(funcCall), isReverse(isRvs), isVirtual(false), 
     isConst(false), isMemberFunction(false), isStd(false), canBeReversed(false), caller(NULL)
 {
+    if (reversibleStlFunctions.empty())
+    {
+        //reversibleStlFunctions.insert(make_pair("priority_queue", "push"));
+        //reversibleStlFunctions.insert(make_pair("priority_queue", "pop"));
+    }
+    
     // If this function is declared as const.
     //bool isConst = false;
     bool isInline = false;
@@ -446,6 +452,9 @@ FunctionCallNode::FunctionNamesT FunctionCallNode::getFunctionNames() const
 
 std::pair<SgExpression*, SgExpression*> FunctionCallNode::buildFwdAndRvsFuncCalls() const
 {
+    //buildFwdAndRvsFuncCallsForSTL();
+    
+    
     using namespace SageInterface;
     using namespace SageBuilder;
     
