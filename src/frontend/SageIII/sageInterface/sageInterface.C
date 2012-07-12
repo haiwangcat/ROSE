@@ -6150,6 +6150,12 @@ std::pair<SgVariableDeclaration*, SgExpression*> SageInterface::createTempVariab
         variableType = SageBuilder::buildPointerType(expressionBaseType);
     }
 
+    bool isConstType = SageInterface::isConstType(expressionType);
+    if (isConstType)
+    {
+        variableType = SageInterface::removeConst(expressionType);
+    }
+
     // If the expression is a dereferenced pointer, use a reference to hold it.
     if (isSgPointerDerefExp(expression))
         variableType = SageBuilder::buildReferenceType(variableType);
