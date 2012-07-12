@@ -9,6 +9,7 @@
 #include <boost/tuple/tuple.hpp>
 
 #define VG_DEBUG 
+#define ROSS
 
 namespace Backstroke
 {

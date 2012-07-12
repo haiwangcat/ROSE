@@ -2355,7 +2355,12 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     
     // Prepend includes to test files.
     foreach (SgGlobal* globalScope, globalScopes)
+    {
+#ifdef ROSS
+        SageInterface::insertHeader("ross.h", PreprocessingInfo::after, false, globalScope);
+#endif
         SageInterface::insertHeader("rctypes.h", PreprocessingInfo::after, false, globalScope);
+    }
     
         
     delete ssa;
