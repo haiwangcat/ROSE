@@ -26,6 +26,9 @@ typedef boost::dynamic_bitset<> PathSet;
 
 typedef std::vector<SgInitializedName*> VarName;
 
+    
+SgMemberFunctionSymbol* getMemFuncSymbol(SgClassType* t, const std::string& name);
+
 
 
 struct PhiNodeDependence

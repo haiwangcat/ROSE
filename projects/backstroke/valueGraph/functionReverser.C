@@ -1306,6 +1306,7 @@ void EventReverser::generateCodeForBasicBlock(
             if (ssEdge->region.hasSingleElement())
             {
                 SgExpression* indexExp = ssEdge->region.var1.buildVarExpression();
+                ROSE_ASSERT(indexExp);
                 
                 
                 SgType* varType = varExp->get_type();
@@ -1320,11 +1321,20 @@ void EventReverser::generateCodeForBasicBlock(
                 if (BackstrokeUtility::isSTLContainer(varType, "vector"))
                 {
                     using namespace SageBuilder;
+                    
+                    SgClassType* vecType = isSgClassType(varType);
+                    
+                    // Search the symbol of the member function "at".
+                    SgMemberFunctionSymbol* funcSymbol = getMemFuncSymbol(vecType, "operator[]");
+                    ROSE_ASSERT(funcSymbol);
+
                     if (isSgPointerType(varExp->get_type()))
                         varExp = buildPointerDerefExp(varExp);
-                    varExp = buildDotExp(varExp, buildFunctionCallExp(
-                            "at", buildVoidType(),
-                            buildExprListExp(indexExp)));
+                    varExp = buildFunctionCallExp(
+                        buildDotExp(
+                            varExp, 
+                            buildMemberFunctionRefExp(funcSymbol, false, false)),
+                        buildExprListExp(indexExp));
                 }
                 else
                     ROSE_ASSERT(false);

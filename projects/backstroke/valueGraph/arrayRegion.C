@@ -18,7 +18,7 @@ void SymbolicRepresentation::setValue(SgValueExp* valExp)
 
 SgExpression* SymbolicRepresentation::buildVarExpression() const
 {
-    if (constant > 0)
+    if (constant >= 0)
         return SageBuilder::buildIntVal(constant);
     return var.getVarRefExp();
 }

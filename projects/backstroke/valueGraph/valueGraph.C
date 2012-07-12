@@ -1454,12 +1454,14 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
             callerAsDefVertex = varVertexMap_[defVar];
         }
     }
+    
+    PathInfos paths = pathNumManager_->getPathNumbers(funcCallExp);
 
     
     // Add edges from the function call node to its args.
     foreach (VGVertex argVertex, realArgs)
     {
-        addValueGraphEdge(funcCallVertex, argVertex);
+        addValueGraphEdge(funcCallVertex, argVertex, paths);
     }
     
     //if (funcCallNode->isConst)
@@ -1472,7 +1474,7 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     ROSE_ASSERT(callerAsUseVertex != callerAsDefVertex);
     
     // Add an edge from the caller as def to the function call node.
-    addValueGraphEdge(callerAsDefVertex, funcCallVertex);
+    addValueGraphEdge(callerAsDefVertex, funcCallVertex, paths);
     
     // This edge will be added in the next loop.
     //addValueGraphEdge(funcCallVertex, callerAsUseVertex);
@@ -1480,8 +1482,8 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     // Add edges on the reverse function node.
     if (funcCallNode->canBeReversed)
     {
-        addValueGraphEdge(callerAsUseVertex, rvsFuncCallVertex);
-        addValueGraphEdge(rvsFuncCallVertex, callerAsDefVertex);
+        addValueGraphEdge(callerAsUseVertex, rvsFuncCallVertex, paths);
+        addValueGraphEdge(rvsFuncCallVertex, callerAsDefVertex, paths);
     }
     
         

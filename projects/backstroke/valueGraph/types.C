@@ -8,6 +8,27 @@ using namespace std;
 #define foreach         BOOST_FOREACH
 
 
+SgMemberFunctionSymbol* getMemFuncSymbol(SgClassType* t, const string& name)
+{
+    // Search the symbol of the member function "at".
+    SgDeclarationStatement* decl = 
+            t->get_declaration()->get_definingDeclaration();
+    SgClassDeclaration* classDecl = isSgClassDeclaration(decl);
+    ROSE_ASSERT(classDecl);
+    SgClassDefinition* classDef = classDecl->get_definition();
+
+    foreach (SgDeclarationStatement* d, classDef->get_members())
+    {
+        if (SgMemberFunctionDeclaration* memFuncDecl = isSgMemberFunctionDeclaration(d))
+        {
+            if (name == memFuncDecl->get_name().str())
+                return isSgMemberFunctionSymbol(memFuncDecl->get_symbol_from_symbol_table());
+        }
+    }
+
+    return NULL;
+}
+
 
 std::string VersionedVariable::toString() const
 {

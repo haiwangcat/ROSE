@@ -137,13 +137,20 @@ std::string VectorElementNode::toString() const
 SgExpression* VectorElementNode::buildExpression() const
 {
     SgExpression* var = vecVar.getVarRefExp();
-    if (isSgPointerType(var->get_type()))
+    SgType* varType = var->get_type();
+    if (SgPointerType* pt = isSgPointerType(varType))
+    {
+        varType = pt->get_base_type();
         var = SageBuilder::buildPointerDerefExp(var);
-    return SageBuilder::buildDotExp(
-            var, 
-            SageBuilder::buildFunctionCallExp(
-                "at", SageBuilder::buildVoidType(),
-                SageBuilder::buildExprListExp(indexVar.getVarRefExp())));
+    }
+
+    SgClassType* vecType = isSgClassType(varType);
+    SgMemberFunctionSymbol* funcSymbol = getMemFuncSymbol(vecType, "operator[]");
+    return SageBuilder::buildFunctionCallExp(
+            SageBuilder::buildDotExp(
+                var, 
+                SageBuilder::buildMemberFunctionRefExp(funcSymbol, false, false)),
+            SageBuilder::buildExprListExp(indexVar.getVarRefExp()));
 }
 
 //void ValueNode::addVariable(const VersionedVariable& newVar)
