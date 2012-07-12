@@ -283,12 +283,10 @@ void EventReverser::generateCode()
     if (pathNumNeeded)
         pathNumManager_->insertPathNumToFwdFunc();
 
-#if 0
     // Replace expressions in replaceTable_.
     typedef pair<SgExpression*, SgExpression*> ExprPair;
     foreach (const ExprPair& exprPair, replaceTable_)
         SageInterface::replaceExpression(exprPair.first, exprPair.second);
-#endif
     
     // Finally insert all functions in the code.
     insertFunctions();
@@ -1447,154 +1445,18 @@ void EventReverser::generateCodeForBasicBlock(
                         funcCallExp->unparseToString() << endl;
             }
             
-            //cout << "Function: " << funcCallExp->unparseToString() << endl;
             
-            SgMemberFunctionRefExp* funcRef = NULL;
-            if (SgBinaryOp* binExp = isSgBinaryOp(funcCallExp->get_function()))
-                funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
-            ROSE_ASSERT(funcRef);
+            SgExpression *fwdExp, *rvsExp;        
+            boost::tie(fwdExp, rvsExp) = funcCallNode->buildFwdAndRvsFuncCalls();
             
-            SgMemberFunctionDeclaration* funcDecl = funcRef->getAssociatedMemberFunctionDeclaration();
-            SgType* returnType = funcCallExp->get_type();
+            bool isFwdFuncCallBuilt = replaceTable_.count(funcCallExp);
+            if (!isFwdFuncCallBuilt)
+                replaceTable_[funcCallExp] = fwdExp;
             
-            string funcName = funcDecl->get_name().str();
-            string fwdFuncName = funcName + "_forward";
-            string rvsFuncName = funcName + "_reverse";
-            string cmtFuncName = funcName + "_commit";
-            
-            if (SgClassDefinition* classDef = funcDecl->get_class_scope())
-            {
-                SgMemberFunctionSymbol* fwdFuncSymbol = NULL;
-                SgMemberFunctionSymbol* rvsFuncSymbol = NULL;
-                SgMemberFunctionSymbol* cmtFuncSymbol = NULL;
-
-                //cout << "Class Name: " << classDef->get_declaration()->get_name().str() << endl;
-                ROSE_ASSERT(classDef);
-                
-                foreach (SgDeclarationStatement* decl, classDef->get_members())
-                {
-                    SgMemberFunctionDeclaration* memFuncDecl = 
-                            isSgMemberFunctionDeclaration(decl);
-                    if (memFuncDecl == NULL)
-                        continue;
-                    
-                    SgName funcName = memFuncDecl->get_name();
-                    //cout << memFuncDecl->get_qualified_name().str() << endl;
-                    
-                    //cout << "FUNC:\t" << funcName.str() << endl;
-                    //cout << fwdFuncName << " " << rvsFuncName << " " << cmtFuncName << endl;
-                    
-                    if (funcName == fwdFuncName)
-                    {
-                        fwdFuncSymbol = isSgMemberFunctionSymbol(
-                                memFuncDecl->get_symbol_from_symbol_table());
-                    }
-                    else if (funcName == rvsFuncName)
-                    {
-                        rvsFuncSymbol = isSgMemberFunctionSymbol(
-                                memFuncDecl->get_symbol_from_symbol_table());
-                    }
-                    else if (funcName == cmtFuncName)
-                    {
-                        cmtFuncSymbol = isSgMemberFunctionSymbol(
-                                memFuncDecl->get_symbol_from_symbol_table());
-                    }
-                }
-                
-                //cout << "Processing Function Call:\t" << funcName << " : " <<
-                //        funcDecl->get_functionModifier() << " " << 
-                //        funcDecl->get_specialFunctionModifier() << endl;
-                
-                if (!(fwdFuncSymbol && rvsFuncSymbol && cmtFuncSymbol))
-                {
-                    boost::tie(fwdFuncSymbol, rvsFuncSymbol, cmtFuncSymbol) = 
-                            buildThreeFuncDecl(classDef, funcDecl);
-                }
-                ROSE_ASSERT(fwdFuncSymbol && rvsFuncSymbol && cmtFuncSymbol);
-                
-                
-
-                //SgThisExp* thisExp = isSgThisExp(arrowExp->get_lhs_operand());
-                //ROSE_ASSERT(thisExp);
-                //ROSE_ASSERT(copyExpression(thisExp));
-
-                //SgMemberFunctionRefExp* fwdFuncRef = NULL;
-                //SgMemberFunctionRefExp* rvsFuncRef = NULL;
-                //SgMemberFunctionRefExp* cmtFuncRef = NULL;
-                
-                // Since the same VG node can be traversed more than once, this 
-                // flag indicate if the replacement of this function call is built
-                // or not.
-                bool isFwdFuncCallBuilt = replaceTable_.count(funcCallExp);
-                
-                if (!isFwdFuncCallBuilt)
-                {
-                    SgFunctionCallExp* fwdFuncCall = isSgFunctionCallExp(copyExpression(funcCallExp));
-                    if (SgBinaryOp* binExp = isSgBinaryOp(fwdFuncCall->get_function()))
-                        funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
-                    funcRef->set_symbol(fwdFuncSymbol);
-                    replaceTable_[funcCallExp] = fwdFuncCall;
-                }
-                // FIXME The following method does not work!!
-                //replaceExpression(arrowExp->get_rhs_operand(), fwdFuncRef);
-                
-                SgFunctionCallExp* rvsFuncCall = isSgFunctionCallExp(copyExpression(funcCallExp));
-                //replaceExpression(rvsFuncCall->get_args(), buildExprListExp());
-                if (SgBinaryOp* binExp = isSgBinaryOp(rvsFuncCall->get_function()))
-                    funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
-                funcRef->set_symbol(rvsFuncSymbol);
-                
-                // Remove all args from the reverse function call.
-#ifdef ROSS
-                rvsFuncCall->set_args(buildExprListExp(buildVarRefExp("lp")));
-#else
-                rvsFuncCall->set_args(buildExprListExp());
-#endif
-                        
-                //replaceExpression(arrowExp->get_rhs_operand(), rvsFuncRef);
-                
-                SgFunctionCallExp* cmtFuncCall = isSgFunctionCallExp(copyExpression(funcCallExp));
-                replaceExpression(cmtFuncCall->get_args(), buildExprListExp());
-                if (SgBinaryOp* binExp = isSgBinaryOp(cmtFuncCall->get_function()))
-                    funcRef = isSgMemberFunctionRefExp(binExp->get_rhs_operand());
-                funcRef->set_symbol(cmtFuncSymbol);
-                //replaceExpression(arrowExp->get_rhs_operand(), cmtFuncRef);
-                
-#if 0
-                SgExpression* fwdFuncCall = buildFunctionCallExp(buildArrowExp(
-                        copyExpression(thisExp), fwdFuncRef));
-                replaceExpression(funcCallExp, fwdFuncCall);
-
-                SgExpression* rvsFuncCall = buildFunctionCallExp(buildArrowExp(
-                        copyExpression(thisExp), rvsFuncRef));
-                rvsStmt = buildExprStatement(rvsFuncCall);
-
-                SgExpression* cmtFuncCall = buildFunctionCallExp(buildArrowExp(
-                        copyExpression(thisExp), cmtFuncRef));
-                cmtStmt = buildExprStatement(cmtFuncCall);
-#endif
-                
-                //replaceExpression(funcCallExp, fwdFuncCall);
-                rvsStmt = buildExprStatement(rvsFuncCall);
-                cmtStmt = buildExprStatement(cmtFuncCall);
-            }
-            else
-            {
-                ROSE_ASSERT(0);
-                
-                SgExpression* fwdFuncCall = buildFunctionCallExp(fwdFuncName, returnType);
-                //fwdFuncCall = buildArrowExp(SageInterface::copyExpression(thisExp), fwdFuncCall);
-                SageInterface::replaceExpression(funcCallExp, fwdFuncCall);
-
-                SgExpression* rvsFuncCall = buildFunctionCallExp(rvsFuncName, returnType);
-                //SgExpression* rvsFuncCall = buildFunctionCallExp(SageInterface::copyExpression(arrowExp));
-                rvsStmt = buildExprStatement(rvsFuncCall);
-
-                SgExpression* cmtFuncCall = buildFunctionCallExp(cmtFuncName, returnType);
-                cmtStmt = buildExprStatement(cmtFuncCall);
-            }
-#endif
+            rvsStmt = buildExprStatement(rvsExp);
         }
+        
+#endif
 
         // Add the generated statement to the scope.
         if (rvsStmt)
