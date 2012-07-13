@@ -12,6 +12,8 @@ namespace Backstroke
 	
 using namespace std;
 using namespace boost;
+using namespace SageBuilder;
+using namespace SageInterface;
 
 #define foreach BOOST_FOREACH
 
@@ -258,12 +260,13 @@ std::set<std::pair<std::string, std::string> > FunctionCallNode::reversibleStlFu
 
 FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
 :   ValueGraphNode(funcCall), isReverse(isRvs), isVirtual(false), 
-    isConst(false), isMemberFunction(false), isStd(false), canBeReversed(false), caller(NULL)
+    isConst(false), isMemberFunction(false), isStd(false), canBeReversed(false), 
+    caller(NULL), isReversibleSTLFunction(false)
 {
     if (reversibleStlFunctions.empty())
     {
-        //reversibleStlFunctions.insert(make_pair("priority_queue", "push"));
-        //reversibleStlFunctions.insert(make_pair("priority_queue", "pop"));
+        reversibleStlFunctions.insert(make_pair("priority_queue", "push"));
+        reversibleStlFunctions.insert(make_pair("priority_queue", "pop"));
     }
     
     // If this function is declared as const.
@@ -416,6 +419,11 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
                 if (funcDecl && funcDecl->get_name() == strPair.second)
                 {
                     canBeReversed = true;
+                    
+                    isReversibleSTLFunction = true;
+                    STLContainerName = strPair.first;
+                    funcName = strPair.second;
+                    
                     break;
                 }
             }
@@ -450,13 +458,41 @@ FunctionCallNode::FunctionNamesT FunctionCallNode::getFunctionNames() const
 
 
 
+std::pair<SgExpression*, SgExpression*> FunctionCallNode::buildFwdAndRvsFuncCallsForSTL() const
+{
+    string fwdFuncName = "bs_" + STLContainerName + "_" + funcName + "_forward";
+    string rvsFuncName = "bs_" + STLContainerName + "_" + funcName + "_reverse";
+    
+    SgFunctionCallExp* funcCall = isSgFunctionCallExp(astNode);
+    ROSE_ASSERT(funcCall);
+    ROSE_ASSERT(caller);
+    
+    SgExprListExp* fwdFuncParaList = buildExprListExp(copyExpression(caller));
+    SgExprListExp* rvsFuncParaList = buildExprListExp(copyExpression(caller));
+    
+    foreach (SgExpression* exp, funcCall->get_args()->get_expressions())
+        fwdFuncParaList->append_expression(copyExpression(exp));
+    
+#ifdef ROSS
+    fwdFuncParaList->append_expression(buildVarRefExp("lp"));
+    rvsFuncParaList->append_expression(buildVarRefExp("lp"));
+#endif
+    
+    SgExpression* fwdFuncCall = buildFunctionCallExp(
+            fwdFuncName, buildVoidType(), fwdFuncParaList);
+    SgExpression* rvsFuncCall = buildFunctionCallExp(
+            rvsFuncName, buildVoidType(), rvsFuncParaList);
+    
+    return make_pair(fwdFuncCall, rvsFuncCall);
+}
+
+
+
 std::pair<SgExpression*, SgExpression*> FunctionCallNode::buildFwdAndRvsFuncCalls() const
 {
-    //buildFwdAndRvsFuncCallsForSTL();
+    if (isReversibleSTLFunction)
+        return buildFwdAndRvsFuncCallsForSTL();
     
-    
-    using namespace SageInterface;
-    using namespace SageBuilder;
     
     SgFunctionCallExp* funcCallExp = isSgFunctionCallExp(astNode);
     ROSE_ASSERT(funcCallExp);
@@ -469,7 +505,7 @@ std::pair<SgExpression*, SgExpression*> FunctionCallNode::buildFwdAndRvsFuncCall
     ROSE_ASSERT(funcRef);
 
     SgMemberFunctionDeclaration* memFunDecl = funcRef->getAssociatedMemberFunctionDeclaration();
-    SgType* returnType = funcCallExp->get_type();
+    //SgType* returnType = funcCallExp->get_type();
 
     string funcName = memFunDecl->get_name().str();
     string fwdFuncName = funcName + "_forward";

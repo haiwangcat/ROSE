@@ -569,7 +569,7 @@ vector<pair<int, int> > PathNumManager::getMastAndCompTarget(int dagIndex, DAGVe
 
 PathInfos PathNumManager::getPathNumbers(SgNode* node) const
 {
-    cout << "getPathNumbers: " << node->unparseToString() << ' '  << node->get_parent()->unparseToString() << endl;
+    //cout << "getPathNumbers: " << node->unparseToString() << ' '  << node->get_parent()->unparseToString() << endl;
     
     CFGVertex cfgNode;
     // If the given node is a data member of a class, set its CFG node to the exit.
@@ -592,7 +592,7 @@ PathInfos PathNumManager::getPathNumbers(SgNode* node) const
         boost::tie(idx, dagNode) = idxNode;
         vector<pair<int, int> > maskAndTarget = getMastAndCompTarget(idx, dagNode);
         
-        cout << idx << endl;
+        //cout << idx << endl;
         PathSet p = pathNumGenerators_[idx]->getPaths(dagNode);
         if (p.any())
             paths[idx] = p;

@@ -227,6 +227,8 @@ struct FunctionCallNode: ValueGraphNode
     
     std::pair<SgExpression*, SgExpression*> buildFwdAndRvsFuncCalls() const;
     
+    std::pair<SgExpression*, SgExpression*> buildFwdAndRvsFuncCallsForSTL() const;
+    
     SgFunctionDeclaration* funcDecl;
     std::string funcName;
     
@@ -250,6 +252,9 @@ struct FunctionCallNode: ValueGraphNode
     
     //! If the function is a member function, this the caller.
     SgExpression* caller;
+    
+    bool isReversibleSTLFunction;
+    std::string STLContainerName;
     
     static std::set<SgMemberFunctionDeclaration*> functionsToReverse;
     

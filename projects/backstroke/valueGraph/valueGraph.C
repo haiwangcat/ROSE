@@ -776,7 +776,7 @@ void EventReverser::addAvailableAndTargetValues()
         // For every variable, if it is not added into VG, add it now.
         VersionedVariable var(name, nameDef.second->getRenamingNumber());
                 
-        cout << "Versioned variable with last version:\t" << var.toString() << endl;
+        //cout << "Versioned variable with last version:\t" << var.toString() << endl;
         //printVarVertexMap();
         
         if (varVertexMap_.count(var) > 0)
@@ -856,7 +856,8 @@ void EventReverser::addExtraNodesAndEdges()
         // If the edge is not connected to an operator node or function call node,
         // make a reverse copy.
         if (isOperatorNode(valueGraph_[src]) || isOperatorNode(valueGraph_[tar]) ||
-            isFunctionCallNode(valueGraph_[src]) || isFunctionCallNode(valueGraph_[tar]))
+                isMuNode(valueGraph_[src]) || isMuNode(valueGraph_[tar]) ||
+                isFunctionCallNode(valueGraph_[src]) || isFunctionCallNode(valueGraph_[tar]))
             continue;
         
         // If the edge is a mu edge, don't add a reverse edge.
@@ -1385,30 +1386,31 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
     
     typedef map<VarName, SSA::ReachingDefPtr>::value_type PT;
     
-    // If it is not a member function call, only add state saving edges for those modified vars.
+    // Add state saving edges for those modified vars.
+    foreach (const PT& nameDef, defTable)
+    {
+        const VarName& name = nameDef.first;
+        ROSE_ASSERT(reachingDefTable.count(name));
+        VersionedVariable var(name, reachingDefTable.find(name)->second->getRenamingNumber());
+
+        if (varVertexMap_.count(var) == 0)
+            createForgottenValueNode(var);
+
+        addStateSavingEdges(name, funcCallExp);
+
+        VersionedVariable defVar(name, nameDef.second->getRenamingNumber());
+
+        // If the defined variable is not added to the VG.
+        if (varVertexMap_.count(defVar) == 0)
+        {
+            //createValueNode(arg, NULL);
+            ScalarValueNode* valNode = new ScalarValueNode(defVar, funcCallExp);
+            varVertexMap_[defVar] = addValueGraphNode(valNode);
+        }
+    }
+
     if (!isMemberFunc)
     {
-        foreach (const PT& nameDef, defTable)
-        {
-            const VarName& name = nameDef.first;
-            ROSE_ASSERT(reachingDefTable.count(name));
-            VersionedVariable var(name, reachingDefTable.find(name)->second->getRenamingNumber());
-
-            if (varVertexMap_.count(var) == 0)
-                createForgottenValueNode(var);
-            
-            addStateSavingEdges(name, funcCallExp);
-
-            VersionedVariable defVar(name, nameDef.second->getRenamingNumber());
-            
-            // If the defined variable is not added to the VG.
-            if (varVertexMap_.count(defVar) == 0)
-            {
-                //createValueNode(arg, NULL);
-                ScalarValueNode* valNode = new ScalarValueNode(defVar, funcCallExp);
-                varVertexMap_[defVar] = addValueGraphNode(valNode);
-            }
-        }
         return VGVertex();
     }
     
@@ -1460,28 +1462,13 @@ EventReverser::createFunctionCallNode(SgFunctionCallExp* funcCallExp)
         const VarName& name = nameDef.first;
         ROSE_ASSERT(reachingDefTable.count(name));
         VersionedVariable var(name, reachingDefTable.find(name)->second->getRenamingNumber());
-        //cout << funcCallExp->unparseToString() << " DEF: " << var << "\n\n";
-        
-            
-        if (varVertexMap_.count(var) == 0)
-            createForgottenValueNode(var);
+
         realArgs.insert(varVertexMap_[var]);
-        
-        
-        // Add state saving edges for killed defs.
-        addStateSavingEdges(name, funcCallExp);
-        
-        VersionedVariable defVar(name, nameDef.second->getRenamingNumber());
-        //cout << funcCallExp->unparseToString() << " DEF: " << defVar << "\n\n";
-        
-        // If the defined variable is not added to the VG.
-        if (varVertexMap_.count(defVar) == 0)
+
+        if (name == callerName)
         {
-            //createValueNode(arg, NULL);
-            ScalarValueNode* valNode = new ScalarValueNode(defVar, funcCallExp);
-            varVertexMap_[defVar] = addValueGraphNode(valNode);
-            if (name == callerName)
-                callerAsDefVertex = varVertexMap_[defVar];
+            VersionedVariable defVar(name, nameDef.second->getRenamingNumber());
+            callerAsDefVertex = varVertexMap_[defVar];
         }
     }
     
@@ -2028,6 +2015,7 @@ void EventReverser::addPhiEdges()
                         ROSE_ASSERT(preheader);
 #endif
                         
+                        //cout << muNode->toString() << ' ' << preheader->unparseToString() << endl;
                         addStateSavingEdges(muNode->var.name, preheader);
                         
                         // For a Mu node, we duplicate it and connect all Mu edges to it.
@@ -2244,9 +2232,9 @@ void EventReverser::addStateSavingEdges()
         // reaching defs on this statement to get all last versions of local variables.
         if (SgBasicBlock* basicBlock = isSgBasicBlock(scope))
         {
-            cout << "Scope end SS edge: " << initName->get_name() 
-                    << "--SS-->" << basicBlock->class_name() << '\n' <<
-                    basicBlock->unparseToString() << "\n\n";
+            //cout << "Scope end SS edge: " << initName->get_name() 
+            //        << "--SS-->" << basicBlock->class_name() << '\n' <<
+            //        basicBlock->unparseToString() << "\n\n";
             ROSE_ASSERT(isSgNullStatement(basicBlock->get_statements().back()));
             addStateSavingEdges(VarName(1, initName), basicBlock->get_statements().back());
         }

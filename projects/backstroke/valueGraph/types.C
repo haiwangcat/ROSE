@@ -193,6 +193,7 @@ PathInfo& PathInfo::operator-=(const PathInfo& p)
 ostream& operator<<(ostream& os, const PathInfo& path)
 {
     os << dynamic_cast<const PathSet&>(path);
+#if 0
     for (int i = 0, s = path.pathCond.size(); i < s; ++i)
     {
         os << ' ';
@@ -201,6 +202,7 @@ ostream& operator<<(ostream& os, const PathInfo& path)
             os << path.pathCond[i][j].first << ":" << path.pathCond[i][j].second;
         }
     }
+#endif
     return os;
 }
 

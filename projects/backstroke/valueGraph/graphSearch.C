@@ -165,6 +165,8 @@ map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
     map<VGVertex, vector<Route> > allRoutes;
     
     set<VGVertex> valuesToRestore = valsToRestore;
+    
+#if 0
     // Find all reverse function call node and put them into valuesToRestore set.
     foreach (VGVertex node, boost::vertices(valueGraph_))
     {
@@ -173,6 +175,7 @@ map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
         if (funcCallNode && funcCallNode->isReverse)
             valuesToRestore.insert(node);
     }
+#endif
     
     foreach (VGVertex valToRestore, valuesToRestore)
     {
@@ -205,6 +208,8 @@ map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
             {
                 VGEdge edge = *(boost::out_edges(valToRestore, valueGraph_).first);
                 route.paths = valueGraph_[edge]->paths[dagIndex].makeFullPath();
+                //cout << valueGraph_[valToRestore]->toString() << endl;
+                //cout << "New route: " << route.paths << ' '  << valueGraph_[edge]->toString() << endl;
                 unfinishedRoutes.push(route);
             }
         }
@@ -454,6 +459,7 @@ map<VGEdge, EdgeInfo> EventReverser::getReversalRoute(
                 Route newRoute = unfinishedRoute;
                 newRoute.addEdge(edge);
                 newRoute.addVertices(tar, node);
+                cout << newRoute.paths << ' ' << valueGraph_[edge]->paths[dagIndex] << endl;
                 newRoute.paths &= valueGraph_[edge]->paths[dagIndex];
                 if (!newRoute.paths.isEmpty())
                     unfinishedRoutes.push(newRoute);

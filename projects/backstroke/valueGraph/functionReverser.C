@@ -1415,7 +1415,7 @@ void EventReverser::generateCodeForBasicBlock(
                 }
             }
             
-            if (fDecl)
+            if (fDecl && !funcCallNode->isReversibleSTLFunction)
             {
                 if (SgFunctionDefinition* fDef = fDecl->get_definition())
                     functionsToBeReversed_.insert(fDef);
@@ -2358,6 +2358,7 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     {
 #ifdef ROSS
         SageInterface::insertHeader("ross.h", PreprocessingInfo::after, false, globalScope);
+        SageInterface::insertHeader("backstroke/stl_fwd_rvs_funcs.h", PreprocessingInfo::after, false, globalScope);
 #endif
         SageInterface::insertHeader("rctypes.h", PreprocessingInfo::after, false, globalScope);
     }
