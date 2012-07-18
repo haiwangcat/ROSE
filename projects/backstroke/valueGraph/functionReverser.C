@@ -2358,9 +2358,9 @@ void reverseFunctions(const set<SgFunctionDefinition*>& funcDefs)
     {
 #ifdef ROSS
         SageInterface::insertHeader("ross.h", PreprocessingInfo::after, false, globalScope);
+        SageInterface::insertHeader("rctypes.h", PreprocessingInfo::after, false, globalScope);
         SageInterface::insertHeader("backstroke/stl_fwd_rvs_funcs.h", PreprocessingInfo::after, false, globalScope);
 #endif
-        SageInterface::insertHeader("rctypes.h", PreprocessingInfo::after, false, globalScope);
     }
     
         

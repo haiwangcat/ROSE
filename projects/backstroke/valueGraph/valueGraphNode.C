@@ -267,6 +267,12 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
     {
         reversibleStlFunctions.insert(make_pair("priority_queue", "push"));
         reversibleStlFunctions.insert(make_pair("priority_queue", "pop"));
+        reversibleStlFunctions.insert(make_pair("vector", "begin"));
+        reversibleStlFunctions.insert(make_pair("vector", "end"));
+        reversibleStlFunctions.insert(make_pair("vector", "erase"));
+        reversibleStlFunctions.insert(make_pair("vector", "insert"));
+        reversibleStlFunctions.insert(make_pair("vector", "push_back"));
+        reversibleStlFunctions.insert(make_pair("vector", "pop_back"));
     }
     
     // If this function is declared as const.
