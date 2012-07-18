@@ -41,6 +41,7 @@ SUBDIRS = \
 	PowerAwareCompiler \
 	ManyCoreRuntime \
 	mint \
+	vectorization \
 	extractMPISkeleton \
 	$(OPTIONAL_PROJECTS)
 
