@@ -267,12 +267,37 @@ FunctionCallNode::FunctionCallNode(SgFunctionCallExp* funcCall, bool isRvs)
     {
         reversibleStlFunctions.insert(make_pair("priority_queue", "push"));
         reversibleStlFunctions.insert(make_pair("priority_queue", "pop"));
+        
         reversibleStlFunctions.insert(make_pair("vector", "begin"));
         reversibleStlFunctions.insert(make_pair("vector", "end"));
         reversibleStlFunctions.insert(make_pair("vector", "erase"));
         reversibleStlFunctions.insert(make_pair("vector", "insert"));
         reversibleStlFunctions.insert(make_pair("vector", "push_back"));
         reversibleStlFunctions.insert(make_pair("vector", "pop_back"));
+        
+        
+        reversibleStlFunctions.insert(make_pair("deque", "begin"));
+        reversibleStlFunctions.insert(make_pair("deque", "end"));
+        reversibleStlFunctions.insert(make_pair("deque", "erase"));
+        reversibleStlFunctions.insert(make_pair("deque", "insert"));
+        reversibleStlFunctions.insert(make_pair("deque", "push_back"));
+        reversibleStlFunctions.insert(make_pair("deque", "pop_back"));
+        reversibleStlFunctions.insert(make_pair("deque", "push_front"));
+        reversibleStlFunctions.insert(make_pair("deque", "pop_front"));
+        
+        reversibleStlFunctions.insert(make_pair("list", "begin"));
+        reversibleStlFunctions.insert(make_pair("list", "end"));
+        reversibleStlFunctions.insert(make_pair("list", "erase"));
+        reversibleStlFunctions.insert(make_pair("list", "insert"));
+        reversibleStlFunctions.insert(make_pair("list", "push_back"));
+        reversibleStlFunctions.insert(make_pair("list", "pop_back"));
+        reversibleStlFunctions.insert(make_pair("list", "push_front"));
+        reversibleStlFunctions.insert(make_pair("list", "pop_front"));
+        
+        reversibleStlFunctions.insert(make_pair("multiset", "begin"));
+        reversibleStlFunctions.insert(make_pair("multiset", "end"));
+        reversibleStlFunctions.insert(make_pair("multiset", "erase"));
+        reversibleStlFunctions.insert(make_pair("multiset", "insert"));
     }
     
     // If this function is declared as const.
