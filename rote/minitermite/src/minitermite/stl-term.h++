@@ -2,6 +2,7 @@
 #define __STL_TERM_HPP__
 #include <term.h++>
 #include <sstream>
+#include <iostream>
 #include <iomanip>
 #include <string>
 #include <memory>
@@ -436,18 +437,18 @@ namespace term {
     std::string getName() const { return mName; };
     std::string getRepresentation() const {
       /*Pattern: name(...all subterms separated by commas..) */
-      std::string rep = getName();
-      rep += "(";
+      std::ostringstream rep;
+      rep << quote(getName()) << "(";
       std::vector<Term*>::const_iterator it;
       it = mSubterms.begin();
       // append the representation of all subterms
       while (it != mSubterms.end()) {
-	rep = rep + (*it)->getRepresentation();
+	rep << (*it)->getRepresentation();
 	// all but the last subterm are followed by a comma
-	if(++it != mSubterms.end()) rep += ",";
+	if(++it != mSubterms.end()) rep << ",";
       }
-      rep += ")";
-      return rep;
+      rep << ")";
+      return rep.str();
     };
 
     /// Get a vector of the subterms
@@ -484,7 +485,10 @@ namespace term {
   class STLVariable : public STLTerm {
   public:
     ///constructor setting the name
-    STLVariable(std::string name) : mName(name) { assert(false); };
+    STLVariable(std::string name) : mName(name) { 
+      std::cerr<<"STLVariable("<<name<<" not implemented"<<std::endl;
+      assert(false);
+    };
     /// arity is always zero
     int getArity() const {return 0;};
     /// a variable isn't ground
@@ -527,17 +531,18 @@ namespace term {
     /// output the representation
     std::string getRepresentation() const {
       /*Pattern: name(...all subterms separated by commas..) */
-      std::string rep = "[";
+      std::ostringstream rep;
+      rep << "[";
       std::deque<Term*>::const_iterator it;
       it = mTerms.begin();
       // append the representation of all subterms
       while (it != mTerms.end()) {
-	rep = rep + (*it)->getRepresentation();
+	rep << (*it)->getRepresentation();
 	// all but the last subterm are followed by a comma
-	if(++it != mTerms.end()) rep += ",";
+	if(++it != mTerms.end()) rep << ",";
       }
-      rep += "]";
-      return rep;
+      rep << "]";
+      return rep.str();
     }
 
     /// add a list element
