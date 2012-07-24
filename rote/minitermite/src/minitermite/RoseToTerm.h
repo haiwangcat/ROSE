@@ -25,6 +25,7 @@ private:
   bool typeWasDeclaredBefore(std::string type);
   std::set<std::string> declaredTypes;
   RoseEnums re;
+  term::Term* getBitVector(const SgBitVector&, const std::vector<std::string>&);
   term::CompTerm* getPreprocessingInfo(AttachedPreprocessingInfoType*);
   term::CompTerm* getFunctionDeclarationSpecific(SgFunctionDeclaration*);
   term::CompTerm* getUnaryOpSpecific(SgUnaryOp*);
@@ -41,8 +42,6 @@ private:
   term::CompTerm* getEnumTypeSpecific(SgType*);
   term::CompTerm* getClassDeclarationSpecific(SgClassDeclaration*);
   term::CompTerm* getClassDefinitionSpecific(SgClassDefinition*);
-  term::Term* getBitVector(const SgBitVector&, const std::vector<std::string>&);
-  term::Term* getEnum(int enum_val, const std::vector<std::string>&);
   term::CompTerm* getLabelStatementSpecific(SgLabelStatement*);
   term::CompTerm* getGotoStatementSpecific(SgGotoStatement*);
   term::CompTerm* getConditionalExpSpecific(SgConditionalExp*);

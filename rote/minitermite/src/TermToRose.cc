@@ -196,7 +196,7 @@ void expect_term(Term* n, TermType **r,
   }
 
 /** reverse of makeFlag */
-bool TermToRose::getFlag(Term *t) {
+bool TermToRose::createFlag(Term *t) {
   EXPECT_TERM(Atom*, atom, t);
   if (boost::starts_with(atom->getName(), "no_"))
     return false;
@@ -379,12 +379,10 @@ TermToRose::toRose(Term* t) {
 
           Sg_File_Info* fi = createFileInfo(ppi->at(ppi->getArity()-1));
           PreprocessingInfo::RelativePositionType locationInL =
-            (PreprocessingInfo::RelativePositionType)
-            createEnum(ppi->at(1), re.RelativePositionType);
+            re.enum_RelativePositionType[*ppi->at(1)];
 
           ln->addToAttachedPreprocessingInfo(
-             new PreprocessingInfo((PreprocessingInfo::DirectiveType)
-                                   createEnum(ppi, re.DirectiveType),
+             new PreprocessingInfo(re.enum_DirectiveType[*ppi],
                                    ppi->at(0)->getName(),
                                    fi->get_filenameString(),
                                    fi->get_line(),
@@ -1279,8 +1277,8 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
     TERM_ASSERT(t, annot != NULL);
     EXPECT_TERM(Atom*, s, annot->at(0));
     SgStringVal* sv = new SgStringVal(fi,s->getName());
-    sv->set_usesSingleQuotes(getFlag(annot->at(1)));
-    sv->set_usesDoubleQuotes(getFlag(annot->at(2)));
+    sv->set_usesSingleQuotes(createFlag(annot->at(1)));
+    sv->set_usesDoubleQuotes(createFlag(annot->at(2)));
     ve = sv;
   }
 
@@ -1373,15 +1371,14 @@ TermToRose::createUnaryOp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   else if (opname == "cast_exp") {
     //cerr<<"######castexp "<< annot->getRepresentation()<< "bug in ROSE?" <<endl;
     SgCastExp* e = new SgCastExp(fi, sgexp, sgtype,
-                                 (SgCastExp::cast_type_enum)
-                                 createEnum(annot->at(2), re.cast_type));
+                                 re.enum_cast_type_enum[*annot->at(2)]);
     //cerr<< e->unparseToString()<< endl;
     return e;
   }
   /* some more initialization necessary for a throw */
   else if (opname == "throw_op") {
     /*need to retrieve throw kind* (enum)*/
-    int tkind = createEnum(annot->at(2), re.throw_kind);
+    int tkind = re.enum_e_throw_kind[*annot->at(2)];
     // FIXME: use kind!
     /*need to retrieve types */
     EXPECT_TERM(List*, typel, annot->at(3));
@@ -1763,8 +1760,8 @@ TermToRose::inameFromAnnot(CompTerm* annot) {
   siname->set_file_info(FI);
 
   /* static?*/
-  int stat = (int) createEnum(annot->at(2), re.static_flag);
-  if(stat != 0) {
+  bool stat = createFlag(annot->at(2));
+  if(stat) {
     debug("setting static");
     siname->get_storageModifier().setStatic();
   }
@@ -1781,7 +1778,7 @@ TermToRose::createFunctionType(Term* t) {
   /* create the return type*/
   SgType* ret_type = createType(tterm->at(0));
   /* has ellipses?*/
-  bool has_ellipses = (bool) createEnum(tterm->at(1), re.ellipses_flag);
+  bool has_ellipses = createFlag(tterm->at(1));
   /* create type */
   SgFunctionType* func_type = new SgFunctionType(ret_type,has_ellipses);
   TERM_ASSERT(t, func_type != NULL);
@@ -1803,9 +1800,9 @@ TermToRose::createMemberFunctionType(Term* t) {
   /* create the reutnr type*/
   SgType* ret_type = createType(tterm->at(0));
   /* has ellipses?*/
-  bool has_ellipses = (bool) createEnum(tterm->at(1), re.ellipses_flag);
+  bool has_ellipses = createFlag(tterm->at(1));
   /* mfunc_specifier*/
-  int mfuncs = createEnum(tterm->at(3), re.declaration_modifier);
+  int mfuncs = re.enum_declaration_modifier_enum[*tterm->at(3)];
   /*create type
    * note thate no SgMemberFunctionDefinition is given
    * this is because the unparser does not use it!
@@ -1902,9 +1899,9 @@ TermToRose::createFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u, Comp
 
   EXPECT_TERM(Int*, length, annot->at(4));
   func_decl->set_name_qualification_length(length->getValue());
-  func_decl->set_type_elaboration_required(getFlag(annot->at(5)));
-  func_decl->set_global_qualification_required(getFlag(annot->at(6)));
-  func_decl->set_requiresNameQualificationOnReturnType(getFlag(annot->at(7)));
+  func_decl->set_type_elaboration_required(createFlag(annot->at(5)));
+  func_decl->set_global_qualification_required(createFlag(annot->at(6)));
+  func_decl->set_requiresNameQualificationOnReturnType(createFlag(annot->at(7)));
 
   register_func_decl(func_name, func_decl, annot->at(0));
   return func_decl;
@@ -1958,13 +1955,12 @@ TermToRose::createTemplateArgument(CompTerm* t) {
   debug("template argument:");
   CompTerm* annot = retrieveAnnotation(t);
   EXPECT_ATOM(templ_decl_name, annot->at(4));
-  return new SgTemplateArgument( 
-     (SgTemplateArgument::template_argument_enum)createEnum(annot->at(0), re.template_argument),
-     getFlag(annot->at(1)),
+  return new SgTemplateArgument(re.enum_template_argument_enum[*annot->at(0)],
+     createFlag(annot->at(1)),
      createType(annot->at(2)),
      static_cast<SgExpression*>(toRose(annot->at(3))),
      lookupTemplateDecl(templ_decl_name),
-     getFlag(annot->at(5)));
+     createFlag(annot->at(5)));
 }
 
 SgTemplateParameter*
@@ -1973,8 +1969,7 @@ TermToRose::createTemplateParameter(Sg_File_Info* fi, CompTerm* t) {
   CompTerm* annot = retrieveAnnotation(t);
   EXPECT_ATOM(templ_decl_name, annot->at(4));
   EXPECT_ATOM(default_param, annot->at(5));
-  return new SgTemplateParameter((SgTemplateParameter::template_parameter_enum)
-                                 createEnum(annot->at(0), re.template_parameter),
+  return new SgTemplateParameter(re.enum_template_parameter_enum[*annot->at(0)],
                                  createType(annot->at(1)),
                                  createType(annot->at(2)),
                                  static_cast<SgExpression*>(toRose(annot->at(3))),
@@ -2001,8 +1996,7 @@ TermToRose::createTemplateDeclaration(Sg_File_Info* fi, CompTerm* t) {
 
   SgTemplateDeclaration* decl = 
     new SgTemplateDeclaration(fi, name, strng,
-                              (SgTemplateDeclaration::template_type_enum)
-                              createEnum(annot->at(2), re.template_instantiation),
+                              re.enum_template_type_enum[*annot->at(2)],
                               params);
 
   // register it in the symbol table
@@ -2098,7 +2092,7 @@ TermToRose::createMemberFunctionDeclaration(Sg_File_Info* fi, SgNode* par_list_u
   CompTerm* scopeTerm = isCompTerm(annot->at(2));
   TERM_ASSERT(t, scopeTerm != NULL);
   EXPECT_ATOM(scope_name, scopeTerm->at(0));
-  int scope_type  = createEnum(scopeTerm->at(1), re.class_type);
+  int scope_type  = re.enum_class_types[*scopeTerm->at(1)];
 
   //func_decl->set_scope(fakeClassScope(scope_name,scope_type,func_decl));
 
@@ -2179,8 +2173,7 @@ TermToRose::createProcedureHeaderStatement(Sg_File_Info* fi, SgNode* par_list_u,
   setDeclarationModifier(annot->at(2),&proc_header_stmt->get_declarationModifier());
 
   /* subprogram kind */
-  proc_header_stmt->set_subprogram_kind((SgProcedureHeaderStatement::subprogram_kind_enum)
-                                        createEnum(annot->at(3), re.subprogram_kind));
+  proc_header_stmt->set_subprogram_kind(re.enum_subprogram_kind_enum[*annot->at(3)]);
 
   register_func_decl(func_name, proc_header_stmt, annot->at(0));
 
@@ -2528,9 +2521,9 @@ TermToRose::createIfStmt(Sg_File_Info* fi, SgNode* child1, SgNode* child2, SgNod
   TERM_ASSERT(t, if_stmt != NULL);
 
   CompTerm* annot = retrieveAnnotation(t);
-  if_stmt->set_has_end_statement(    getFlag(annot->at(0)) );
-  if_stmt->set_use_then_keyword(     getFlag(annot->at(1)) );
-  if_stmt->set_is_else_if_statement( getFlag(annot->at(2)) );
+  if_stmt->set_has_end_statement(    createFlag(annot->at(0)) );
+  if_stmt->set_use_then_keyword(     createFlag(annot->at(1)) );
+  if_stmt->set_is_else_if_statement( createFlag(annot->at(2)) );
 
   return if_stmt;
 }
@@ -2618,8 +2611,8 @@ TermToRose::createFortranDo(Sg_File_Info* fi, SgNode* child1, SgNode* child2, Sg
                                      isSgExpression(child2),
                                      isSgExpression(child3),
                                      isSgBasicBlock(child4));
-  fdo->set_old_style(getFlag(annot->at(0)));
-  fdo->set_has_end_statement(getFlag(annot->at(1)));
+  fdo->set_old_style(createFlag(annot->at(0)));
+  fdo->set_has_end_statement(createFlag(annot->at(1)));
   return fdo;
 }
 
@@ -2826,8 +2819,7 @@ TermToRose::createClassDeclaration(Sg_File_Info* fi, SgNode* child1, CompTerm* t
   EXPECT_TERM(Atom*, p_class_type, annot->at(1));
   /* get the type*/
   EXPECT_TERM(CompTerm*, type_s, annot->at(2));
-  SgClassDeclaration::class_types e_class_type =
-    (SgClassDeclaration::class_types)createEnum(p_class_type, re.class_type);
+  SgClassDeclaration::class_types e_class_type = re.enum_class_types[*p_class_type];
   //SgClassType* sg_class_type = createClassType(type_s);
   SgName class_name = class_name_s->getName();
   SgClassDeclaration* d =
@@ -3019,7 +3011,7 @@ TermToRose::createClassType(Term* p) {
   if (declarationMap.find(t->getRepresentation()) != declarationMap.end()) {
     d = isSgClassDeclaration(declarationMap[t->getRepresentation()]);
   } else {
-    d = createDummyClassDeclaration(s, createEnum(t->at(1), re.class_type));
+    d = createDummyClassDeclaration(s, re.enum_class_types[*t->at(1)]);
     declarationMap[t->getRepresentation()] = d;
   }
 
@@ -3060,13 +3052,14 @@ TermToRose::createCtorInitializerList(Sg_File_Info* fi,std::deque<SgNode*>* succ
 void
 TermToRose::abort_unless(bool condition,std::string message) {
   if (condition) return;
-  cerr << "\nFatal error while transforming  to ROSE AST:\n"<< message << "\n";
+  cerr << "\nFatal error while transforming to ROSE AST:\n"<< message << "\n";
   assert(condition);
 }
 
 /** create bit deque from List*/
+template < typename enumType  >
 SgBitVector*
-TermToRose::createBitVector(Term* t, std::map<std::string, int> names) {
+TermToRose::createBitVector(Term* t, std::map<std::string, enumType> names) {
   /*cast the argument to the list and extract elements*/
   EXPECT_TERM(List*, l, t);
   deque<Term*>* succs = l->getSuccs();
@@ -3082,12 +3075,6 @@ TermToRose::createBitVector(Term* t, std::map<std::string, int> names) {
     it++;
   }
   return bv;
-}
-
-/** create enum from Atom */
-int
-TermToRose::createEnum(Term* t, std::map<std::string, int> names) {
-  return names[t->getName()];
 }
 
 /**
@@ -3340,8 +3327,8 @@ TermToRose::createDeleteExp(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
   SgExpression* e = isSgExpression(child1);
   TERM_ASSERT(t, e != NULL);
   // get "flags" Flag
-  bool is_array = getFlag(annot->at(0));
-  bool need_g = getFlag(annot->at(1));
+  bool is_array = createFlag(annot->at(0));
+  bool need_g = createFlag(annot->at(1));
   // create, test, return
   SgDeleteExp* del = new SgDeleteExp(fi,e,is_array,need_g);
   TERM_ASSERT(t, del != NULL);
@@ -3476,8 +3463,7 @@ TermToRose::createAccessModifier(Term* t) {
   TERM_ASSERT(t, c != NULL);
   SgAccessModifier* a = new SgAccessModifier();
   TERM_ASSERT(t, a != NULL);
-  a->set_modifier((SgAccessModifier::access_modifier_enum)
-                  createEnum(c->at(0), re.access_modifier));
+  a->set_modifier(re.enum_access_modifier_enum[*c->at(0)]);
   return a;
 }
 /**
@@ -3492,9 +3478,7 @@ TermToRose::createBaseClassModifier(Term* t) {
   b->set_modifier((SgBaseClassModifier::baseclass_modifier_enum)
     toInt(c->at(0)));
 
-  b->get_accessModifier().set_modifier(
-   (SgAccessModifier::access_modifier_enum)
-   createEnum(c->at(1), re.access_modifier));
+  b->get_accessModifier().set_modifier(re.enum_access_modifier_enum[*c->at(1)]);
   return b;
 }
 /**
@@ -3506,7 +3490,7 @@ TermToRose::createFunctionModifier(Term* t) {
   TERM_ASSERT(t, c != NULL);
   //extract bit vector list and create bit vector
   // ( cast done in createBitVector)
-  SgBitVector b = *(createBitVector(c->at(0), re.function_modifier));
+  SgBitVector b = *(createBitVector(c->at(0), re.enum_function_modifier_enum));
   SgFunctionModifier* m = new SgFunctionModifier();
   TERM_ASSERT(t, m != NULL);
   m->set_modifierVector(b);
@@ -3523,7 +3507,7 @@ TermToRose::setSpecialFunctionModifier(Term* t, SgSpecialFunctionModifier* m) {
   //extract bit vector list and create bit vector
   // ( cast done in createBitVector)
   SgBitVector b = *(createBitVector(c->at(0),
-                                    re.special_function_modifier));
+                                    re.enum_special_function_modifier_enum));
   m->set_modifierVector(b);
 }
 
@@ -3536,8 +3520,7 @@ TermToRose::createStorageModifier(Term* t) {
   TERM_ASSERT(t, c != NULL);
   SgStorageModifier* a = new SgStorageModifier();
   TERM_ASSERT(t, a != NULL);
-  a->set_modifier((SgStorageModifier::storage_modifier_enum)
-          createEnum(c->at(0), re.storage_modifier));
+  a->set_modifier(re.enum_storage_modifier_enum[*c->at(0)]);
   return a;
 }
 /**
@@ -3574,8 +3557,7 @@ TermToRose::createConstVolatileModifier(Term* t) {
   TERM_ASSERT(t, c != NULL);
   SgConstVolatileModifier* a = new SgConstVolatileModifier();
   TERM_ASSERT(t, a != NULL);
-  a->set_modifier((SgConstVolatileModifier::cv_modifier_enum)
-                  createEnum(c->at(0), re.cv_modifier));
+  a->set_modifier(re.enum_cv_modifier_enum[*c->at(0)]);
   return a;
 }
 /**
@@ -3587,8 +3569,7 @@ TermToRose::createUPC_AccessModifier(Term* t) {
   TERM_ASSERT(t, c != NULL);
   SgUPC_AccessModifier* a = new SgUPC_AccessModifier();
   TERM_ASSERT(t, a != NULL);
-  a->set_modifier((SgUPC_AccessModifier::upc_access_modifier_enum)
-                  createEnum(c->at(0), re.upc_access_modifier));
+  a->set_modifier(re.enum_upc_access_modifier_enum[*c->at(0)]);
   return a;
 }
 
@@ -3616,20 +3597,11 @@ TermToRose::setTypeModifier(Term* t, SgTypeModifier* tm) {
   TERM_ASSERT(t, c != NULL);
   TERM_ASSERT(t, tm != NULL);
   /* set bit vector and internal modifiers*/
-  SgBitVector b = *(createBitVector(c->at(0), re.type_modifier));
+  SgBitVector b = *(createBitVector(c->at(0), re.enum_type_modifier_enum));
   tm->set_modifierVector(b);
-
-  tm->get_upcModifier().set_modifier(
-    (SgUPC_AccessModifier::upc_access_modifier_enum)
-    createEnum(c->at(1), re.upc_access_modifier));
-
-  tm->get_constVolatileModifier().set_modifier(
-    (SgConstVolatileModifier::cv_modifier_enum)
-    createEnum(c->at(2), re.cv_modifier));
-
-  tm->get_elaboratedTypeModifier().set_modifier(
-    (SgElaboratedTypeModifier::elaborated_type_modifier_enum)
-    createEnum(c->at(3), re.elaborated_type_modifier));
+  tm->get_upcModifier().set_modifier( re.enum_upc_access_modifier_enum[*c->at(1)] );
+  tm->get_constVolatileModifier().set_modifier( re.enum_cv_modifier_enum[*c->at(2)] );
+  tm->get_elaboratedTypeModifier().set_modifier( re.enum_elaborated_type_modifier_enum[*c->at(3)] );
 }
 
 /**
@@ -3655,16 +3627,13 @@ TermToRose::setDeclarationModifier(Term* t, SgDeclarationModifier* d) {
   CompTerm* c = isCompTerm(t);
   TERM_ASSERT(t, c != NULL);
   /* create and set bit vector*/
-  SgBitVector b = *(createBitVector(c->at(0), re.declaration_modifier));
+  SgBitVector b = *(createBitVector(c->at(0), re.enum_declaration_modifier_enum));
   d->set_modifierVector(b);
   /* set type modifier values*/
   setTypeModifier(c->at(1),&(d->get_typeModifier()));
   /* set access modifier value*/
-  d->get_accessModifier().set_modifier((SgAccessModifier::access_modifier_enum)
-     createEnum(c->at(2), re.access_modifier));
-  d->get_storageModifier().set_modifier(
-     (SgStorageModifier::storage_modifier_enum)
-     createEnum(c->at(3), re.storage_modifier));
+  d->get_accessModifier().set_modifier(re.enum_access_modifier_enum[*c->at(2)]);
+  d->get_storageModifier().set_modifier(re.enum_storage_modifier_enum[*c->at(3)]);
 }
 
 /**
@@ -3764,7 +3733,7 @@ TermToRose::createDummyMemberFunctionSymbol(Term* annot_term) {
   /*scope name and type*/
   debug("creating scope for member function declaration for symbol ");
   EXPECT_ATOM(scope_name, scope_term->at(0));
-  int scope_type  = createEnum(scope_term->at(1), re.class_type);
+  int scope_type  = re.enum_class_types[*scope_term->at(1)];
   fakeClassScope(scope_name,scope_type,mfunc);
   TERM_ASSERT(annot_term, mfunc->get_class_scope() != NULL);
   /* create symbol */
@@ -3801,8 +3770,7 @@ TermToRose::createFunctionRefExp(Sg_File_Info* fi, CompTerm* ct) {
     debug("symbol");
 
     sym = createDummyFunctionSymbol(s,annot->at(1), 
-                                    (SgProcedureHeaderStatement::subprogram_kind_enum)
-                                    createEnum(annot->at(2), re.subprogram_kind));
+                                    re.enum_subprogram_kind_enum[*annot->at(2)]);
   }
   TERM_ASSERT(ct, sym != NULL);
 
@@ -4003,10 +3971,10 @@ TermToRose::createConstructorInitializer(Sg_File_Info* fi, SgNode* child1,CompTe
   /* create constructor initializer, need_name = true*/
   SgConstructorInitializer* ci = new SgConstructorInitializer
     (fi,decl,el,expr_type,
-     getFlag(annot->at(2)),
-     getFlag(annot->at(3)),
-     getFlag(annot->at(4)),
-     getFlag(annot->at(5)));
+     createFlag(annot->at(2)),
+     createFlag(annot->at(3)),
+     createFlag(annot->at(4)),
+     createFlag(annot->at(5)));
   TERM_ASSERT(t, ci != NULL);
   ci->set_is_explicit_cast(1);
   return ci;
@@ -4113,7 +4081,7 @@ TermToRose::createImplicitStatement(Sg_File_Info* fi, CompTerm* t) {
   /* retrieve annotation */
   CompTerm* annot = retrieveAnnotation(t);
   /* create the SgImplicitStatement */
-  SgImplicitStatement* s = new SgImplicitStatement(fi, getFlag(annot->at(0)));
+  SgImplicitStatement* s = new SgImplicitStatement(fi, createFlag(annot->at(0)));
   TERM_ASSERT(t, s != NULL);
   s->setForward();
   s->set_firstNondefiningDeclaration(s);
@@ -4131,8 +4099,7 @@ TermToRose::createAttributeSpecificationStatement(Sg_File_Info* fi, CompTerm* t)
   SgAttributeSpecificationStatement* ass = 
     new SgAttributeSpecificationStatement(fi);
   TERM_ASSERT(t, ass != NULL);
-  ass->set_attribute_kind( (SgAttributeSpecificationStatement::attribute_spec_enum)
-                              createEnum(annot->at(0), re.attribute_spec));
+  ass->set_attribute_kind( re.enum_attribute_spec_enum[*annot->at(0)]);
   ass->set_parameter_list( isSgExprListExp(toRose(annot->at(1))) );
   ass->set_bind_list(      isSgExprListExp(toRose(annot->at(2))) );
   return ass;
@@ -4308,7 +4275,6 @@ TermToRose::createLabelSymbol(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
 
   EXPECT_TERM(Int*, val, annot->at(0));
   n->set_numeric_label_value(val->getValue());
-  n->set_label_type((SgLabelSymbol::label_type_enum)
-    createEnum(annot->at(1), re.label_type));
+  n->set_label_type(re.enum_label_type_enum[*annot->at(1)]);
   return n;
 }

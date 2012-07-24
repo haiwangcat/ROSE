@@ -113,7 +113,7 @@ namespace term {
   class STLAtom : virtual public Atom, virtual public STLTerm {
   public:
     ///constructor setting the string
-    STLAtom(std::string name = "#ERROR", bool escapedRepresentation = true) {
+    STLAtom(const std::string name = "#ERROR", bool escapedRepresentation = true) {
       mName = name;
       mEscapedRepresentation = escapedRepresentation;
     };

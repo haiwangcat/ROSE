@@ -15,6 +15,7 @@ nobase_include_HEADERS = \
 	src/minitermite/TermToRose.h \
 	src/minitermite/RoseToTerm.h \
 	src/minitermite/RoseEnums.h \
+        src/minitermite/RoseEnumNames.h \
 	\
 	src/minitermite/term.h++ \
 	src/minitermite/stl-term.h++ \
@@ -27,6 +28,8 @@ ROSELDFLAGS=-L$(ROSE_LIB_DIR) -Wl,-rpath $(ROSE_LIB_DIR) \
 CLEANFILES = termpretty.c++
 
 bin_PROGRAMS = src/termpretty src/src2term src/term2src
+noinst_bindir = $(builddir)
+noinst_PROGRAMS = src/find-enums
 
 if WITH_SWI_PROLOG
 bin_SCRIPTS = src/termite_lint src/cime3_signatures src/stratego-signatures
@@ -59,11 +62,12 @@ endif
 AM_YFLAGS = -d
 
 lib_LTLIBRARIES = libtermsupport.la
+
 libtermsupport_la_SOURCES = \
-	src/RoseToTerm.C \
-	src/TermToRose.C \
-	src/PrologTerm.C \
-	src/RoseEnums.C
+	src/RoseToTerm.cc \
+	src/TermToRose.cc \
+	src/PrologTerm.cc \
+	src/RoseEnums.cc
 
 if WITH_SWI_PROLOG # ---------------------------------------------------
 
@@ -77,6 +81,42 @@ nobase_dist_data_DATA = \
   src/termite/markers.pl
 
 endif # -----------------------------------------------------------------
+
+BUILT_SOURCES += src/minitermite/RoseEnumNames.h
+src/minitermite/RoseEnumNames.h : enum-stamp
+# cf. http://www.gnu.org/software/automake/manual/automake.html#Multiple-Outputs
+# Recover from the removal of $@
+	@if test -f $@; then :; else \
+	  trap 'rm -rf enum-lock enum-stamp' 1 2 13 15; \
+true      "mkdir is a portable test-and-set"; \
+	  if mkdir enum-lock 2>/dev/null; then \
+true        "This code is being executed by the first process."; \
+	    rm -f enum-stamp; \
+	    $(MAKE) $(AM_MAKEFLAGS) enum-stamp; \
+	    result=$$?; rm -rf enum-lock; exit $$result; \
+	  else \
+true        "This code is being executed by the follower processes."; \
+true        "Wait until the first process is done."; \
+	    while test -d enum-lock; do sleep 1; done; \
+true        "Succeed if and only if the first process succeeded." ; \
+	    test -f enum-stamp; \
+	  fi; \
+	fi
+
+enum-stamp: src/find-enums
+	@rm -f enum-temp
+	@touch enum-temp
+	@echo "#include <rosePublicConfig.h>" >RoseEnumNames.cc
+	@echo "#include <sage3basic.h>"      >>RoseEnumNames.cc
+	$(AM_V_GEN) $< --edg:no_warnings -O0 -DROSE_SKIP_COMPILATION_OF_WAVE -I$(ROSE_INCLUDE_DIR) \
+	                                   -c RoseEnumNames.cc \
+	    | sed 's/^Red/\/\/ Red/g' >__RoseEnumNames.h
+	@$(MKDIR_P) src/minitermite
+	@mv __RoseEnumNames.h src/minitermite/RoseEnumNames.h
+	@mv -f enum-temp $@
+
+CLEANFILES += RoseEnumNames.cc src/minitermite/RoseEnumNames.h_tmp
+
 
 BUILT_SOURCES += src/termparser.tab.h++ 
 
@@ -95,8 +135,12 @@ src_termpretty_SOURCES = src/termpretty.l++
 src_termpretty_LDFLAGS = $(ROSELDFLAGS)
 src_termpretty_LDADD = -lboost_program_options
 
-src_src2term_SOURCES = src/src2term.C 
-src_term2src_SOURCES = src/term2src.C 
+src_find_enums_SOURCES = src/find-enums.cc 
+src_find_enums_LDFLAGS = $(ROSELDFLAGS)
+src_find_enums_LDADD = -lrose 
+
+src_src2term_SOURCES = src/src2term.cc src/minitermite/RoseEnumNames.h
+src_term2src_SOURCES = src/term2src.cc src/minitermite/RoseEnumNames.h
 
 src_term2src_LDADD = libtermsupport.la -lrose 
 src_src2term_LDADD = libtermsupport.la -lrose

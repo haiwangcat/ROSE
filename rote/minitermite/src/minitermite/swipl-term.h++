@@ -185,7 +185,7 @@ namespace term {
       //PL_unregister(term);
     }
     ///constructor setting the string
-    SWIPLAtom(std::string name = "#ERROR", bool escapedRepresentation = true) {
+    SWIPLAtom(const std::string name = "#ERROR", bool escapedRepresentation = true) {
       term = PL_new_term_ref();
       PL_put_atom_chars(term, name.c_str());
 #   if DEBUG_TERMITE

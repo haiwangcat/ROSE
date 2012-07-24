@@ -91,6 +91,8 @@ namespace term {
     virtual std::string getRepresentation() const = 0;
     /// shorthand for getRepresenation()
     std::string repr() const { return getRepresentation(); }
+    /// conversion to string
+    operator std::string () { return getRepresentation(); }
    
     // true if the pattern can be unified with the term
     virtual bool matches(std::string pattern) = 0;

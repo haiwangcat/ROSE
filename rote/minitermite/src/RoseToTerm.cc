@@ -24,7 +24,6 @@ using namespace term;
 /**
  * Create a descriptive name for a boolean flag
  */
-
 #define MAKE_FLAG(node, flag_name) \
   makeFlag((node)->get_ ## flag_name(), #flag_name)
  
@@ -35,6 +34,9 @@ RoseToTerm::makeFlag(bool val, std::string name) {
   else return termFactory.makeAtom("no_"+name);
 }
 
+/** Convert an enum value to an atom */
+#define enum_atom(ENUM) \
+  termFactory.makeAtom(re.str(ENUM))
 
 /**
  * get node specific info for a term.
@@ -135,10 +137,9 @@ RoseToTerm::getPreprocessingInfo(AttachedPreprocessingInfoType* inf) {
 	!= PreprocessingInfo::CpreprocessorIncludeDeclaration;
 
       CompTerm* ppd = termFactory.makeCompTerm
-	(re.DirectiveTypes[(*it)->getTypeOfDirective()], //3,
+	(re.str((*it)->getTypeOfDirective()), //3,
 	 termFactory.makeAtom((*it)->getString(), escape),
-	 getEnum((*it)->getRelativePosition(),
-		 re.RelativePositionTypes),
+	 enum_atom((*it)->getRelativePosition()),
 	 getFileInfo((*it)->get_file_info()));
       l->addFirstElement(ppd);
     }
@@ -236,7 +237,7 @@ RoseToTerm::getProcedureHeaderStatementSpecific(SgProcedureHeaderStatement* decl
      getTypeSpecific(decl->get_type()),
      termFactory.makeAtom(decl->get_name().getString()),
      getDeclarationModifierSpecific(&(decl->get_declarationModifier())),
-     getEnum(decl->get_subprogram_kind(), re.subprogram_kinds),
+     enum_atom(decl->get_subprogram_kind()),
      termFactory.makeAtom("null"), //FIXME decl->get_end_numeric_label(),
      //termFactory.makeAtom("null"), decl->get_result_name(),
      PPI(decl));
@@ -267,7 +268,7 @@ CompTerm*
 RoseToTerm::getTemplateArgumentSpecific(SgTemplateArgument* arg) {
   return termFactory.makeCompTerm
     ("template_argument_annotation", 
-     getEnum(arg->get_argumentType(), re.template_arguments),
+     enum_atom(arg->get_argumentType()),
      MAKE_FLAG(arg, isArrayBoundUnknownType),
      getTypeSpecific(arg->get_type()),
      traverseSingleNode(arg->get_expression()),     
@@ -281,7 +282,7 @@ RoseToTerm::getTemplateDeclarationSpecific(SgTemplateDeclaration* decl) {
     ("template_declaration_annotation", 
      termFactory.makeAtom(decl->get_name().getString()),
      termFactory.makeAtom(decl->get_string().getString()),
-     getEnum(decl->get_template_kind(), re.template_instantiations),
+     enum_atom(decl->get_template_kind()),
      traverseList(decl->get_templateParameters()));
 }
 
@@ -289,7 +290,7 @@ CompTerm*
 RoseToTerm::getTemplateParameterSpecific(SgTemplateParameter *p) {
   return termFactory.makeCompTerm
     ("template_parameter_annotation", 
-     getEnum(p->get_parameterType(), re.template_parameters),
+     enum_atom(p->get_parameterType()),
      getTypeSpecific(p->get_type()),
      getTypeSpecific(p->get_defaultTypeParameter()),
      traverseSingleNode(p->get_expression()),
@@ -349,7 +350,7 @@ RoseToTerm::getFunctionTypeSpecific(SgType* mytype) {
      /*recurse with getTypeSpecific*/
      getTypeSpecific(ftype->get_return_type()),
      /*we need to know wether it has ellipses to unparse the constructor*/
-     getEnum(ftype->get_has_ellipses(), re.ellipses_flags),
+     makeFlag(ftype->get_has_ellipses(), "ellipses"),
      /*arguments*/
      getTypePtrListSpecific(ftype->get_arguments()));
 }
@@ -375,11 +376,11 @@ RoseToTerm::getMemberFunctionTypeSpecific(SgType* mytype) {
      /*recurse with getTypeSpecific*/
      getTypeSpecific(ftype->get_return_type()),
     /*we need to know wether it has ellipses for the constructor for unparsing*/
-     getEnum(ftype->get_has_ellipses(), re.ellipses_flags),
+     makeFlag(ftype->get_has_ellipses(), "ellipses"),
      /*arguments*/
      getTypePtrListSpecific(ftype->get_arguments()),
      /* mfunc_specifier*/
-     getEnum(ftype->get_mfunc_specifier(), re.declaration_modifiers));
+     enum_atom((::SgMemberFunctionType::mfunc_specifier_enum)ftype->get_mfunc_specifier()));
 }
 
 
@@ -448,7 +449,7 @@ RoseToTerm::getClassTypeSpecific(SgType* mtype) {
      /*add base type*/
      termFactory.makeAtom(ctype->get_name().str()),
      /* what kind of class is this?*/
-     getEnum(d->get_class_type(), re.class_types),
+     enum_atom(d->get_class_type()),
      /* add qualified name of scope*/
      termFactory.makeAtom
      (d->get_scope()->get_scope()->get_qualified_name().getString()));
@@ -639,7 +640,7 @@ RoseToTerm::getUnaryOpSpecific(SgUnaryOp* op) {
     // GB (2008-08-23): As of ROSE 0.9.3.a-1593, throw ops no longer have a
     // type list. Or was it only removed temporarily? TODO: Check again
     // sometime.
-    e3 = getEnum(thrw->get_throwKind(), re.throw_kinds);
+    e3 = enum_atom(thrw->get_throwKind());
 #if 0
     SgTypePtrListPtr types = thrw->get_typeList ();
     SgTypePtrList::iterator it = types->begin();
@@ -653,7 +654,7 @@ RoseToTerm::getUnaryOpSpecific(SgUnaryOp* op) {
 #endif
   } else if (SgCastExp* cst = dynamic_cast<SgCastExp*>(op)) {
     /*Casts have a cast type*/
-    e3 = getEnum(cst->get_cast_type(), re.cast_types);
+    e3 = enum_atom(cst->get_cast_type());
     /*assure that arity = 4*/
     e4 = termFactory.makeAtom("null");
   } else {
@@ -806,10 +807,9 @@ RoseToTerm::getVarRefExpSpecific(SgVarRefExp* vr) {
   SgDeclarationStatement* vdec = n->get_declaration();
   if (vdec != NULL) {
     isStatic =
-      getEnum(vdec->get_declarationModifier().get_storageModifier().isStatic(),
-	      re.static_flags);
+      makeFlag(vdec->get_declarationModifier().get_storageModifier().isStatic(), "static");
   } else {
-    isStatic = getEnum(0, re.static_flags);
+    isStatic = makeFlag(false, "static");
   }
   Term* scope;
   if (vdec != NULL) {
@@ -852,7 +852,7 @@ RoseToTerm::getInitializedNameSpecific(SgInitializedName* n) {
      getTypeSpecific(n->get_typeptr()),
      termFactory.makeAtom(n->get_name().getString()),
      /* static? (relevant for unparsing if scope is a class)*/
-     getEnum(n->get_storageModifier().isStatic(), re.static_flags),
+     makeFlag(n->get_storageModifier().isStatic(), "static"),
      getScope(n),
      PPI(n));
 }
@@ -872,7 +872,7 @@ RoseToTerm::getClassDeclarationSpecific(SgClassDeclaration* cd) {
     ("class_declaration_annotation", //4,
      /* add name and type*/
      termFactory.makeAtom(cd->get_name().str()),
-     getEnum(cd->get_class_type(), re.class_types),
+     enum_atom(cd->get_class_type()),
      getTypeSpecific(cd->get_type()),
      PPI(cd));
 }
@@ -935,13 +935,6 @@ RoseToTerm::getBitVector(const SgBitVector &v, const std::vector<std::string> &n
     name++;
   }
   return l;
-}
-
-/** create a list of atoms from a bit vector*/
-Term*
-RoseToTerm::getEnum(int enum_val, const std::vector<std::string> &names) {
-  ROSE_ASSERT(enum_val < names.size());
-  return termFactory.makeAtom(names[enum_val]);
 }
 
 /**
@@ -1166,7 +1159,7 @@ RoseToTerm::getFunctionModifierSpecific(SgFunctionModifier* f) {
   return termFactory.makeCompTerm
     ("function_modifier", //1,
      /* get bit vector and convert to PROLOG*/
-     getBitVector(f->get_modifierVector(), re.function_modifiers));
+     getBitVector(f->get_modifierVector(), re.vec_function_modifier_enum));
 }
 
 /**
@@ -1179,7 +1172,7 @@ RoseToTerm::getSpecialFunctionModifierSpecific(SgSpecialFunctionModifier* f) {
   return termFactory.makeCompTerm
     ("special_function_modifier", //1,
      /* get bit vector and convert to PROLOG*/
-     getBitVector(f->get_modifierVector(),re.special_function_modifiers));
+     getBitVector(f->get_modifierVector(),re.vec_special_function_modifier_enum));
 }
 
 /**
@@ -1200,7 +1193,7 @@ RoseToTerm::getLinkageModifierSpecific(SgLinkageModifier* a) {
 CompTerm*
 RoseToTerm::getStorageModifierSpecific(SgStorageModifier* a) {
   return termFactory.makeCompTerm("storage_modifier", //1,
-			    getEnum(a->get_modifier(), re.storage_modifiers));
+				  enum_atom(a->get_modifier()));
 }
 /**
  * class: SgElaboratedTypeModifier
@@ -1220,7 +1213,7 @@ RoseToTerm::getElaboratedTypeModifierSpecific(SgElaboratedTypeModifier* a) {
 CompTerm*
 RoseToTerm::getConstVolatileModifierSpecific(SgConstVolatileModifier* a) {
   return termFactory.makeCompTerm("const_volatile_modifier", //1,
-			    getEnum(a->get_modifier(), re.cv_modifiers));
+				  enum_atom(a->get_modifier()));
 }
 /**
  * class: SgUPC_AccessModifier
@@ -1231,7 +1224,7 @@ CompTerm*
 RoseToTerm::getUPC_AccessModifierSpecific(SgUPC_AccessModifier* a) {
   return termFactory.makeCompTerm
     ("upc_access_modifier", //1,
-     getEnum(a->get_modifier(), re.upc_access_modifiers));
+     enum_atom(a->get_modifier()));
 }
 
 /**
@@ -1247,12 +1240,11 @@ RoseToTerm::getTypeModifierSpecific(SgTypeModifier* a) {
   return termFactory.makeCompTerm
     ("type_modifier", //4,
      /* get bit vector and convert to PROLOG*/
-     getBitVector(a->get_modifierVector(), re.type_modifiers),
+     getBitVector(a->get_modifierVector(), re.vec_type_modifier_enum),
      /* add enums*/
-     getEnum(a->get_upcModifier().get_modifier(), re.upc_access_modifiers),
-     getEnum(a->get_constVolatileModifier().get_modifier(), re.cv_modifiers),
-     getEnum(a->get_elaboratedTypeModifier().get_modifier(),
-	     re.elaborated_type_modifiers));
+     enum_atom(a->get_upcModifier().get_modifier()),
+     enum_atom(a->get_constVolatileModifier().get_modifier()),
+     enum_atom(a->get_elaboratedTypeModifier().get_modifier()));
 }
 
 /**
@@ -1267,10 +1259,10 @@ CompTerm*
 RoseToTerm::getDeclarationModifierSpecific(SgDeclarationModifier* dm) {
   return termFactory.makeCompTerm
     ("declaration_modifier", //4,
-     getBitVector(dm->get_modifierVector(), re.declaration_modifiers),
+     getBitVector(dm->get_modifierVector(), re.vec_declaration_modifier_enum),
      getTypeModifierSpecific(&(dm->get_typeModifier())),
-     getEnum(dm->get_accessModifier().get_modifier(), re.access_modifiers),
-     getEnum(dm->get_storageModifier().get_modifier(),re.storage_modifiers));
+     enum_atom(dm->get_accessModifier().get_modifier()),
+     enum_atom(dm->get_storageModifier().get_modifier()));
 }
 
 /**
@@ -1307,7 +1299,7 @@ RoseToTerm::getFunctionRefExpSpecific(SgFunctionRefExp* r) {
   return termFactory.makeCompTerm("function_ref_exp_annotation", //3,
 			    termFactory.makeAtom(s->get_name().getString()),
 			    getTypeSpecific(tpe),
-			    getEnum(subprogram_kind, re.subprogram_kinds),
+			    enum_atom(subprogram_kind),
 			    PPI(r));
 
 }
@@ -1394,7 +1386,7 @@ RoseToTerm::getClassScopeName(SgClassDefinition* def) {
   /* create a CompTerm*/
   return termFactory.makeCompTerm("class_scope", //3,
 			    termFactory.makeAtom(qname),
-			    getEnum(decl->get_class_type(), re.class_types),
+			    enum_atom(decl->get_class_type()),
 			    PPI(def));
 }
 
@@ -1567,7 +1559,7 @@ CompTerm*
 RoseToTerm::getAttributeSpecificationStatementSpecific(SgAttributeSpecificationStatement* ass) {
   return termFactory.makeCompTerm
     ("attribute_specification_statement_annotation",
-     getEnum(ass->get_attribute_kind(), re.attribute_specs),
+     enum_atom(ass->get_attribute_kind()),
      traverseSingleNode( ass->get_parameter_list() ),
      traverseSingleNode( ass->get_bind_list() ),
      PPI(ass));
@@ -1698,7 +1690,7 @@ RoseToTerm::getLabelSymbolSpecific(SgLabelSymbol* n) {
   return termFactory.makeCompTerm
     ("label_symbol_annotation",
      termFactory.makeInt(n->get_numeric_label_value()),
-     getEnum(n->get_label_type(), re.label_types)
+     enum_atom(n->get_label_type())
      );
 }
 

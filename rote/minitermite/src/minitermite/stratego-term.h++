@@ -7,7 +7,7 @@ namespace term {
   class StrategoTerm : virtual public STLTerm {};
   class StrategoAtom : virtual public STLAtom {
   public:
-    StrategoAtom(std::string name = "#ERROR", bool escapedRepresentation = true) :
+    StrategoAtom(const std::string name = "#ERROR", bool escapedRepresentation = true) :
       STLAtom(name, escapedRepresentation) { };
     /// return the string
     std::string getRepresentation() const {

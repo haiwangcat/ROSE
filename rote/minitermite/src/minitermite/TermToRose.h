@@ -29,7 +29,9 @@ private:
   /* enum <-> atom conversion */
   RoseEnums re;
 
-  bool getFlag(term::Term*);
+  bool createFlag(term::Term*);
+  template < typename enumType  >
+  SgBitVector* createBitVector(term::Term*, std::map<std::string, enumType>);
   
   /* fixups */
   std::vector<SgDeclarationStatement*> declarationStatementsWithoutScope;
@@ -76,8 +78,6 @@ private:
   void testFileInfo(Sg_File_Info*);
   SgClassDeclaration* createDummyClassDeclaration(std::string, int);
   SgMemberFunctionDeclaration* createDummyMemberFunctionDeclaration(std::string s,int c_type); /* TODO */
-  SgBitVector* createBitVector(term::Term*, std::map<std::string, int>);
-  int createEnum(term::Term*, std::map<std::string, int>);
   SgFunctionDeclaration* setFunctionDeclarationBody(SgFunctionDeclaration*, SgNode*);
   SgClassDeclaration* setClassDeclarationBody(SgClassDeclaration*, SgNode*);
   void setSpecialFunctionModifier(term::Term*, SgSpecialFunctionModifier*);
