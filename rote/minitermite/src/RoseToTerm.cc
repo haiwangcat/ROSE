@@ -927,7 +927,8 @@ RoseToTerm::getBitVector(const SgBitVector &v, const std::vector<std::string> &n
   reverse_iterator<SgBitVector::const_iterator> it = v.rbegin();
   reverse_iterator<vector<string>::const_iterator> name = names.rbegin();
 
-  ROSE_ASSERT(v.size() <= names.size());
+  name++; // skip over e_last_xxx
+  ROSE_ASSERT(v.size()+1 <= names.size());
   while(it != v.rend()) {
     if (*it == true)
       l->addFirstElement(termFactory.makeAtom(*name));

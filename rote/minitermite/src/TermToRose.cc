@@ -382,7 +382,7 @@ TermToRose::toRose(Term* t) {
             re.enum_RelativePositionType[*ppi->at(1)];
 
           ln->addToAttachedPreprocessingInfo(
-             new PreprocessingInfo(re.enum_DirectiveType[*ppi],
+	     new PreprocessingInfo(re.enum_DirectiveType[ppi->getName()],
                                    ppi->at(0)->getName(),
                                    fi->get_filenameString(),
                                    fi->get_line(),

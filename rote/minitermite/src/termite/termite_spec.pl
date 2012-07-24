@@ -548,9 +548,9 @@ scope_name ::=  % name of a scope
   | name.
 
 class_kind ::=
-    {class}
-  | {struct}
-  | {union}.
+    {e_class}
+  | {e_struct}
+  | {e_union}.
 
 number_or_string ::=
     {It} where ( numberatom(It) ; number(It) ; string(It) ; atom(It) ).
