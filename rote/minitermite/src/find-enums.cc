@@ -23,7 +23,7 @@ public:
     all_names[name] = qname;
 
     cout << "// "<<qname<<"\n";
-    cout << "// "<<fi->get_filename()<<"\n";
+    cout << "// "<<fi->get_filename()<<":"<<fi->get_line()<<"\n";
     cout << "static const char* e_"<<string(name)<<"[] = {" << "\n";
     SgInitializedNamePtrList& es = enum_decl->get_enumerators();
     SgInitializedNamePtrList::iterator e = es.begin();
