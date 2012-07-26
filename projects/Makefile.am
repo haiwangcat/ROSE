@@ -43,6 +43,7 @@ SUBDIRS = \
 	ManyCoreRuntime \
 	mint \
 	extractMPISkeleton \
+	minitermite \
 	$(OPTIONAL_PROJECTS)
 
 if ROSE_WITH_ISL

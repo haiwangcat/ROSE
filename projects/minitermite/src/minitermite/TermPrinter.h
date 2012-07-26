@@ -884,7 +884,7 @@ term::CompTerm* TermPrinter<DFI_STORE_TYPE>::leafTerm(
   term::CompTerm* t =
     termFactory.makeCompTerm(termConv.prologize(astNode->class_name()), //0+3,
                              specific,
-#if HAVE_ANALYSIS_RESULTS
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
                              ar,
 #endif
                              fiTerm);
@@ -901,7 +901,7 @@ term::CompTerm* TermPrinter<DFI_STORE_TYPE>::unaryTerm(
     termFactory.makeCompTerm(termConv.prologize(astNode->class_name()), //1+3,
                              synList.at(0),
                              specific,
-#if HAVE_ANALYSIS_RESULTS
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
                              ar,
 #endif
                              fiTerm);
@@ -919,7 +919,7 @@ term::CompTerm* TermPrinter<DFI_STORE_TYPE>::binaryTerm(
                              synList.at(0),
                              synList.at(1),
                              specific,
-#if HAVE_ANALYSIS_RESULTS
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
                              ar,
 #endif
                              fiTerm);
@@ -938,7 +938,7 @@ term::CompTerm* TermPrinter<DFI_STORE_TYPE>::ternaryTerm(
                              synList.at(1),
                              synList.at(2),
                              specific,
-#if HAVE_ANALYSIS_RESULTS
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
                              ar,
 #endif
                              fiTerm);
@@ -958,7 +958,7 @@ term::CompTerm* TermPrinter<DFI_STORE_TYPE>::quaternaryTerm(
                              synList.at(2),
                              synList.at(3),
                              specific,
-#if HAVE_ANALYSIS_RESULTS
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
                              ar,
 #endif
                              fiTerm);
@@ -1001,7 +1001,7 @@ listTerm(SgNode* astNode, SynthesizedAttributesList synList,
     termFactory.makeCompTerm(termConv.prologize(astNode->class_name()), //1+3,
                              l,
                              specific,
-#if HAVE_ANALYSIS_RESULTS
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
                              ar,
 #endif
                              fiTerm);

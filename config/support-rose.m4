@@ -976,6 +976,12 @@ fi
 # Call supporting macro for Haskell
 ROSE_SUPPORT_HASKELL
 
+# Call supporting macro for SWI Prolog
+ROSE_SUPPORT_SWIPL
+
+# Call supporting macro for minitermite
+ROSE_CONFIGURE_MINITERMITE
+
 # Call supporting macro for bddbddb
 ROSE_SUPPORT_BDDBDDB
 
@@ -2150,6 +2156,9 @@ projects/ManyCoreRuntime/docs/Makefile
 projects/mint/Makefile
 projects/mint/src/Makefile
 projects/mint/tests/Makefile
+projects/minitermite/Makefile
+projects/minitermite/Doxyfile
+projects/minitermite/src/minitermite/minitermite.h
 projects/traceAnalysis/Makefile
 projects/PolyhedralModel/Makefile
 projects/PolyhedralModel/src/Makefile

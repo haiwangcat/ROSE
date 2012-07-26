@@ -106,7 +106,7 @@ static inline string makeFunctionID(const string& func_name,
 #define isInt(t)  (t)->isInt()
 #define isFloat(t)  (t)->isFloat()
 
-#if !HAVE_ANALYSIS_RESULTS
+#if !ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
 #  define AR 1
 #else
 #  define AR 0
@@ -947,7 +947,7 @@ TermToRose::createTypedefType(Term* t) {
   } else if (lookaheadDecl(&decl,
                            "typedef_declaration(_,typedef_annotation("
                            +annot->at(0)->getRepresentation()+",_,_),"
-#if HAVE_ANALYSIS_RESULTS
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
                            "_,"
 #endif
                            "_)")) {
@@ -966,7 +966,7 @@ TermToRose::createTypedefType(Term* t) {
                                                  annot->at(0), annot->at(1),
                                                  termFactory.makeAtom("null"),
                                                  termFactory.makeAtom("null")),
-#if HAVE_ANALYSIS_RESULTS
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
                               termFactory.makeAtom("null"),
 #endif
                               termFactory.makeAtom("null")));

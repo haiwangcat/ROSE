@@ -1,4 +1,5 @@
 ## Process this file with automake to create Makefile.in.
+include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -6,7 +7,7 @@ SUBDIRS=
 DIST_SUBDIRS = 
 DISTCHECK_CONFIGURE_FLAGS=--with-rosedir=$(ROSEDIR) --with-boostdir=$(BOOSTDIR) --with-boost-compiler-string=$(BOOST_COMPILER_STRING) CXX=$(CXX)
 
-if !WITH_SWI_PROLOG
+if !ROSE_HAVE_SWI_PROLOG
 DISTCHECK_CONFIGURE_FLAGS += --without-swi-prolog
 endif
 
@@ -30,12 +31,8 @@ include regression/Makefile.include
 
 .PHONY: doc
 doc:
-if ENABLE_DOCUMENTATION
 	@echo "  GEN [doxygen documentation]"
 	@($(DOXYGEN) && $(MAKE) MAKEFLAGS=-j1 -C doc/latex)
-else
-        @echo "**WARNING: Doxygen was not found by configure; SKIPPING"
-endif 
 
 doc/html/index.html:
 	$(MAKE) doc
