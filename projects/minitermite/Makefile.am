@@ -35,7 +35,7 @@ dist_man_MANS = $(srcdir)/doc/src2term.1 $(srcdir)/doc/term2src.1
 # We are distributing the compiled manpage so we don't depend on rst2man
 # Insert the output of xxx --help into the MAN page.
 EXTRA_DIST += doc/man_header.txt
-$(srcdir)/doc/%.1: src/% doc/man_header.txt README Makefile
+$(srcdir)/doc/%.1: $(top_builddir)/src/% doc/man_header.txt README Makefile
 	$(AM_V_GEN)
 	@cat $(srcdir)/doc/man_header.txt |sed -e 's/@DATE@/$(shell date +%Y-%m-%d)/g' \
                      -e 's/\@VERSION\@/$(PACKAGE_VERSION)/g' >$<.txt
