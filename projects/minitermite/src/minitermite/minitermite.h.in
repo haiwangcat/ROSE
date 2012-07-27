@@ -56,7 +56,6 @@
  *  
  * Just like SATIrE, minitermite is distributed under a permissive
  * three-clause BSD license. See COPYING for details.
- * termlint.pl is covered by the GPLv3.
  *  
 
  */
@@ -69,6 +68,8 @@
 #endif
 
 #define SWI_HOME_DIR "@SWI_PROLOG_HOME_DIR@"
+
+#define ROSE_INCLUDE_DIR ROSE_INSTALLATION_PATH "/include"
 
 #define DEBUG_TERMITE 0
 

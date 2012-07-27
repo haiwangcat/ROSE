@@ -4,6 +4,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 */
 
 #include <rose.h>
+#include <rose_config.h>
 #include "minitermite.h"
 #include "TermToRose.h"
 #include "AstJanitor.h"
@@ -101,10 +102,10 @@ static inline string makeFunctionID(const string& func_name,
   } while (0)
 
 #define isCompTerm(t) (t)->isCompTerm()
-#define isAtom(t) (t)->isAtom()
-#define isList(t) (t)->isList()
-#define isInt(t)  (t)->isInt()
-#define isFloat(t)  (t)->isFloat()
+#define isAtom(t)     (t)->isAtom()
+#define isList(t)     (t)->isList()
+#define isInt(t)      (t)->isInt()
+#define isFloat(t)    (t)->isFloat()
 
 #if !ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
 #  define AR 1
@@ -262,13 +263,13 @@ void TermToRose::unparse(std::string filename, std::string dir, std::string suff
 
 SgNode*
 TermToRose::toRose(const char* filename) {
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
   if (dynamic_cast<SWIPLInt*>(termFactory.makeInt(0)) == NULL)
 #endif
   {
     yyin = fopen( filename, "r" );
     yyparse();
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
   } else {
     /*open('input.pl',read,_,[alias(rstrm)]),
       read_term(rstrm,X,[double_quotes(string)]),

@@ -8,6 +8,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <rose.h>
 #include "TermToRose.h"
 #include <getopt.h>
+#include <rose_config.h>
 
 using namespace std;
 using namespace term;
@@ -38,7 +39,7 @@ void usage(const char* me)
 
        << "  --stratego\n"
        << "    Create term output compatible with the Stratego/XT.\n\n"
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
        << "  --stl-engine\n"
        << "    Do not use SWI-Prolog to generate term output.\n\n"
 #endif
@@ -59,7 +60,7 @@ int main(int argc, char** argv) {
   int dot_flag = 0;
   int pdf_flag = 0;
   int stratego_flag = 0;
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
   int stl_flag = 0;
 #else
   int stl_flag = 1;
@@ -73,7 +74,7 @@ int main(int argc, char** argv) {
       {"dot", no_argument, &dot_flag, 1},
       {"pdf", no_argument, &pdf_flag, 1},
       {"stratego", no_argument, &stratego_flag, 1},
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
       {"stl-engine", no_argument, &stl_flag, 1},
 #endif
       {"version", no_argument, &version_flag, 1},
@@ -126,7 +127,7 @@ int main(int argc, char** argv) {
   } else 
     if (stl_flag)
       termFactory = new STLTermFactory();
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
     else termFactory = new SWIPLTermFactory();
 #endif
 

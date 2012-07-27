@@ -12,6 +12,7 @@
 #include "TermPrinter.h"
 #include "RoseToTerm.h"
 #include <boost/algorithm/string/predicate.hpp>
+#include <rose_config.h>
 
 using namespace std;
 using namespace term;

@@ -6,6 +6,7 @@ using namespace std;
 #include <iostream>
 #include <boost/program_options.hpp>
 #include "minitermite.h"
+#include <rose_config.h>
 int indent = 0;
 int level;
 void indent_line();

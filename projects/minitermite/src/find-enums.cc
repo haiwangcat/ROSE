@@ -60,10 +60,14 @@ int main(int argc, char** argv) {
   cerr << "This may take several minutes, but it is so much more\n"
        << "future-proof than what we had before.\n"
        << "Thank you for your patience!" << endl;
+
+  cout << "/* -*- C++ -*-" << endl;
   SgProject* project = frontend(argc, argv);
+  fflush(stdout); // send all frontend warnings into the comment
+  cout << "*/\n";
+
   cerr << "Running visitor..." << endl;
   EnumWriter enumWriter;
-  cout << "// -*- C++ -*-\n";
   cout << "#ifdef ROSEENUM_DEFS\n";
   traverseMemoryPoolVisitorPattern(enumWriter);
   enumWriter.print_init();

@@ -108,12 +108,9 @@ enum-stamp: src/find-enums
 	@touch enum-temp
 	@echo "#include <rosePublicConfig.h>" >RoseEnumNames.cc
 	@echo "#include <sage3basic.h>"      >>RoseEnumNames.cc
-	@echo "#include <iostream>" >RoseEnumNames.cc
-	touch rose_edg_required_macros_and_functions.h
-	$(AM_V_GEN) $< --edg:no_warnings -O0 -DROSE_SKIP_COMPILATION_OF_WAVE \
+	$(AM_V_GEN) $< --edg:no_warnings  -O0 -DROSE_SKIP_COMPILATION_OF_WAVE \
 	   -I$(top_builddir) $(ROSE_INCLUDES) \
            -c RoseEnumNames.cc > __RoseEnumNames.h
-	@$(SED) -i 's/^Red/\/\/ Red/g' __RoseEnumNames.h
 	@$(MKDIR_P) src/minitermite
 	@mv __RoseEnumNames.h src/minitermite/RoseEnumNames.h
 	@mv -f enum-temp $@
@@ -139,8 +136,7 @@ src_termpretty_LDFLAGS = $(ROSELDFLAGS)
 src_termpretty_LDADD = -lboost_program_options
 
 src_find_enums_SOURCES = src/find-enums.cc 
-# src_find_enums_LDFLAGS = $(ROSELDFLAGS)
-src_find_enums_LDADD = $(ROSE_LIBS)
+src_find_enums_LDADD = $(LIBS_WITH_RPATH) $(ROSE_LIBS)
 
 src_src2term_SOURCES = src/src2term.cc src/minitermite/RoseEnumNames.h
 src_term2src_SOURCES = src/term2src.cc src/minitermite/RoseEnumNames.h

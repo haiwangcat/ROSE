@@ -3,17 +3,9 @@ include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS= 
-DIST_SUBDIRS = 
-DISTCHECK_CONFIGURE_FLAGS=--with-rosedir=$(ROSEDIR) --with-boostdir=$(BOOSTDIR) --with-boost-compiler-string=$(BOOST_COMPILER_STRING) CXX=$(CXX)
-
-if !ROSE_HAVE_SWI_PROLOG
-DISTCHECK_CONFIGURE_FLAGS += --without-swi-prolog
-endif
-
 .PHONY: clang
 
-clang: $(top_srcdir)/src/termite/clang/clang-termite.patch $(top_builddir)/clang/build/Makefile
+clang: $(top_srcdir)/src/minitermite/clang/clang-termite.patch $(top_builddir)/clang/build/Makefile
 	$(MAKE) -C $(top_builddir)/clang/build
 	$(MAKE) install -C $(top_builddir)/clang/build
 
@@ -43,7 +35,7 @@ dist_man_MANS = $(srcdir)/doc/src2term.1 $(srcdir)/doc/term2src.1
 # We are distributing the compiled manpage so we don't depend on rst2man
 # Insert the output of xxx --help into the MAN page.
 EXTRA_DIST += doc/man_header.txt
-$(dist_man_MANS): $(srcdir)/doc/%.1: $(top_builddir)/src/% doc/man_header.txt README Makefile
+$(srcdir)/doc/%.1: src/% doc/man_header.txt README Makefile
 	$(AM_V_GEN)
 	@cat $(srcdir)/doc/man_header.txt |sed -e 's/@DATE@/$(shell date +%Y-%m-%d)/g' \
                      -e 's/\@VERSION\@/$(PACKAGE_VERSION)/g' >$<.txt

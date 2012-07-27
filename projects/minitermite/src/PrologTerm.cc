@@ -24,7 +24,7 @@ Variable* STLTerm::isVariable() {
   return dynamic_cast<Variable*>(this);
 }
 
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
 
 
 // true if the pattern can be unified with the term
