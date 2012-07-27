@@ -100,8 +100,6 @@ true        "Succeed if and only if the first process succeeded." ; \
 	    test -f enum-stamp; \
 	  fi; \
 	fi
-#	   -I$(top_builddir)/include-staging/$(shell basename $(CXX))_HEADERS \
-#
 
 enum-stamp: src/find-enums
 	@rm -f enum-temp
