@@ -117,6 +117,7 @@ enum-stamp: src/find-enums
 
 CLEANFILES += RoseEnumNames.cc src/minitermite/RoseEnumNames.h enum-stamp
 
+
 BUILT_SOURCES += src/termparser.tab.h++ 
 
 nodist_libtermsupport_la_SOURCES = $(BUILT_SOURCES)
