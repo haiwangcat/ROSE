@@ -115,8 +115,7 @@ enum-stamp: src/find-enums
 	@mv __RoseEnumNames.h src/minitermite/RoseEnumNames.h
 	@mv -f enum-temp $@
 
-CLEANFILES += RoseEnumNames.cc src/minitermite/RoseEnumNames.h_tmp
-
+CLEANFILES += RoseEnumNames.cc src/minitermite/RoseEnumNames.h enum-stamp
 
 BUILT_SOURCES += src/termparser.tab.h++ 
 
