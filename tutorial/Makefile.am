@@ -59,15 +59,10 @@ NOINST_TUTORIAL_EXAMPLES = \
    addVariableDeclaration \
    addVariableDeclaration2 \
    AST_PDF_Generator \
-   astFileIO_GenerateBinaryFile \
    astFileIO_ReadMultipleASTs \
    ASTGraphGenerator \
    ASTGraphGeneratorCustomized \
    bin_example \
-   binaryAnalysisExample \
-   binaryAnalysis_symbolTable \
-   binaryFileRead \
-   binaryFileWrite \
    sb_callgraphAnalysis \
    buildCFG \
    buildVFA \
@@ -137,6 +132,15 @@ NOINST_TUTORIAL_EXAMPLES = \
    wholeASTGraphGenerator \
    wholeGraphAST \
    wholeGraphFilterOnPersistantAttributes
+
+if ROSE_BUILD_BINARY_ANALYSIS_SUPPORT
+NOINST_TUTORIAL_EXAMPLES += \
+   astFileIO_GenerateBinaryFile \
+   binaryAnalysisExample \
+   binaryAnalysis_symbolTable \
+   binaryFileRead \
+   binaryFileWrite
+endif
 
 # DQ (3/21/2009): Separate those that compile under Cygwin from those that don't.
 if ROSE_BUILD_OS_IS_CYGWIN
