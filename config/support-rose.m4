@@ -2152,6 +2152,7 @@ projects/mint/src/Makefile
 projects/mint/tests/Makefile
 projects/vectorization/Makefile
 projects/vectorization/src/Makefile
+projects/vectorization/tests/Makefile
 projects/traceAnalysis/Makefile
 projects/PolyhedralModel/Makefile
 projects/PolyhedralModel/src/Makefile
