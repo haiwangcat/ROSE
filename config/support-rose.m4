@@ -164,6 +164,7 @@ fi
   ROSE_SUPPORT_COMPASS2
   ROSE_SUPPORT_GMP
   ROSE_SUPPORT_ISL
+  ROSE_SUPPORT_MPI
 
 ##
 #########################################################################################
@@ -330,13 +331,7 @@ AM_CONDITIONAL(ROSE_USE_NEW_EDG_INTERFACE, [test "x$enable_new_edg_interface" = 
 AM_CONDITIONAL(ROSE_USE_EDG_VERSION_4, [test "x$enable_edg_version4" = xyes])
 AM_CONDITIONAL(ROSE_USE_EDG_VERSION_4_3, [test "x$enable_edg_version43" = xyes])
 
-AC_ARG_ENABLE(clang-frontend, AS_HELP_STRING([--enable-clang-frontend], [Use Clang frontend instead of EDG]))
-AM_CONDITIONAL(ROSE_USE_CLANG_FRONTEND, [test "x$enable_clang_frontend" = xyes])
-if test "x$enable_clang_frontend" = "xyes"; then
-  ROSE_SUPPORT_CLANG
-else
-  AC_MSG_NOTICE([Clang frontend support disabled])
-fi
+ROSE_SUPPORT_CLANG
 
 # DQ (1/4/2009) Added support for optional GNU language extensions in new EDG/ROSE interface.
 # This value will be substituted into EDG/4.0/src/rose_lang_feat.h in the future (not used at present!)
@@ -2152,6 +2147,9 @@ projects/ManyCoreRuntime/docs/Makefile
 projects/mint/Makefile
 projects/mint/src/Makefile
 projects/mint/tests/Makefile
+projects/Fortran_to_C/Makefile
+projects/Fortran_to_C/src/Makefile
+projects/Fortran_to_C/tests/Makefile
 projects/traceAnalysis/Makefile
 projects/PolyhedralModel/Makefile
 projects/PolyhedralModel/src/Makefile
@@ -2289,8 +2287,6 @@ tests/roseTests/utilTests/Makefile
 tests/roseTests/fileLocation_tests/Makefile
 tests/roseTests/graph_tests/Makefile
 tests/roseTests/mergeTraversal_tests/Makefile
-tests/roseTests/cudaTests/Makefile
-tests/roseTests/openclTests/Makefile
 tests/translatorTests/Makefile
 tutorial/Makefile
 tutorial/exampleMakefile
