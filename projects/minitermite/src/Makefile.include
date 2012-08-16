@@ -116,13 +116,12 @@ enum-stamp: src/find-enums
 CLEANFILES += RoseEnumNames.cc src/minitermite/RoseEnumNames.h enum-stamp
 
 
-BUILT_SOURCES += src/termparser.tab.h++ 
+BUILT_SOURCES += src/termparser.tab.h++
 
 nodist_libtermsupport_la_SOURCES = $(BUILT_SOURCES)
 CLEANFILES += src/termparser.c++ src/termparser.h src/termlexer.c++ \
               src/termparser.tab.h++
 libtermsupport_la_SOURCES += src/termparser.y++ src/termlexer.l++
-nobase_include_HEADERS += src/minitermite/termparser.h
 
 src/termparser.tab.h++: $(srcdir)/src/termparser.y++ Makefile
 	$(YACC) -d $(srcdir)/src/termparser.y++ && \

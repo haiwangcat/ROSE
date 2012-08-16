@@ -3,7 +3,7 @@ include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 
 ACLOCAL_AMFLAGS = -I m4
 
-.PHONY: clang
+.PHONY: clang docs
 
 clang: $(top_srcdir)/src/minitermite/clang/clang-termite.patch $(top_builddir)/clang/build/Makefile
 	$(MAKE) -C $(top_builddir)/clang/build
@@ -21,10 +21,9 @@ include regression/Makefile.include
 # Documentation
 # ############################################
 
-.PHONY: doc
-doc:
+docs:
 	@echo "  GEN [doxygen documentation]"
-	@($(DOXYGEN) && $(MAKE) MAKEFLAGS=-j1 -C doc/latex)
+	@(doxygen && $(MAKE) MAKEFLAGS=-j1 -C doc/latex)
 
 doc/html/index.html:
 	$(MAKE) doc
