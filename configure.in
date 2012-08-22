@@ -1,7 +1,7 @@
 dnl DQ (1/11/2010): Consider handing configure options as specified at:
 dnl    https://projects.coin-or.org/BuildTools/wiki/user-configure
 
-AC_INIT([ROSE], [0.9.5a])
+AC_INIT([ROSE], [0.9.5a], [https://outreach.scidac.gov/tracker/?group_id=24])
 AC_PREREQ([2.59])
 
 dnl +--------------------------------------------------------------------------+
@@ -34,7 +34,7 @@ dnl +--------------------------------------------------------------------------+
 dnl | Autotools setup
 dnl +--------------------------------------------------------------------------+
 AC_CONFIG_AUX_DIR([config])
-AM_INIT_AUTOMAKE([foreign tar-pax 1.9.5])
+AM_INIT_AUTOMAKE([foreign tar-pax 1.9.5 parallel-tests color-tests])
 AM_CONFIG_HEADER([rose_config.h])
 AM_PROG_CC_C_O
 
