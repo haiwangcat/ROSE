@@ -142,7 +142,8 @@ noinst_SCRIPTS = \
   regression/cxx_driver.sh \
   regression/f90_driver.sh \
   regression/f03_driver.sh \
-  regression/f77_driver.sh
+  regression/f77_driver.sh \
+  regression/serial_driver.sh
 
 TEST_EXTENSIONS = .cxx .c .f90 .f03 .f .F
 C_LOG_COMPILER = sh $(builddir)/regression/c_driver.sh
@@ -156,6 +157,31 @@ AM_F03_LOG_FLAGS =
 F_LOG_COMPILER = sh $(builddir)/regression/f77_driver.sh
 AM_F_LOG_FLAGS = 
 
+# ------------------------------------------------------------------------
+# BEGIN Backwards-compatible serial-tests
+# Please remove this as soon as ROSE is upgraded to automake 1.10b or later!
+# ------------------------------------------------------------------------
+TESTS_ENVIRONMENT=sh $(builddir)/regression/serial_driver.sh
+regression/serial_driver.sh: Makefile
+	$(AM_V_GEN)
+	@mkdir -p $(builddir)/regression
+	@echo '#!/bin/sh' > $@
+	@echo 'ext=`echo "$$1"|awk -F . '"'"'{print $$NF}'"'"'` # get extension' >> $@
+	@echo 'case $$ext in' >> $@
+	@echo '    c)	exec sh	$(builddir)/regression/c_driver.sh $$1 ;;' >> $@
+	@echo '	   cxx) exec sh $(builddir)/regression/cxx_driver.sh $$1 ;;' >> $@
+	@echo '	   f90) exec sh $(builddir)/regression/f90_driver.sh $$1 ;;' >> $@
+	@echo '	   f03) exec sh $(builddir)/regression/f03_driver.sh $$1 ;;' >> $@
+	@echo '	   f)	exec sh	$(builddir)/regression/f_driver.sh $$1 ;;' >> $@
+	@echo '	   F)	exec sh	$(builddir)/regression/f_driver.sh $$1 ;;' >> $@
+	@echo '    *)    exit 1 ;;' >> $@
+	@echo 'esac' >> $@
+# ------------------------------------------------------------------------
+# END Backwards-compatible serial-tests
+# Please remove this as soon as ROSE is upgraded to automake 1.10b or later!
+# ------------------------------------------------------------------------
+
+
 CLEANFILES += $(noinst_SCRIPTS)
 
 testdir=check-tests
@@ -166,7 +192,7 @@ testdir=check-tests
 regression/c_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(builddir)/regression
-	@echo '#!/bin/bash' > $@
+	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(builddir)/regression' >> $@
@@ -187,7 +213,7 @@ endif
 regression/cxx_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(builddir)/regression
-	@echo '#!/bin/bash' > $@
+	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(builddir)/regression' >> $@
@@ -208,7 +234,7 @@ endif
 regression/f90_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(builddir)/regression
-	@echo '#!/bin/bash' > $@
+	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(builddir)/regression' >> $@
@@ -229,7 +255,7 @@ endif
 regression/f03_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(builddir)/regression
-	@echo '#!/bin/bash' > $@
+	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(builddir)/regression' >> $@
@@ -250,7 +276,7 @@ endif
 regression/f77_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(builddir)/regression
-	@echo '#!/bin/bash' > $@
+	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(builddir)/regression' >> $@
