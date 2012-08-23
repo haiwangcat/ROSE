@@ -16,6 +16,8 @@ class SgInitializedName;
 class SgLabelSymbol;
 class SgLabelRefExp;
 class SgStatement;
+//! edited by Hongyi
+class SgOmpClause;
 
 #ifndef _MSC_VER
 SgStatement* isSgStatement(SgNode* node);
@@ -24,6 +26,10 @@ SgExpression* isSgExpression(SgNode* node);
 const SgExpression* isSgExpression(const SgNode* node);
 SgInitializedName* isSgInitializedName(SgNode* node);
 const SgInitializedName* isSgInitializedName(const SgNode* node);
+
+//!edited by Hongyi 
+SgOmpClause* isSgOmpClause(SgNode* node);
+const SgOmpClause* isSgOmpClause(const SgNode* node );
 #endif
 
 namespace VirtualCFG {
