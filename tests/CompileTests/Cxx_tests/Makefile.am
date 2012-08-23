@@ -8,6 +8,7 @@ include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 if ROSE_USE_EDG_VERSION_4_3
 
 EXAMPLE_TESTCODES_REQUIRED_TO_PASS = \
+ompCFG.C \
 test_CplusplusMacro_Cpp.C \
 test2001_01.C \
 test2001_02.C \

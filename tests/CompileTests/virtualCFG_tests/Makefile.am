@@ -19,6 +19,7 @@ include $(srcdir)/../Cxx_tests/Makefile-pass.inc
 
 
 EXAMPLE_C_TESTCODES_VERIFIED_TO_PASS = \
+ompCFG.C \
 test_CplusplusMacro_C.C \
 test2001_02.C \
 test2001_03.C \
