@@ -592,7 +592,7 @@ TESTCODES = $(TESTCODES_REQUIRED_TO_PASS)
 # QMTest allows both passing and failing tests.
 ALL_TESTCODES = $(TESTCODES_REQUIRED_TO_PASS) 
 
-ROSE_FLAGS = --edg:no_warnings -w -rose:verbose 0 --edg:restrict
+ROSE_FLAGS = -rose:openmp:ast_only --edg:no_warnings -w -rose:verbose 0 --edg:restrict
 
 PASSING_TEST_Objects = ${TESTCODES:.C=.o}
 TEST_Objects = ${ALL_TESTCODES:.C=.o}
