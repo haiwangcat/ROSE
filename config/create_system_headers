@@ -277,26 +277,26 @@ echo "system_headers_directory = $system_headers_directory should be used instea
 # "struct __gconv_info __cd;" in "/usr/include/_G_config.h".  This is a common problem since C does not
 # support this (gnu does however as an extension).  This is a problem for EDG and we fix it this way.
 
-echo "Copying $roseHome/config/rose_specific_cdefs.h to $system_headers_directory/sys to fix __gconv_info incomplete definition problem ..."
+echo "Copying $roseHome/config/include-staging/rose_specific_cdefs.h to $system_headers_directory/sys to fix __gconv_info incomplete definition problem ..."
 mkdir -p "$system_headers_directory/sys"
 # cp $roseHome/config/rose_specific_cdefs.h $target_parent_dir/sys/cdefs.h
-cp "$roseHome/config/rose_specific_cdefs.h" "$system_headers_directory/sys/cdefs.h"
+cp "$roseHome/config/include-staging/rose_specific_cdefs.h" "$system_headers_directory/sys/cdefs.h"
 
 error_code=$?
 if test $error_code != 0; then
-     echo "Error in cp $roseHome/config/rose_specific_cdefs.h $system_headers_directory/sys/cdefs.h: nonzero exit code returned to caller error_code = $error_code" >&2
+     echo "Error in cp $roseHome/config/include-staging/rose_specific_cdefs.h $system_headers_directory/sys/cdefs.h: nonzero exit code returned to caller error_code = $error_code" >&2
      exit 1
 fi
 
 if [ is_C_compiler = "yes" ]
 then
     echo "We are handling C compiler specific details, so copy the ROSE specific fix for complex.h to $system_headers_directory" >&2
-    cp "$roseHome/config/rose_specific_complex.h" "$system_headers_directory/complex.h"
+    cp "$roseHome/config/include-staging/rose_specific_complex.h" "$system_headers_directory/complex.h"
 fi
 
 error_code=$?
 if test $error_code != 0; then
-     echo "Error in cp $roseHome/config/rose_specific_complex.h $system_headers_directory/complex.h: nonzero exit code returned to caller error_code = $error_code" >&2
+     echo "Error in cp $roseHome/config/include-staging/rose_specific_complex.h $system_headers_directory/complex.h: nonzero exit code returned to caller error_code = $error_code" >&2
      exit 1
 fi
 
