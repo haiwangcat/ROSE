@@ -34,7 +34,7 @@ dnl +--------------------------------------------------------------------------+
 dnl | Autotools setup
 dnl +--------------------------------------------------------------------------+
 AC_CONFIG_AUX_DIR([config])
-AM_INIT_AUTOMAKE([foreign tar-pax 1.9.5 parallel-tests color-tests])
+AM_INIT_AUTOMAKE([foreign tar-pax 1.9.5])
 AM_CONFIG_HEADER([rose_config.h])
 AM_PROG_CC_C_O
 
