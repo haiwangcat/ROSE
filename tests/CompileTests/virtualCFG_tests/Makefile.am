@@ -584,7 +584,7 @@ endif # ROSE_USE_LONG_MAKE_CHECK_RULE
 
 # Some of these test codes reference A++ header fiels as part of their tests
 # Include the path to A++ and the transformation specification
-TESTCODE_INCLUDES = -I$(top_srcdir)/tests/CompileTests/A++Code
+TESTCODE_INCLUDES = -I$(top_srcdir)/tests/CompileTests/A++Code -I$(top_srcdir)/src/frontend/SageIII
 
 # Automake's testing mechanism (which defines the "make check" rule) requires passing tests.
 TESTCODES = $(TESTCODES_REQUIRED_TO_PASS)
