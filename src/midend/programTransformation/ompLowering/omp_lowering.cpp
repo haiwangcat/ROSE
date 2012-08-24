@@ -47,12 +47,8 @@ namespace OmpSupport
    *   3. check whether these variables has been in private or shared clause already
    *   4. if not, add them into shared clause
   */
-
-
  
-  
   //! function prototypes for  patch up shared variables 
-
 
 /*    Get name of varrefexp  */
 string getName( SgNode * n )
@@ -79,9 +75,11 @@ void getUnique( Rose_STL_Container< SgNode* > & list )
             j = i + 1;
             while ( j < size )
             {
-                string is = getName( list.at( i ) );
-                string js = getName( list.at( j ) );
-                
+               SgVarRefExp* iis = isSgVarRefExp( list.at(i) );
+               SgVarRefExp* jjs = isSgVarRefExp( list.at(j) );
+
+               SgInitializedName* is = isSgInitializedName( iis->get_symbol()->get_declaration() );
+               SgInitializedName* js = isSgInitializedName( jjs->get_symbol()->get_declaration() );
                 if ( is == js )
                 {
                     list.erase( start + j );
