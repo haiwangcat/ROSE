@@ -26,6 +26,6 @@ int main( int argc, char* argv[] )
 
 	 int i = OmpSupport::makeDataSharingExplicit( file );
 
-   return 0;
-
+ //  return 0;
+ return backend(project);
  }

@@ -40,44 +40,7 @@ namespace OmpSupport
  //! This makeDataSharingExplicit() is added by Hongyi on July/23/2012. 
  //! Consider private, firstprivate, lastprivate, shared, reduction  is it correct?@Leo
  //TODO: consider the initialized name of variable in function call or definitions  
-  
-    //! remove the local variable list list2 in parallel region from list1 
-
-        void  filterSharedDeclarations(Rose_STL_Container< SgNode* > & list1, Rose_STL_Container< SgNode* > &list2 )
-         {
-
-
-              Rose_STL_Container< SgNode* >::iterator Itr1 = list1.begin();
-              Rose_STL_Container< SgNode* >::iterator Itr2 = list1.begin();
-              Rose_STL_Container< SgNode* >::iterator Itr3 = list2.begin();
-
-                int count = 0;
-                int size = list1.size();
-                while( count < size )
-                 {
-
-
-                      for(Itr3 = list2.begin() ;Itr3 != list2.end(); Itr3++ )
-                        {
-
-                             if((*Itr1)->unparseToString()==(*Itr3)->unparseToString() )
-                                {
-                                printf("erase !\n");
-                                list1.erase(Itr2 + count);
-                                size--;
-
-                               }
-
-                       }
-                 Itr1++;
-                 count++;    
-
-                }
-
-
-         }  // the end of filtershareddeclarations
-  
-
+ 
    /** Algorithm for patchUpSharedVariables edited by Hongyi Ma on August 7th 2012
    *   1. find all variables references in  parallel region
    *   2. find all varibale declarations in this parallel region
