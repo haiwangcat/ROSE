@@ -54,6 +54,9 @@ AC_DEFUN([ROSE_SUPPORT_SWIPL], [
            have_swi_prolog=0])
      
   ])
-  AM_CONDITIONAL(ROSE_HAVE_SWI_PROLOG, [test "x$CONFIG_HAS_ROSE_WITH_SWI_PROLOG" = xyes])
+  AM_CONDITIONAL(ROSE_HAVE_SWI_PROLOG, [test "x$have_swi_prolog" = x1])
+  AS_IF([test "x$have_swi_prolog" = x1],
+      [AC_DEFINE(ROSE_HAVE_SWI_PROLOG, 1, [linking against libswipl])],
+      [AC_DEFINE(ROSE_HAVE_SWI_PROLOG, 0, [linking against libswipl])])
   AC_SUBST(have_swi_prolog)
 ])

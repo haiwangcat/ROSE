@@ -172,8 +172,8 @@ regression/serial_driver.sh: Makefile
 	@echo '	   cxx) exec sh $(builddir)/regression/cxx_driver.sh $$1 ;;' >> $@
 	@echo '	   f90) exec sh $(builddir)/regression/f90_driver.sh $$1 ;;' >> $@
 	@echo '	   f03) exec sh $(builddir)/regression/f03_driver.sh $$1 ;;' >> $@
-	@echo '	   f)	exec sh	$(builddir)/regression/f_driver.sh $$1 ;;' >> $@
-	@echo '	   F)	exec sh	$(builddir)/regression/f_driver.sh $$1 ;;' >> $@
+	@echo '	   f)	exec sh	$(builddir)/regression/f77_driver.sh $$1 ;;' >> $@
+	@echo '	   F)	exec sh	$(builddir)/regression/f77_driver.sh $$1 ;;' >> $@
 	@echo '    *)    exit 1 ;;' >> $@
 	@echo 'esac' >> $@
 # ------------------------------------------------------------------------

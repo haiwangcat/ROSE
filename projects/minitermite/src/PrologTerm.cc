@@ -1,3 +1,4 @@
+#include <rose_config.h>
 #include "minitermite.h"
 
 #include <cstring>

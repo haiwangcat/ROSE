@@ -107,10 +107,10 @@ static inline string makeFunctionID(const string& func_name,
 #define isInt(t)      (t)->isInt()
 #define isFloat(t)    (t)->isFloat()
 
-#if !ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
-#  define AR 1
-#else
+#if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
 #  define AR 0
+#else
+#  define AR 1
 #endif
 
 #define ARITY_ASSERT(t, arity) do {                                     \

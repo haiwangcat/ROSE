@@ -78,7 +78,7 @@ public:
     , program(NULL)
 #endif
   {
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
     int argc;
     char **argv;
     assert(PL_is_initialised(&argc, &argv)

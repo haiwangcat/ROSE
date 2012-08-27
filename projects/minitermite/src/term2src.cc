@@ -38,12 +38,14 @@ void usage(const char* me)
        << "    Create a PDF printout of the syntax tree.\n\n"
 
        << "  --stratego\n"
-       << "    Create term output compatible with the Stratego/XT.\n\n"
-#if ROSE_HAVE_SWI_PROLOG
-       << "  --stl-engine\n"
-       << "    Do not use SWI-Prolog to generate term output.\n\n"
-#endif
+       << "    Read term input in Stratego/XT format.\n\n"
 
+       << "  --stl-engine\n"
+#if ROSE_HAVE_SWI_PROLOG
+       << "    Do not use SWI-Prolog to parse term input.\n\n"
+#else
+       << "    Ignored for compatibility reasons.\n\n"
+#endif
        << "This program was built against "<<PACKAGE_STRING<<",\n"
        << "please report bugs to <"<<PACKAGE_BUGREPORT<<">."
 
@@ -74,9 +76,7 @@ int main(int argc, char** argv) {
       {"dot", no_argument, &dot_flag, 1},
       {"pdf", no_argument, &pdf_flag, 1},
       {"stratego", no_argument, &stratego_flag, 1},
-#if ROSE_HAVE_SWI_PROLOG
       {"stl-engine", no_argument, &stl_flag, 1},
-#endif
       {"version", no_argument, &version_flag, 1},
       {"help", no_argument, &help_flag, 1},
       /* These don't */

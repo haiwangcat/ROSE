@@ -119,7 +119,7 @@ CLEANFILES += RoseEnumNames.cc src/minitermite/RoseEnumNames.h enum-stamp
 BUILT_SOURCES += src/termparser.tab.h++
 
 nodist_libtermsupport_la_SOURCES = $(BUILT_SOURCES)
-CLEANFILES += src/termparser.c++ src/termparser.h src/termlexer.c++ \
+CLEANFILES += termparser.c++ termparser.h termlexer.c++ \
               src/termparser.tab.h++
 libtermsupport_la_SOURCES += src/termparser.y++ src/termlexer.l++
 

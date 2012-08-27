@@ -6,7 +6,7 @@
 #  error "Please do not include this file directly. Use minitermite.h instead."
 #endif
 
-#if HAVE_SWI_PROLOG
+#if ROSE_HAVE_SWI_PROLOG
 #include <SWI-Prolog.h>
 
 

@@ -131,10 +131,6 @@
 #ifndef __TERMITE_H__
 #define __TERMITE_H__
 
-#ifndef HAVE_SWI_PROLOG
-#define HAVE_SWI_PROLOG @have_swi_prolog@
-#endif
-
 #define SWI_HOME_DIR "@SWI_PROLOG_HOME_DIR@"
 
 #define ROSE_INCLUDE_DIR ROSE_INSTALLATION_PATH "/include"
