@@ -124,6 +124,7 @@ AS_SET_CATFILE([ABSOLUTE_SRCDIR], [`pwd`], [${srcdir}])
 ROSE_SUPPORT_JAVA # This macro uses JAVA_HOME
 
 # DQ (10/18/2010): Check for gfortran (required for syntax checking and semantic analysis of input Fortran codes)
+m4_include([config/utility_macros/ax_with_prog.m4])
 AX_WITH_PROG(GFORTRAN_PATH, [gfortran], [])
 AC_SUBST(GFORTRAN_PATH)
 
