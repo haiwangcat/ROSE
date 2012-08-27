@@ -27,8 +27,10 @@ SgNode::cfgIndexForEnd() const {
 
 bool
 SgNode::cfgIsIndexInteresting(unsigned int) const {
-  ROSE_ASSERT (!"CFG functions only work on SgExpression, SgStatement, and SgInitializedName");
-  return false;
+    ROSE_ASSERT (!"CFG functions only work on SgExpression, SgStatement, and SgInitializedName"); 
+    return false;// edited by Hongyi
+
+ //return true;
 }
 
 unsigned int
@@ -45,14 +47,14 @@ SgNode::cfgFindNextChildIndex(SgNode*) {
 
 std::vector<CFGEdge>
 SgNode::cfgOutEdges(unsigned int idx) {
-  ROSE_ASSERT (!"CFG functions only work on SgExpression, SgStatement, and SgInitializedName");
-  return std::vector<CFGEdge>();
+    ROSE_ASSERT (!"CFG functions only work on SgExpression, SgStatement, and SgInitializedName");
+    return std::vector<CFGEdge>();
 }
 
 std::vector<CFGEdge>
 SgNode::cfgInEdges(unsigned int idx) {
-  ROSE_ASSERT (!"CFG functions only work on SgExpression, SgStatement, and SgInitializedName");
-  return std::vector<CFGEdge>();
+    ROSE_ASSERT (!"CFG functions only work on SgExpression, SgStatement, and SgInitializedName");
+    return std::vector<CFGEdge>();
 }
 
 template <class NodeT, class EdgeT>
@@ -4227,32 +4229,322 @@ std::vector<CFGEdge> SgOmpBodyStatement::cfgInEdges(unsigned int idx) {
 //----------------------------------------
  unsigned int
 SgOmpClauseBodyStatement::cfgIndexForEnd() const {
-  return 2;
+//   return 2; // according to the AST the index is baed on the number of clauses
+  //TODO: list all cases: private shared reduction first considerred
+
+   
+   int size = this->get_clauses().size();
+   return (size + 1); // clauses + body 
+  
+
+ 
 }
 
 std::vector<CFGEdge> SgOmpClauseBodyStatement::cfgOutEdges(unsigned int idx) {
   std::vector<CFGEdge> result;
-  switch (idx) {
-    case 0: makeEdge(CFGNode(this, idx), this->get_body()->cfgForBeginning(), result); break;
-    case 1: break; // we don't build edges for OpenMP clause list for now //TODO  not sure if the code is correct
-    case 2: makeEdge(CFGNode(this, idx), getNodeJustAfterInContainer(this), result); break;
-    default: ROSE_ASSERT (!"Bad index for SgOmpClauseBodyStatement");
+
+ //! edited by Hongyi for edges between SgOmpClauseBodyStatement  and SgOmpClause 
+
+addIncomingFortranGotos( this, idx, result );
+if( idx == (this->get_clauses().size() + 1 ) )
+  {
+     makeEdge( CFGNode( this ,idx), getNodeJustAfterInContainer( this ), result ); 
   }
-  return result;
+ else
+  {
+    if( idx == this->get_clauses().size()  )
+       {
+         makeEdge( CFGNode( this, idx ), this->get_body()->cfgForBeginning(), result ); // connect variable clauses first, parallel body last
+       }
+      else
+      {
+        if( idx < this->get_clauses().size() ) // connect variables clauses first, parallel body last
+          {
+            makeEdge( CFGNode( this, idx ), this->get_clauses()[idx]->cfgForBeginning(), result );
+     
+          }
+         else
+          {
+            ROSE_ASSERT( !"Bad index for SgOmpClauseBodyStatement" );
+          }
+       }
+  }
+
+
+return result;
+
 }
 
 std::vector<CFGEdge> SgOmpClauseBodyStatement::cfgInEdges(unsigned int idx) {
   std::vector<CFGEdge> result;
   addIncomingFortranGotos(this, idx, result);
-  switch (idx) {
-    case 0: makeEdge(getNodeJustBeforeInContainer(this), CFGNode(this, idx), result); break;
-    case 1: break; // we don't build edges for OpenMP clause list for now //TODO  not sure if the code is correct here
-    case 2: makeEdge(this->get_body()->cfgForEnd(), CFGNode(this, idx), result); break;
-    default: ROSE_ASSERT (!"Bad index for SgOmpClauseBodyStatement");
-  }
+
+ if( idx == 0 )
+   {
+    makeEdge( getNodeJustBeforeInContainer( this ), CFGNode( this, idx ), result );
+    
+    }
+   else 
+   {
+      if( idx == ( this->get_clauses().size() + 1 ) )
+       {
+        makeEdge( this->get_body()->cfgForEnd(), CFGNode( this, idx ) , result ); //connect variables clauses first, then parallel body
+        
+       }
+      else 
+       {
+           if( idx < ( this->get_clauses().size() + 1 ) )
+            {
+               makeEdge( this->get_clauses()[idx -1]->cfgForEnd(), CFGNode( this, idx ), result );//connect variables clauses first, then parallel body
+            
+             }
+           
+           else
+            {
+             ROSE_ASSERT( !" Bad index for SgOmpClauseBodyStatement" );
+            }
+       }
+   }
+
+ return result;
+}
+
+//! edited by Hongyi Ma for private shared
+
+unsigned int
+SgOmpClause::cfgIndexForEnd() const {
+     
+     int size; //SgOmpClause size is based on the number of variables in this clause, please refer to AST for more detail
+     switch( this->variantT() )
+     {
+
+   case V_SgOmpPrivateClause:
+        {
+         const SgOmpPrivateClause* pClause = isSgOmpPrivateClause( this );
+         size  = pClause->get_variables().size();
+         break;
+         }
+   case V_SgOmpSharedClause:
+        {
+          const SgOmpSharedClause* sClause  = isSgOmpSharedClause( this );
+           size = sClause->get_variables().size();
+         break;
+        }
+   case V_SgOmpReductionClause:
+        {
+          const SgOmpReductionClause* rClause = isSgOmpReductionClause( this );
+           size = rClause->get_variables().size();
+          break;
+        }
+   
+   default: break;     
+
+     }
+      return size;
+  
+}
+
+std::vector<CFGEdge> SgOmpClause::cfgOutEdges(unsigned int idx) {
+  std::vector<CFGEdge> result;
+    
+     
+      
+  switch( this->variantT() )
+  {
+    case V_SgOmpPrivateClause:
+         {
+         SgVarRefExpPtrList clauseVariables;
+         SgOmpPrivateClause* pClause = isSgOmpPrivateClause( this );
+       
+         clauseVariables = pClause->get_variables();
+
+          if( idx == clauseVariables.size() )
+           {
+             makeEdge( CFGNode( this, idx ), getNodeJustAfterInContainer( this ), result );
+
+           }
+          else
+           {
+             if( idx < clauseVariables.size() )
+              {
+                 makeEdge( CFGNode( this, idx ), pClause->get_variables()[idx]->cfgForBeginning(), result );
+              }
+             else
+              {
+               ROSE_ASSERT(!"Bad index for SgOmpClause" );
+              }
+           }
+          break;
+          
+         }
+ 
+   case V_SgOmpSharedClause:
+        {
+        SgVarRefExpPtrList clauseVariables;
+         SgOmpSharedClause* sClause = isSgOmpSharedClause( this );
+         clauseVariables = sClause->get_variables();
+      
+        if( idx == clauseVariables.size() )
+          {
+             makeEdge( CFGNode( this, idx), getNodeJustAfterInContainer( this ), result );
+          }     
+   
+         else
+          {
+            if(idx < clauseVariables.size() )
+             {
+                 makeEdge( CFGNode( this, idx ), sClause->get_variables()[idx]->cfgForBeginning(), result );
+             }
+            else
+             { 
+              ROSE_ASSERT( !"Bad index for SgOmpClause" );
+             }
+          
+            }
+          break;
+        }
+
+      case V_SgOmpReductionClause:
+           {
+            SgVarRefExpPtrList clauseVariables;
+             SgOmpReductionClause* rClause = isSgOmpReductionClause( this );
+             clauseVariables = rClause->get_variables();
+           
+             if( idx == clauseVariables.size() )
+              {
+                makeEdge( CFGNode( this, idx ), getNodeJustAfterInContainer( this), result );
+              }
+             else
+             {
+                if( idx <clauseVariables.size() )
+                 {
+                     makeEdge( CFGNode( this, idx ), rClause->get_variables()[idx]->cfgForBeginning(), result );
+
+                 }
+                 else
+                 {
+                  ROSE_ASSERT( !"Bad index for SgOmpClause" );
+                 }
+               }
+            break;
+           }
+    default: break;
+         
+ }
   return result;
 }
 
+std::vector<CFGEdge> SgOmpClause::cfgInEdges(unsigned int idx) {
+std::vector<CFGEdge> result;
+
+switch( this->variantT() )
+  { 
+    case V_SgOmpPrivateClause:
+      {
+      SgOmpPrivateClause* pClause = isSgOmpPrivateClause( this );
+      SgVarRefExpPtrList clauseVariables;
+      clauseVariables = pClause->get_variables();
+      if ( idx == 0)
+      {
+      makeEdge(getNodeJustBeforeInContainer(this), CFGNode(this, idx), result);
+       }
+     else
+      {
+     
+    
+    if( idx <= pClause->get_variables().size() )
+     {     
+            makeEdge( pClause->get_variables()[idx - 1]->cfgForEnd(), CFGNode( this, idx ), result );
+
+     }
+     else
+     {
+        ROSE_ASSERT( !"Bad index for SgOmpClause");
+     }
+     
+     }
+     break;
+     }
+
+   case V_SgOmpSharedClause:
+        {
+       SgOmpSharedClause* sClause = isSgOmpSharedClause( this );
+      SgVarRefExpPtrList clauseVariables;
+      clauseVariables = sClause->get_variables();
+     if( idx == 0 )
+      {
+          makeEdge(getNodeJustBeforeInContainer(this), CFGNode(this, idx), result);
+
+      }     
+     else
+      {
+        if( idx <= sClause->get_variables().size() )
+         {
+                makeEdge( sClause->get_variables()[idx - 1]->cfgForEnd(), CFGNode( this, idx ), result );
+
+         }  
+        else
+         { 
+          ROSE_ASSERT( !"bad index for SgOmpClause " );
+         }
+      }
+     break;
+      } 
+
+    case V_SgOmpReductionClause:
+         {
+           SgOmpReductionClause* rClause = isSgOmpReductionClause( this );
+           SgVarRefExpPtrList clauseVariables;
+           clauseVariables = rClause->get_variables();
+           if( idx == 0 )
+           {
+              makeEdge( getNodeJustBeforeInContainer( this), CFGNode( this, idx ), result );
+           }
+           else
+           {
+             if( idx <= rClause->get_variables().size() )
+             {
+                   makeEdge( rClause->get_variables()[idx - 1]->cfgForEnd(), CFGNode( this, idx ), result );
+             }
+             else
+             {
+              ROSE_ASSERT( !"bad index for SgOmpClause" );
+             }
+           }
+           break;
+           
+         }  
+  default: break;
+
+}
+
+
+return result;
+}
+//-----------------------------------------------------
+       //! this part is for extend CFGNode to support SgOmpClause
+         bool SgOmpClause::cfgIsIndexInteresting(unsigned int index) const
+          {
+              return true;
+          }
+
+           unsigned int SgOmpClause::cfgFindChildIndex(SgNode* n)
+          { 
+        
+             size_t idx = this->getChildIndex(n);
+
+             return idx;
+          }
+           unsigned int SgOmpClause::cfgFindNextChildIndex(SgNode* n)
+          {
+                 return this->cfgFindChildIndex(n) + 1;
+       
+          }
+              
+
+
+
+//! end edited by Hongyi Ma private shared reduction
 // case of ifndef ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
 #endif
  
