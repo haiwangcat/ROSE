@@ -109,7 +109,7 @@ enum-stamp: src/find-enums
 	$(AM_V_GEN) $< --edg:no_warnings  -O0 -DROSE_SKIP_COMPILATION_OF_WAVE \
 	   -I$(top_builddir) $(ROSE_INCLUDES) \
            -c RoseEnumNames.cc > __RoseEnumNames.h
-	@$(MKDIR_P) src/minitermite
+	@mkdir -p src/minitermite
 	@mv __RoseEnumNames.h src/minitermite/RoseEnumNames.h
 	@mv -f enum-temp $@
 
