@@ -1,6 +1,8 @@
 ## Process this file with automake to create Makefile.in.
 include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 
+BUILDDIR=$(top_builddir)/projects/minitermite
+
 ACLOCAL_AMFLAGS = -I m4
 
 .PHONY: clang docs

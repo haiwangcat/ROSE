@@ -146,34 +146,34 @@ noinst_SCRIPTS = \
   regression/serial_driver.sh
 
 TEST_EXTENSIONS = .cxx .c .f90 .f03 .f .F
-C_LOG_COMPILER = sh $(builddir)/regression/c_driver.sh
+C_LOG_COMPILER = sh $(BUILDDIR)/regression/c_driver.sh
 AM_C_LOG_FLAGS = 
-CXX_LOG_COMPILER = sh $(builddir)/regression/cxx_driver.sh
+CXX_LOG_COMPILER = sh $(BUILDDIR)/regression/cxx_driver.sh
 AM_CXX_LOG_FLAGS =
-F90_LOG_COMPILER = sh $(builddir)/regression/f90_driver.sh
+F90_LOG_COMPILER = sh $(BUILDDIR)/regression/f90_driver.sh
 AM_F90_LOG_FLAGS = 
-F03_LOG_COMPILER = sh $(builddir)/regression/f03_driver.sh
+F03_LOG_COMPILER = sh $(BUILDDIR)/regression/f03_driver.sh
 AM_F03_LOG_FLAGS = 
-F_LOG_COMPILER = sh $(builddir)/regression/f77_driver.sh
+F_LOG_COMPILER = sh $(BUILDDIR)/regression/f77_driver.sh
 AM_F_LOG_FLAGS = 
 
 # ------------------------------------------------------------------------
 # BEGIN Backwards-compatible serial-tests
 # Please remove this as soon as ROSE is upgraded to automake 1.10b or later!
 # ------------------------------------------------------------------------
-TESTS_ENVIRONMENT=sh $(builddir)/regression/serial_driver.sh
+TESTS_ENVIRONMENT=sh $(BUILDDIR)/regression/serial_driver.sh
 regression/serial_driver.sh: Makefile
 	$(AM_V_GEN)
-	@mkdir -p $(builddir)/regression
+	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
 	@echo 'ext=`echo "$$1"|awk -F . '"'"'{print $$NF}'"'"'` # get extension' >> $@
 	@echo 'case $$ext in' >> $@
-	@echo '    c)	exec sh	$(builddir)/regression/c_driver.sh $$1 ;;' >> $@
-	@echo '	   cxx) exec sh $(builddir)/regression/cxx_driver.sh $$1 ;;' >> $@
-	@echo '	   f90) exec sh $(builddir)/regression/f90_driver.sh $$1 ;;' >> $@
-	@echo '	   f03) exec sh $(builddir)/regression/f03_driver.sh $$1 ;;' >> $@
-	@echo '	   f)	exec sh	$(builddir)/regression/f77_driver.sh $$1 ;;' >> $@
-	@echo '	   F)	exec sh	$(builddir)/regression/f77_driver.sh $$1 ;;' >> $@
+	@echo '    c)	exec sh	$(BUILDDIR)/regression/c_driver.sh $$1 ;;' >> $@
+	@echo '	   cxx) exec sh $(BUILDDIR)/regression/cxx_driver.sh $$1 ;;' >> $@
+	@echo '	   f90) exec sh $(BUILDDIR)/regression/f90_driver.sh $$1 ;;' >> $@
+	@echo '	   f03) exec sh $(BUILDDIR)/regression/f03_driver.sh $$1 ;;' >> $@
+	@echo '	   f)	exec sh	$(BUILDDIR)/regression/f77_driver.sh $$1 ;;' >> $@
+	@echo '	   F)	exec sh	$(BUILDDIR)/regression/f77_driver.sh $$1 ;;' >> $@
 	@echo '    *)    exit 1 ;;' >> $@
 	@echo 'esac' >> $@
 # ------------------------------------------------------------------------
@@ -191,105 +191,105 @@ testdir=check-tests
 
 regression/c_driver.sh: Makefile
 	$(AM_V_GEN)
-	@mkdir -p $(builddir)/regression
+	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
-	@echo 'cd $(builddir)/regression' >> $@
+	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$1 .c`' >> $@
-	@echo '../$(builddir)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.c || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term --stl-engine -I$$include $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
-	@echo '../$(builddir)/src/src2term --stratego -I$$include $${NAME}-4.c -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(builddir)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.c || exit 6' >>$@
+	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.c || exit 2' >> $@
+	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
+	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.c -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.c || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
 endif
 
 regression/cxx_driver.sh: Makefile
 	$(AM_V_GEN)
-	@mkdir -p $(builddir)/regression
+	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
-	@echo 'cd $(builddir)/regression' >> $@
+	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .cxx`' >> $@
-	@echo '../$(builddir)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.cxx || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term --stl-engine -I$$include $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
-	@echo '../$(builddir)/src/src2term --stratego -I$$include $${NAME}-4.cxx -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(builddir)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.cxx || exit 6' >>$@
+	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.cxx || exit 2' >> $@
+	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
+	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.cxx -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.cxx || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
 endif
 
 regression/f90_driver.sh: Makefile
 	$(AM_V_GEN)
-	@mkdir -p $(builddir)/regression
+	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
-	@echo 'cd $(builddir)/regression' >> $@
+	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .f90`' >> $@
-	@echo '../$(builddir)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.f90 || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term --stl-engine -I$$include $${NAME}-2.f90 -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f90 || exit 4' >>$@
-	@echo '../$(builddir)/src/src2term --stratego -I$$include $${NAME}-4.f90 -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(builddir)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f90 || exit 6' >>$@
+	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f90 || exit 2' >> $@
+	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.f90 -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f90 || exit 4' >>$@
+	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.f90 -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f90 || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
 endif
 
 regression/f03_driver.sh: Makefile
 	$(AM_V_GEN)
-	@mkdir -p $(builddir)/regression
+	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
-	@echo 'cd $(builddir)/regression' >> $@
+	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .f03`' >> $@
-	@echo '../$(builddir)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.f03 || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term --stl-engine -I$$include $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f03 || exit 4' >>$@
-	@echo '../$(builddir)/src/src2term --stratego -I$$include $${NAME}-4.f03 -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(builddir)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f03 || exit 6' >>$@
+	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f03 || exit 2' >> $@
+	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f03 || exit 4' >>$@
+	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.f03 -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f03 || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
 endif
 
 regression/f77_driver.sh: Makefile
 	$(AM_V_GEN)
-	@mkdir -p $(builddir)/regression
+	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
-	@echo 'cd $(builddir)/regression' >> $@
+	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .f`' >> $@
-	@echo '../$(builddir)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(builddir)/src/term2src $${NAME}-1.term -o $${NAME}-2.f || exit 2' >> $@
-	@echo '../$(builddir)/src/src2term --stl-engine -I$$include $${NAME}-2.f -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(builddir)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f || exit 4' >>$@
-	@echo '../$(builddir)/src/src2term --stratego -I$$include $${NAME}-4.f -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(builddir)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f || exit 6' >>$@
+	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f || exit 2' >> $@
+	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.f -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f || exit 4' >>$@
+	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.f -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(builddir)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(builddir)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
+	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
 endif
