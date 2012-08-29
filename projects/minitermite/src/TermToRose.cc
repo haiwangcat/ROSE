@@ -12,7 +12,6 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <sstream>
 #include <string>
 #include <assert.h>
-#include <boost/regex.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <typeinfo>
 
@@ -1510,6 +1509,8 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
 }
 
 
+#define hasSuffix(s, suffix) boost::ends_with(s, suffix)
+
 /**
  * create SgSourceFile
  */
@@ -1525,18 +1526,21 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,CompTerm*) {
 
   // are we unparsing some sort of Fortran sources?
   bool isFortran = false;
-  if (regex_match(fi->get_filename(), regex(".*[fF](77)?"))) {
+  string name = fi->get_filename();
+
+  if (hasSuffix(name, ".f") || hasSuffix(name, ".F") ||
+      hasSuffix(name, ".f77") || hasSuffix(name, ".F77")) {
       isFortran = true;
       file->set_Fortran_only(true);
-  } else if (regex_match(fi->get_filename(), regex(".*[fF]90"))) {
+  } else if (hasSuffix(name, ".f90") || hasSuffix(name, ".F90")) {
       isFortran = true;
       file->set_Fortran_only(true);
       file->set_F90_only(true);
-  } else if (regex_match(fi->get_filename(), regex(".*[fF]95"))) {
+  } else if (hasSuffix(name, ".f95") || hasSuffix(name, ".F95")) {
       isFortran = true;
       file->set_Fortran_only(true);
       file->set_F95_only(true);
-  } else if (regex_match(fi->get_filename(), regex(".*[fF]03"))) {
+  } else if (hasSuffix(name, ".f03") || hasSuffix(name, ".F03")) {
       isFortran = true;
       file->set_Fortran_only(true);
       file->set_F2003_only(true);
