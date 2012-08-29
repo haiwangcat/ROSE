@@ -27,26 +27,26 @@ void count() {
 #define unescape() \
   /* expand sequences such as '\n' */                                \
   char buf[yyleng]; /* if anything, the string should get shorter */ \
-  int i,j;							     \
-  for (i = 0, j= 0; i < yyleng-2; ++i, ++j) {			     \
-    if (yytext[j] == '\\' && i < yyleng-3) {			     \
-      switch(yytext[j+1]) {					     \
+  int i,j;                                                           \
+  for (i = 0, j= 0; i < yyleng-2; ++i, ++j) {                        \
+    if (yytext[j] == '\\' && i < yyleng-3) {                         \
+      switch(yytext[j+1]) {                                          \
       case '\\': buf[i] = '\\'; ++j; break; /* Literal backslash  */ \
-      case '\"': buf[i] = '\"'; ++j; break; /* Double quote	  */ \
-      case '\'': buf[i] = '\''; ++j; break; /* Single quote	  */ \
+      case '\"': buf[i] = '\"'; ++j; break; /* Double quote       */ \
+      case '\'': buf[i] = '\''; ++j; break; /* Single quote       */ \
       case  'n': buf[i] = '\n'; ++j; break; /* Newline (line feed)*/ \
-      case  'r': buf[i] = '\r'; ++j; break; /* Carriage return	  */ \
-      case  'b': buf[i] = '\b'; ++j; break; /* Backspace	  */ \
-      case  't': buf[i] = '\t'; ++j; break; /* Horizontal tab	  */ \
-      case  'f': buf[i] = '\f'; ++j; break; /* Form feed	  */ \
-      case  'a': buf[i] = '\a'; ++j; break; /* Alert (bell)	  */ \
-      case  'v': buf[i] = '\v'; ++j; break; /* Vertical tab	  */ \
-      default: buf[i] = yytext[j]; /* nothing */		     \
-      }								     \
-    } else {							     \
-      buf[i] = yytext[j];					     \
+      case  'r': buf[i] = '\r'; ++j; break; /* Carriage return    */ \
+      case  'b': buf[i] = '\b'; ++j; break; /* Backspace          */ \
+      case  't': buf[i] = '\t'; ++j; break; /* Horizontal tab     */ \
+      case  'f': buf[i] = '\f'; ++j; break; /* Form feed          */ \
+      case  'a': buf[i] = '\a'; ++j; break; /* Alert (bell)       */ \
+      case  'v': buf[i] = '\v'; ++j; break; /* Vertical tab       */ \
+      default: buf[i] = yytext[j]; /* nothing */                     \
+      }                                                              \
+    } else {                                                         \
+      buf[i] = yytext[j];                                            \
     }                                                                \
-  }								     \
+  }                                                                  \
   buf[i] = 0;
 
 
@@ -69,55 +69,55 @@ operator [\-\+\*\/\<\=\>\:\.\#]+
 [ \t\n]   { count(); }
 
 {singlechar} {
-	  // ISO Prolog insists on quoting Characters as "\123\" 
-	  // which leads to this strange ambiguity
+          /* ISO Prolog insists on quoting Characters as "\123\" */
+          /* which leads to this strange ambiguity */
           count();
           yytext[5] = 0;
           yylval.intValue = (int)strtol(yytext+2, NULL, 10);
           return(INT);
         }
- 
+
 {doublequoted} {
-       // FIXME write a more elegant regexp instead
+       /* FIXME write a more elegant regexp instead */
        if ((yyleng > 7) && (yytext[1] == '\\') && 
           (yytext[2] >= '0') && (yytext[2] <= '9') &&
           (yytext[3] >= '0') && (yytext[3] <= '9') &&
           (yytext[4] >= '0') && (yytext[4] <= '9') &&
-          (yytext[5] == '\\') && (yytext[6] == '"')) REJECT; // singlechar
+          (yytext[5] == '\\') && (yytext[6] == '"')) REJECT; /* singlechar */
  
 
         count();
         yytext++;
         *(yytext + yyleng - 2) = '\0';
-	unescape();
+        unescape();
         yylval.strValue = new string(buf);
-	if (yy_use_stratego_filter) {
-	  // screw efficiency...
-	  boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-BANG", "!");
-	  boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-OCTOTHORPE", "#");
+        if (yy_use_stratego_filter) {
+          /* screw efficiency... */
+          boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-BANG", "!");
+          boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-OCTOTHORPE", "#");
         }
-	return(STRING);
+        return(STRING);
         }
 
 {quoted} {
-       // FIXME write a more elegant regexp instead
+       /* FIXME write a more elegant regexp instead */
        if ((yyleng > 7) && (yytext[1] == '\\') && 
           (yytext[2] >= '0') && (yytext[2] <= '9') &&
           (yytext[3] >= '0') && (yytext[3] <= '9') &&
           (yytext[4] >= '0') && (yytext[4] <= '9') &&
-          (yytext[5] == '\\') && (yytext[6] == '\'')) REJECT; // singlechar
+          (yytext[5] == '\\') && (yytext[6] == '\'')) REJECT; /* singlechar */
 
         count();
         yytext++;
         *(yytext + yyleng - 2) = '\0';
-	unescape();
+        unescape();
         yylval.strValue = new string(buf);
-	if (yy_use_stratego_filter) {
-	  // screw efficiency...
-	  boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-BANG", "!");
-	  boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-OCTOTHORPE", "#");
+        if (yy_use_stratego_filter) {
+          /* screw efficiency... */
+          boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-BANG", "!");
+          boost::replace_all(*yylval.strValue, "MINITERMITE-STRATEGO-OCTOTHORPE", "#");
         }
-	return(ATOM);
+        return(ATOM);
         }
 
 {variable} { count(); yylval.strValue = new string(yytext); return(VARIABLE); }
