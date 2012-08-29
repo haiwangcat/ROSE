@@ -472,7 +472,6 @@ namespace term {
   /// Representation of an infix operator.
   class STLInfixOperator : virtual public STLCompTerm {
   public:
-    ~STLInfixOperator() {};
     /// Creates a compound term with the given name. no subterms added yet.
     STLInfixOperator(std::string name) : STLCompTerm(name) {};
     std::string getRepresentation() const {

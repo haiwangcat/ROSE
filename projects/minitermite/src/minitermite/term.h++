@@ -71,6 +71,8 @@ namespace term {
 				   Term*, Term*, Term*,
 				   Term*, Term*, Term*, 
 				   Term*) const = 0;
+
+    virtual ~TermFactory() {};
   };
 
    
