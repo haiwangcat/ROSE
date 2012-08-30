@@ -198,7 +198,7 @@ void expect_term(Term* n, TermType **r,
 /** reverse of makeFlag */
 bool TermToRose::createFlag(Term *t) {
   EXPECT_TERM(Atom*, atom, t);
-  if (boost::starts_with(atom->getName(), "no_"))
+  if (starts_with(atom->getName(), "no_"))
     return false;
   else return true;
 }
@@ -1509,8 +1509,6 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
 }
 
 
-#define hasSuffix(s, suffix) boost::ends_with(s, suffix)
-
 /**
  * create SgSourceFile
  */
@@ -1528,19 +1526,19 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,CompTerm*) {
   bool isFortran = false;
   string name = fi->get_filename();
 
-  if (hasSuffix(name, ".f") || hasSuffix(name, ".F") ||
-      hasSuffix(name, ".f77") || hasSuffix(name, ".F77")) {
+  if (ends_with(name, ".f") || ends_with(name, ".F") ||
+      ends_with(name, ".f77") || ends_with(name, ".F77")) {
       isFortran = true;
       file->set_Fortran_only(true);
-  } else if (hasSuffix(name, ".f90") || hasSuffix(name, ".F90")) {
+  } else if (ends_with(name, ".f90") || ends_with(name, ".F90")) {
       isFortran = true;
       file->set_Fortran_only(true);
       file->set_F90_only(true);
-  } else if (hasSuffix(name, ".f95") || hasSuffix(name, ".F95")) {
+  } else if (ends_with(name, ".f95") || ends_with(name, ".F95")) {
       isFortran = true;
       file->set_Fortran_only(true);
       file->set_F95_only(true);
-  } else if (hasSuffix(name, ".f03") || hasSuffix(name, ".F03")) {
+  } else if (ends_with(name, ".f03") || ends_with(name, ".F03")) {
       isFortran = true;
       file->set_Fortran_only(true);
       file->set_F2003_only(true);

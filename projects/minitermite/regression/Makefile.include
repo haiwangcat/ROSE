@@ -4,14 +4,6 @@
 TERMITE_TESTS = \
     regression/mrtc/success/statemate.c \
     regression/mrtc/success/nsichneu.c \
-    regression/fortran/trivial.f90 \
-    regression/fortran/simple_ccsd_t2.f \
-    regression/fortran/complex.f03 \
-    regression/fortran/icsd.f \
-    regression/fortran/icsd_t2.f \
-    regression/fortran/funCall.F \
-    regression/fortran/precision.f03 \
-    regression/fortran/rose_dim.F \
     regression/base/ab.c \
     regression/base/bigger.c \
     regression/base/blocks.c \
@@ -120,6 +112,16 @@ TERMITE_TESTS = \
     regression/shape/success/nnh_xysel3shared.cxx \
     regression/shape/success/pathjoin.cxx
 
+TERMITE_FORTRAN_TESTS = \
+    regression/fortran/trivial.f90 \
+    regression/fortran/simple_ccsd_t2.f \
+    regression/fortran/complex.f03 \
+    regression/fortran/icsd.f \
+    regression/fortran/icsd_t2.f \
+    regression/fortran/funCall.F \
+    regression/fortran/precision.f03 \
+    regression/fortran/rose_dim.F
+
 BROKEN_TESTS = \
     regression/base/classes2.cxx \
     regression/base/classes3.cxx \
@@ -134,6 +136,10 @@ BROKEN_TESTS = \
 EXTRA_DIST += $(TERMITE_TESTS) \
 	regression/shape/success/README \
 	regression/README
+
+if ROSE_BUILD_FORTRAN_LANGUAGE_SUPPORT
+TERMITE_TESTS += $(TERMITE_FORTRAN_TESTS)
+endif
 
 TESTS = $(TERMITE_TESTS) # $(BROKEN_TESTS)
 
