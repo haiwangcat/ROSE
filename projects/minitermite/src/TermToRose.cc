@@ -1527,33 +1527,39 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,CompTerm*) {
 
   if (ends_with(name, ".f") || ends_with(name, ".F") ||
       ends_with(name, ".f77") || ends_with(name, ".F77")) {
-      isFortran = true;
-      // TODO: this should probably be stored as an attribute
-      file->set_outputFormat(SgFile::e_fixed_form_output_format);
-      file->set_sourceFileUsesFortran77FileExtension(true);
+    isFortran = true;
+    // TODO: this should probably be stored as an attribute
+    file->set_outputFormat(SgFile::e_fixed_form_output_format);
+    file->set_sourceFileUsesFortran77FileExtension(true);
 
-      // Indeed this is WRONG. But have a look at 
-      // src/backend/unparser/FortranCodeGeneration/unparseFortran_statements.C
-      // yourself.
+    // Indeed this is WRONG. But have a look at 
+    // src/backend/unparser/FortranCodeGeneration/unparseFortran_statements.C
+    // for yourself.
 
-      //file->set_F77_only(true);      
-      file->set_F90_only(true);
+    //file->set_F77_only(true);      
+    file->set_F90_only(true);
   } else if (ends_with(name, ".f90") || ends_with(name, ".F90")) {
-      isFortran = true;
-      file->set_outputFormat(SgFile::e_free_form_output_format);
-      file->set_sourceFileUsesFortran90FileExtension(true);
-      file->set_F90_only(true);
+    isFortran = true;
+    file->set_outputFormat(SgFile::e_free_form_output_format);
+    file->set_sourceFileUsesFortran90FileExtension(true);
+    file->set_F90_only(true);
   } else if (ends_with(name, ".f95") || ends_with(name, ".F95")) {
-      isFortran = true;
-      file->set_outputFormat(SgFile::e_free_form_output_format);
-      file->set_sourceFileUsesFortran95FileExtension(true);
-      file->set_F95_only(true);
+    isFortran = true;
+    file->set_outputFormat(SgFile::e_free_form_output_format);
+    file->set_sourceFileUsesFortran95FileExtension(true);
+    file->set_F95_only(true);
   } else if (ends_with(name, ".f03") || ends_with(name, ".F03")) {
-      isFortran = true;
-      file->set_sourceFileUsesFortran2003FileExtension(true);
-      file->set_F2003_only(true);
+    isFortran = true;
+    file->set_sourceFileUsesFortran2003FileExtension(true);
+    file->set_F2003_only(true);
+  } else if (ends_with(name, ".c") || ends_with(name, ".h")) {
+    file->set_C_only(true);    
+  } else if (ends_with(name, ".cxx") || ends_with(name, ".C") ||
+	     ends_with(name, ".cpp") || ends_with(name, ".c++")) {
+    file->set_Cxx_only(true);    
   } else {
-    // Assume C or C++
+    // ???
+    assert(false);
   }
   if (isFortran) {
     file->set_Fortran_only(true);

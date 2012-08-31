@@ -287,6 +287,7 @@ regression/f77_driver.sh: Makefile
 	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
 	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
+	@echo 'linewrap=`readlink -f $(srcdir)/regression/linewrap.awk' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
@@ -295,13 +296,13 @@ regression/f77_driver.sh: Makefile
 	@echo >> $@
 	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
 	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f || exit 2' >> $@
-	@echo 'awk -f $(srcdir)/regression/linewrap.awk $${NAME}-2.f' >> $@
+	@echo 'awk -f $$linewrap $${NAME}-2.f' >> $@
 	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.f -o $${NAME}-3.term || exit 3' >> $@
 	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f || exit 4' >>$@
-	@echo 'awk -f $(srcdir)/regression/linewrap.awk $${NAME}-4.f' >> $@
+	@echo 'awk -f $$linewrap $${NAME}-4.f' >> $@
 	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.f -o $${NAME}-5.term || exit 5' >> $@
 	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f || exit 6' >>$@
-	@echo 'awk -f $(srcdir)/regression/linewrap.awk $${NAME}-6.f' >> $@
+	@echo 'awk -f $$linewrap $${NAME}-6.f' >> $@
 if ROSE_HAVE_SWI_PROLOG
 	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
 	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
