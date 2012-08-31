@@ -16,6 +16,7 @@ $(top_builddir)/clang/build/Makefile:
 
 EXTRA_DIST= README COPYING
 
+bin_SCRIPTS=
 include src/Makefile.include
 include regression/Makefile.include
 

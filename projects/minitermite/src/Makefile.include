@@ -30,7 +30,7 @@ noinst_bindir = $(BUILDDIR)
 noinst_PROGRAMS = src/find-enums
 
 if ROSE_HAVE_SWI_PROLOG
-bin_SCRIPTS = src/termite_lint src/cime3_signatures src/stratego-signatures
+bin_SCRIPTS += src/termite_lint src/cime3_signatures src/stratego-signatures
 
 BUILT_SOURCES += $(BUILDDIR)/PP_termite_spec.pl
 CLEANFILES += $(BUILDDIR)/PP_termite_spec.pl \

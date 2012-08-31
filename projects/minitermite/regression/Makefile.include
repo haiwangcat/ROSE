@@ -121,7 +121,7 @@ TERMITE_FORTRAN_TESTS = \
     regression/fortran/funCall.F \
     regression/fortran/precision.f03 \
     regression/fortran/rose_dim.F \
-    regression/fortran/hello77.F
+    regression/fortran/hello77.f
 
 BROKEN_TESTS = \
     regression/base/classes2.cxx \
@@ -143,6 +143,8 @@ TERMITE_TESTS += $(TERMITE_FORTRAN_TESTS)
 endif
 
 TESTS = $(TERMITE_TESTS) # $(BROKEN_TESTS)
+
+bin_SCRIPTS += regression/linewrap.awk
 
 noinst_SCRIPTS = \
   regression/c_driver.sh \
@@ -290,12 +292,16 @@ regression/f77_driver.sh: Makefile
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .f`' >> $@
+	@echo >> $@
 	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
 	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f || exit 2' >> $@
+	@echo 'awk -f $(srcdir)/regression/linewrap.awk $${NAME}-2.f' >> $@
 	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.f -o $${NAME}-3.term || exit 3' >> $@
 	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f || exit 4' >>$@
+	@echo 'awk -f $(srcdir)/regression/linewrap.awk $${NAME}-4.f' >> $@
 	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.f -o $${NAME}-5.term || exit 5' >> $@
 	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f || exit 6' >>$@
+	@echo 'awk -f $(srcdir)/regression/linewrap.awk $${NAME}-6.f' >> $@
 if ROSE_HAVE_SWI_PROLOG
 	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
 	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
