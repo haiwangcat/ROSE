@@ -120,7 +120,8 @@ TERMITE_FORTRAN_TESTS = \
     regression/fortran/icsd_t2.f \
     regression/fortran/funCall.F \
     regression/fortran/precision.f03 \
-    regression/fortran/rose_dim.F
+    regression/fortran/rose_dim.F \
+    regression/fortran/hello77.F
 
 BROKEN_TESTS = \
     regression/base/classes2.cxx \
