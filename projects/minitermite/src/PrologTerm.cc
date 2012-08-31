@@ -6,25 +6,6 @@
 using namespace std;
 using namespace term;
 
-CompTerm* STLTerm::isCompTerm() { 
-  return dynamic_cast<CompTerm*>(this);
-}
-List* STLTerm::isList() { 
-  return dynamic_cast<List*>(this);
-}
-Atom* STLTerm::isAtom() { 
-  return dynamic_cast<Atom*>(this);
-}
-Int* STLTerm::isInt() { 
-  return dynamic_cast<Int*>(this);
-}
-Float* STLTerm::isFloat() { 
-  return dynamic_cast<Float*>(this);
-}
-Variable* STLTerm::isVariable() { 
-  return dynamic_cast<Variable*>(this);
-}
-
 #if ROSE_HAVE_SWI_PROLOG
 
 

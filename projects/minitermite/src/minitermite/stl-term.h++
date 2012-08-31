@@ -17,16 +17,21 @@ namespace term {
   class STLCompTerm;
   class STLVariable;
 
+  enum TermVariant {
+    Unknown, Atom, Int, Float, List, CompTerm, Variable;
+  };
+
   /// Representation of a prolog term
   class STLTerm : virtual public Term {
   public:
+    CompTerm* isCompTerm() { return variant == CompTerm ? static_cast<CompTerm*>(this) : NULL; }
+    List* isList()         { return variant == List     ? static_cast<List*>(this)     : NULL; }
+    Atom* isAtom()         { return variant == Atom     ? static_cast<Atom*>(this)     : NULL; }
+    Int* isInt()           { return variant == Int      ? static_cast<Int*>(this)      : NULL; }
+    Float* isFloat()       { return variant == Float    ? static_cast<Float*>(this)    : NULL; }
+    Variable* isVariable() { return variant == Variable ? static_cast<Varible*>(this)  : NULL; }
 
-    CompTerm* isCompTerm();
-    List* isList();
-    Atom* isAtom();
-    Int* isInt();
-    Float* isFloat();
-    Variable* isVariable();
+    enum TermVariant variant;
 
     /// Properly quote and escape an atom if necessary
     static std::string quote(const std::string atom) {
@@ -114,10 +119,9 @@ namespace term {
   class STLAtom : virtual public Atom, virtual public STLTerm {
   public:
     ///constructor setting the string
-    STLAtom(const std::string name = "#ERROR", bool escapedRepresentation = true) {
-      mName = name;
-      mEscapedRepresentation = escapedRepresentation;
-    };
+    STLAtom(const std::string name = "#ERROR", bool escapedRepresentation = true)
+      : variant(Atom), mName(name), mEscapedRepresentation(escapedRepresentation)
+    { }
     /// the arity is always 0
     virtual int getArity() const {return 0;};
     /// an atom is always ground
@@ -222,7 +226,7 @@ namespace term {
   class STLInt : public Int, public STLTerm {
   public:
     /// constructor sets the value
-    STLInt(int value) : mValue(value) {}
+    STLInt(int value) : variant(Int), mValue(value) {}
     /// default constructor to make this constructible from templates
     STLInt() : mValue(0) {}
     /// return "Integer"
@@ -250,7 +254,7 @@ namespace term {
   class STLFloat : public Float, public STLTerm {
   public:
     /// constructor sets the value
-    STLFloat(double value) : mValue(value) {}
+    STLFloat(double value) : variant(Float), mValue(value) {}
 
     ///the arity is 0
     int getArity() const {return 0;}
@@ -279,10 +283,10 @@ namespace term {
   class STLCompTerm : public CompTerm, public STLTerm {
   public:
     /// Creates a compound term with the given name. no subterms added yet.
-    STLCompTerm(const std::string name = "#ERROR") : mName(name) {};
+    STLCompTerm(const std::string name = "#ERROR") : variant(CompTerm), mName(name) {};
 
 #if 0
-    STLCompTerm(std::string name, size_t n, ...) : mName(name) {
+    STLCompTerm(std::string name, size_t n, ...) : variant(CompTerm), mName(name) {
       if(n > 0) {
 	va_list params;
 	va_start(params, n);
@@ -297,13 +301,13 @@ namespace term {
 #endif
 
     STLCompTerm(const std::string name, Term* t1)
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
     }
 
     STLCompTerm(const std::string name, Term* t1, Term* t2) 
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -311,7 +315,7 @@ namespace term {
 
     STLCompTerm(const std::string name, 
 		Term* t1, Term* t2, Term* t3) 
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -321,7 +325,7 @@ namespace term {
     STLCompTerm(const std::string name, 
 		Term* t1, Term* t2, Term* t3, 
 		Term* t4) 
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -332,7 +336,7 @@ namespace term {
     STLCompTerm(const std::string name, 
 		Term* t1, Term* t2, Term* t3, 
 		Term* t4, Term* t5) 
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -344,7 +348,7 @@ namespace term {
     STLCompTerm(const std::string name, 
 		Term* t1, Term* t2, Term* t3,
 		Term* t4, Term* t5, Term* t6) 
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -358,7 +362,7 @@ namespace term {
 		Term* t1, Term* t2, Term* t3, 
 		Term* t4, Term* t5, Term* t6, 
 		Term* t7)
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -373,7 +377,7 @@ namespace term {
 		Term* t1, Term* t2, Term* t3, 
 		Term* t4, Term* t5, Term* t6, 
 		Term* t7, Term* t8)
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -389,7 +393,7 @@ namespace term {
 		Term* t1, Term* t2, Term* t3, 
 		Term* t4, Term* t5, Term* t6, 
 		Term* t7, Term* t8, Term* t9)
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -407,7 +411,7 @@ namespace term {
 		Term* t4, Term* t5, Term* t6, 
 		Term* t7, Term* t8, Term* t9,
 		Term* t10)
-      : mName(name)
+      : variant(CompTerm), mName(name)
     {
       mSubterms.push_back(t1);
       mSubterms.push_back(t2);
@@ -484,7 +488,7 @@ namespace term {
   class STLVariable : public STLTerm {
   public:
     ///constructor setting the name
-    STLVariable(std::string name) : mName(name) { 
+    STLVariable(std::string name) : variant(CompTerm), mName(name) { 
       std::cerr<<"STLVariable("<<name<<" not implemented"<<std::endl;
       assert(false);
     };
@@ -506,7 +510,7 @@ namespace term {
   class STLList : public List, virtual public STLTerm {
   public:
     ///default constructor
-    STLList() {}
+    STLList() : variant(List) {}
     /// construct from vector
     STLList(std::deque<term::Term*>& v)  :mTerms(v) {}
     STLList(std::vector<term::Term*>& v) :mTerms(v.begin(), v.end()) {}
