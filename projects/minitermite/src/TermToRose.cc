@@ -222,11 +222,12 @@ void TermToRose::unparseFile(SgSourceFile& f, std::string prefix, std::string su
        << suffix << fn.substr(suffix_start);
   ofstream ofile(name.str().c_str());
   cerr << "Unparsing " << name.str() << endl;
+  f.set_unparse_output_filename(name.str());
   ofile << globalUnparseToString(f.get_globalScope(), ui);
 }
 
 void TermToRose::unparse(std::string filename, std::string dir, std::string suffix,
-                           SgNode* node)
+			 SgNode* node)
 {
   SgUnparse_Info* unparseInfo = new SgUnparse_Info();
   unparseInfo->unset_SkipComments();    // generate comments
@@ -234,30 +235,26 @@ void TermToRose::unparse(std::string filename, std::string dir, std::string suff
                                         // format the code
   //resetParentPointers(glob, file);
 
-  if (filename != "") {
-    // All into one big file
-    ofstream ofile(filename.c_str());
-    if (SgProject* project = isSgProject(node))
-      for (int i = 0; i < project->numberOfFiles(); ++i) {
-        SgSourceFile *sageFile = isSgSourceFile((*project)[i]);
-    if (sageFile != NULL)
-            ofile << globalUnparseToString(sageFile->get_globalScope(), unparseInfo);
+  if (SgProject* project = isSgProject(node)) {
+    for (int i = 0; i < project->numberOfFiles(); ++i) {
+      SgSourceFile *file = isSgSourceFile((*project)[i]);
+      if (file != NULL) {
+	// Override the first file's name with what the user supplied
+	if (filename != "") {
+	  //ofstream ofile(filename.c_str());
+	  file->set_unparse_output_filename(filename);
+	  //ofile << globalUnparseToString(file->get_globalScope(), unparseInfo);
+	  file->unparse();
+	  filename = "";		
+	} else {
+	  unparseFile(*file, dir, suffix, unparseInfo);
+	}
       }
-    else if (SgSourceFile* file = isSgSourceFile(node))
-      ofile << globalUnparseToString(file->get_globalScope(), unparseInfo);
-    else ofile << node->unparseToString();
-  } else {
-    // seperate files
-    if (SgProject* project = isSgProject(node))
-      for (int i = 0; i < project->numberOfFiles(); ++i) {
-        SgSourceFile *file = isSgSourceFile((*project)[i]);
-        if (file != NULL)
-          unparseFile(*file, dir, suffix, unparseInfo);
-      }
-    else if (SgSourceFile* file = isSgSourceFile(node))
-      unparseFile(*file, dir, suffix, unparseInfo);
-    else cout << node->unparseToString();
-  }
+    }
+  } 
+  else if (SgSourceFile* file = isSgSourceFile(node))
+    unparseFile(*file, dir, suffix, unparseInfo);
+  else cout << node->unparseToString();
 }
 
 SgNode*
@@ -266,7 +263,9 @@ TermToRose::toRose(const char* filename) {
   if (dynamic_cast<SWIPLInt*>(termFactory.makeInt(0)) == NULL)
 #endif
   {
+    ROSE_ASSERT(string(filename) != "");
     yyin = fopen( filename, "r" );
+    ROSE_ASSERT(yyin);
     yyparse();
 #if ROSE_HAVE_SWI_PROLOG
   } else {
@@ -1529,21 +1528,35 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,CompTerm*) {
   if (ends_with(name, ".f") || ends_with(name, ".F") ||
       ends_with(name, ".f77") || ends_with(name, ".F77")) {
       isFortran = true;
-      file->set_Fortran_only(true);
+      // TODO: this should probably be stored as an attribute
+      file->set_outputFormat(SgFile::e_fixed_form_output_format);
+      file->set_sourceFileUsesFortran77FileExtension(true);
+
+      // Indeed this is WRONG. But have a look at 
+      // src/backend/unparser/FortranCodeGeneration/unparseFortran_statements.C
+      // yourself.
+
+      //file->set_F77_only(true);      
+      file->set_F90_only(true);
   } else if (ends_with(name, ".f90") || ends_with(name, ".F90")) {
       isFortran = true;
-      file->set_Fortran_only(true);
+      file->set_outputFormat(SgFile::e_free_form_output_format);
+      file->set_sourceFileUsesFortran90FileExtension(true);
       file->set_F90_only(true);
   } else if (ends_with(name, ".f95") || ends_with(name, ".F95")) {
       isFortran = true;
-      file->set_Fortran_only(true);
+      file->set_outputFormat(SgFile::e_free_form_output_format);
+      file->set_sourceFileUsesFortran95FileExtension(true);
       file->set_F95_only(true);
   } else if (ends_with(name, ".f03") || ends_with(name, ".F03")) {
       isFortran = true;
-      file->set_Fortran_only(true);
+      file->set_sourceFileUsesFortran2003FileExtension(true);
       file->set_F2003_only(true);
+  } else {
+    // Assume C or C++
   }
   if (isFortran) {
+    file->set_Fortran_only(true);
     file->set_outputLanguage(SgFile::e_Fortran_output_language);
   }
 

@@ -21,8 +21,8 @@ void usage(const char* me)
 
        << "Options:\n"
        << "  -o, --output sourcefile.c\n"
-       << "    If specified, the contents of all files will be concatenated\n"
-       << "    into the sourcefile.\n\n"
+       << "    Override the name of the unparsed file.\n"
+       << "    For mult-file projects, this will only affect the first file.\n\n"
 
        << "  -s, --suffix '.suffix'  Default: '.unparsed'\n"
 
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
     return 0;
   }
   if (optind < argc) {
-    infile = argv[optind];
+    infile = strdup(argv[optind]);
   } else {
     usage(argv[0]);
     return 1;
