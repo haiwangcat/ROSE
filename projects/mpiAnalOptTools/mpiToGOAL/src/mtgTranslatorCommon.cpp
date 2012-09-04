@@ -17,6 +17,7 @@ namespace mpitogoal
         SgFunctionCallExp* fncall_exp = isSgFunctionCallExp(mpiInitStmt->get_expression());
         ROSE_ASSERT(fncall_exp);
         SgName goalInitName("GOAL_Init");
+        // build GOAL_Init statement with same scope as MPI_Init
         SgExprStatement* goalInitStmt = SageBuilder::buildFunctionCallStmt(goalInitName,
                                                                            SageBuilder::buildIntType(),
                                                                            SageBuilder::buildExprListExp(),
@@ -31,10 +32,12 @@ namespace mpitogoal
     {
         ROSE_ASSERT(mainFuncDecl);
         SgName goalFinalizeName("GOAL_Finalize");
+        // build GOAL_Finalize()
         SgExprStatement* goalFinalizeStmt = SageBuilder::buildFunctionCallStmt(goalFinalizeName,
                                                                                SageBuilder::buildIntType(),
                                                                                SageBuilder::buildExprListExp(),
                                                                                mainFuncDecl->get_scope());
+        // insert at the end of main function
         SageInterface::instrumentEndOfFunction(mainFuncDecl, goalFinalizeStmt);
     }
 

@@ -8,6 +8,7 @@ int main(int argc, char* argv[])
     // insert libGOAL header
     mpitogoal::insertGoalHeader(project, "libGOAL.hpp");
 
+    // collect information for instrumentation setup
     mpitogoal::CollectMPISetupStmts collectMPISetup;
     traverseMemoryPoolVisitorPattern(collectMPISetup);
 
