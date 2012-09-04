@@ -195,6 +195,7 @@ private:
   SgFortranIncludeLine* createFortranIncludeLine(Sg_File_Info*, term::CompTerm*);
   SgAsteriskShapeExp* createAsteriskShapeExp(Sg_File_Info*, term::CompTerm*);
   SgWriteStatement* createWriteStatement(Sg_File_Info*, std::deque<SgNode*>*, term::CompTerm*);
+  SgPrintStatement* createPrintStatement(Sg_File_Info*, std::deque<SgNode*>*, term::CompTerm*);
   SgFormatStatement* createFormatStatement(Sg_File_Info*, term::CompTerm*);
   SgFormatItem* createFormatItem(Sg_File_Info*, term::CompTerm*);
   SgLabelRefExp* createLabelRefExp(Sg_File_Info*, term::CompTerm*);

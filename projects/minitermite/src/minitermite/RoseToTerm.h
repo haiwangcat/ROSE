@@ -97,6 +97,7 @@ private:
   term::CompTerm* getFortranIncludeLineSpecific(SgFortranIncludeLine*);
   term::CompTerm* getAsteriskShapeExpSpecific(SgAsteriskShapeExp*);
   term::CompTerm* getWriteStatementSpecific(SgWriteStatement*);
+  term::CompTerm* getPrintStatementSpecific(SgPrintStatement*);
   term::CompTerm* getFormatStatementSpecific(SgFormatStatement*);
   term::CompTerm* getFormatItemSpecific(SgFormatItem*);
   term::CompTerm* getLabelRefExpSpecific(SgLabelRefExp*);
