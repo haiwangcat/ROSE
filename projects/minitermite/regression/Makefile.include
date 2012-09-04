@@ -138,8 +138,11 @@ EXTRA_DIST += $(TERMITE_TESTS) \
 	regression/shape/success/README \
 	regression/README
 
-if ROSE_BUILD_FORTRAN_LANGUAGE_SUPPORT
+# gfortran 4.0.x will not be able to pass the F77 tests
+if ROSE_BUILD_FORTRAN_LANGUAGE_SUPPORT 
+if !ROSE_USING_GFORTRAN_VERSION_4_0
 TERMITE_TESTS += $(TERMITE_FORTRAN_TESTS)
+endif
 endif
 
 TESTS = $(TERMITE_TESTS) # $(BROKEN_TESTS)
@@ -261,6 +264,10 @@ if ROSE_HAVE_SWI_PROLOG
 	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
 endif
 
+# disable gfortran-based syntax checking until ROSE can compile with gfortran >= 4.7
+# a configure test would be cleaner, though
+F03FLAGS=-rose:skip_syntax_check
+
 regression/f03_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(BUILDDIR)/regression
@@ -271,11 +278,11 @@ regression/f03_driver.sh: Makefile
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .f03`' >> $@
-	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '../$(BUILDDIR)/src/src2term $(F03FLAGS) -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
 	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f03 || exit 2' >> $@
-	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
+	@echo '../$(BUILDDIR)/src/src2term --stl-engine $(F03FLAGS) -I$$include $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
 	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f03 || exit 4' >>$@
-	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.f03 -o $${NAME}-5.term || exit 5' >> $@
+	@echo '../$(BUILDDIR)/src/src2term --stratego $(F03FLAGS) -I$$include $${NAME}-4.f03 -o $${NAME}-5.term || exit 5' >> $@
 	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f03 || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
 	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
