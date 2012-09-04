@@ -84,6 +84,7 @@ RoseToTerm::getSpecific(SgNode* astNode) {
   CASE_SPECIFIC(NamespaceDeclarationStatement)
   CASE_SPECIFIC(NewExp)
   CASE_SPECIFIC(Pragma)
+  CASE_SPECIFIC(PrintStatement)
   CASE_SPECIFIC(ProcedureHeaderStatement)
   CASE_SPECIFIC(RefExp)
   CASE_SPECIFIC(SizeOfOp)
@@ -1640,6 +1641,21 @@ RoseToTerm::getWriteStatementSpecific(SgWriteStatement* n) {
      traverseSingleNode( n->get_namelist()     ),
      traverseSingleNode( n->get_advance()      ),
      traverseSingleNode( n->get_asynchronous() ),
+     PPI(n));
+}
+
+CompTerm*
+RoseToTerm::getPrintStatementSpecific(SgPrintStatement* n) {
+  return termFactory.makeCompTerm
+    ("print_statement_annotation",
+     // from IOStatement
+     //get_io_stmt_list() traversal successor
+     traverseSingleNode( n->get_unit()         ),
+     traverseSingleNode( n->get_iostat()       ),
+     traverseSingleNode( n->get_err()          ),
+     traverseSingleNode( n->get_iomsg()        ),
+     // from PrintStatement
+     traverseSingleNode( n->get_format()       ),
      PPI(n));
 }
 

@@ -203,70 +203,15 @@ bool TermToRose::createFlag(Term *t) {
   else return true;
 }
 
-/**
- * Unparse to a file
- */
-
-void TermToRose::unparseFile(SgSourceFile& f, std::string prefix, std::string suffix,
-                               SgUnparse_Info* ui)
-{
-  string fn = f.get_file_info()->get_filenameString();
-
-  int prefix_end = fn.rfind('/');
-  if (prefix_end == fn.length()) prefix_end = 0;
-  else prefix_end++;
-  int suffix_start = fn.rfind('.');
-
-  stringstream name;
-  name << prefix << '/' << fn.substr(prefix_end, suffix_start-prefix_end)
-       << suffix << fn.substr(suffix_start);
-  ofstream ofile(name.str().c_str());
-  cerr << "Unparsing " << name.str() << endl;
-  ofile << globalUnparseToString(f.get_globalScope(), ui);
-}
-
-void TermToRose::unparse(std::string filename, std::string dir, std::string suffix,
-                           SgNode* node)
-{
-  SgUnparse_Info* unparseInfo = new SgUnparse_Info();
-  unparseInfo->unset_SkipComments();    // generate comments
-  unparseInfo->unset_SkipWhitespaces(); // generate all whitespaces to
-                                        // format the code
-  //resetParentPointers(glob, file);
-
-  if (filename != "") {
-    // All into one big file
-    ofstream ofile(filename.c_str());
-    if (SgProject* project = isSgProject(node))
-      for (int i = 0; i < project->numberOfFiles(); ++i) {
-        SgSourceFile *sageFile = isSgSourceFile((*project)[i]);
-    if (sageFile != NULL)
-            ofile << globalUnparseToString(sageFile->get_globalScope(), unparseInfo);
-      }
-    else if (SgSourceFile* file = isSgSourceFile(node))
-      ofile << globalUnparseToString(file->get_globalScope(), unparseInfo);
-    else ofile << node->unparseToString();
-  } else {
-    // seperate files
-    if (SgProject* project = isSgProject(node))
-      for (int i = 0; i < project->numberOfFiles(); ++i) {
-        SgSourceFile *file = isSgSourceFile((*project)[i]);
-        if (file != NULL)
-          unparseFile(*file, dir, suffix, unparseInfo);
-      }
-    else if (SgSourceFile* file = isSgSourceFile(node))
-      unparseFile(*file, dir, suffix, unparseInfo);
-    else cout << node->unparseToString();
-  }
-}
-
 SgNode*
 TermToRose::toRose(const char* filename) {
 #if ROSE_HAVE_SWI_PROLOG
   if (dynamic_cast<SWIPLInt*>(termFactory.makeInt(0)) == NULL)
 #endif
   {
+    ROSE_ASSERT(string(filename) != "");
     yyin = fopen( filename, "r" );
+    ROSE_ASSERT(yyin);
     yyparse();
 #if ROSE_HAVE_SWI_PROLOG
   } else {
@@ -714,6 +659,8 @@ TermToRose::listToRose(CompTerm* t,std::string tname) {
     s = createNamespaceDefinitionStatement(fi,succs);
   } else if (tname == "catch_statement_seq") {
     s = createCatchStatementSeq(fi,succs);
+  } else if (tname == "print_statement") {
+    s = createPrintStatement(fi,succs,t);
   } else if (tname == "write_statement") {
     s = createWriteStatement(fi,succs,t);
   }
@@ -1508,6 +1455,60 @@ TermToRose::createProject(Sg_File_Info* fi, std::deque<SgNode*>* succs) {
   return project;
 }
 
+/**
+ * Unparse to a file
+ */
+
+void TermToRose::unparseFile(SgSourceFile& f, std::string prefix, std::string suffix,
+                               SgUnparse_Info* ui)
+{
+  string fn = f.get_file_info()->get_filenameString();
+
+  int prefix_end = fn.rfind('/');
+  if (prefix_end == fn.length()) prefix_end = 0;
+  else prefix_end++;
+  int suffix_start = fn.rfind('.');
+
+  stringstream name;
+  name << prefix << '/' << fn.substr(prefix_end, suffix_start-prefix_end)
+       << suffix << fn.substr(suffix_start);
+  ofstream ofile(name.str().c_str());
+  cerr << "Unparsing " << name.str() << endl;
+  f.set_unparse_output_filename(name.str());
+  ofile << globalUnparseToString(f.get_globalScope(), ui);
+}
+
+void TermToRose::unparse(std::string filename, std::string dir, std::string suffix,
+			 SgNode* node)
+{
+  SgUnparse_Info* unparseInfo = new SgUnparse_Info();
+  unparseInfo->unset_SkipComments();    // generate comments
+  unparseInfo->unset_SkipWhitespaces(); // generate all whitespaces to
+                                        // format the code
+  //resetParentPointers(glob, file);
+
+  if (SgProject* project = isSgProject(node)) {
+    for (int i = 0; i < project->numberOfFiles(); ++i) {
+      SgSourceFile *file = isSgSourceFile((*project)[i]);
+      if (file != NULL) {
+	// Override the first file's name with what the user supplied
+	if (filename != "") {
+	  ofstream ofile(filename.c_str());
+	  //file->set_unparse_output_filename(filename);
+	  ofile << globalUnparseToString(file->get_globalScope(), unparseInfo);
+	  //file->unparse();
+	  filename = "";		
+	} else {
+	  unparseFile(*file, dir, suffix, unparseInfo);
+	}
+      }
+    }
+  } 
+  else if (SgSourceFile* file = isSgSourceFile(node))
+    unparseFile(*file, dir, suffix, unparseInfo);
+  else cout << node->unparseToString();
+}
+
 
 /**
  * create SgSourceFile
@@ -1528,22 +1529,36 @@ TermToRose::createFile(Sg_File_Info* fi,SgNode* child1,CompTerm*) {
 
   if (ends_with(name, ".f") || ends_with(name, ".F") ||
       ends_with(name, ".f77") || ends_with(name, ".F77")) {
-      isFortran = true;
-      file->set_Fortran_only(true);
+    isFortran = true;
+    // TODO: this should probably be stored as an attribute
+    file->set_outputFormat(SgFile::e_fixed_form_output_format);
+    file->set_sourceFileUsesFortran77FileExtension(true);
+    file->set_F77_only(true);      
   } else if (ends_with(name, ".f90") || ends_with(name, ".F90")) {
-      isFortran = true;
-      file->set_Fortran_only(true);
-      file->set_F90_only(true);
+    isFortran = true;
+    file->set_outputFormat(SgFile::e_free_form_output_format);
+    file->set_sourceFileUsesFortran90FileExtension(true);
+    file->set_F90_only(true);
   } else if (ends_with(name, ".f95") || ends_with(name, ".F95")) {
-      isFortran = true;
-      file->set_Fortran_only(true);
-      file->set_F95_only(true);
+    isFortran = true;
+    file->set_outputFormat(SgFile::e_free_form_output_format);
+    file->set_sourceFileUsesFortran95FileExtension(true);
+    file->set_F95_only(true);
   } else if (ends_with(name, ".f03") || ends_with(name, ".F03")) {
-      isFortran = true;
-      file->set_Fortran_only(true);
-      file->set_F2003_only(true);
+    isFortran = true;
+    file->set_sourceFileUsesFortran2003FileExtension(true);
+    file->set_F2003_only(true);
+  } else if (ends_with(name, ".c") || ends_with(name, ".h")) {
+    file->set_C_only(true);    
+  } else if (ends_with(name, ".cxx") || ends_with(name, ".C") ||
+	     ends_with(name, ".cpp") || ends_with(name, ".c++")) {
+    file->set_Cxx_only(true);    
+  } else {
+    // ???
+    assert(false);
   }
   if (isFortran) {
+    file->set_Fortran_only(true);
     file->set_outputLanguage(SgFile::e_Fortran_output_language);
   }
 
@@ -4204,6 +4219,31 @@ TermToRose::createWriteStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, C
   n->set_io_statement(SgIOStatement::e_write);
   return n;
 }
+
+/**
+ * create SgPrintStatement
+ */
+SgPrintStatement*
+TermToRose::createPrintStatement(Sg_File_Info* fi, std::deque<SgNode*>* succs, CompTerm* t) {
+  /* retrieve annotation */
+  CompTerm* annot = retrieveAnnotation(t);
+  ARITY_ASSERT(annot, 6);
+  /* create the SgPrintStatement */
+  SgPrintStatement* n = new SgPrintStatement(fi);
+  // from IOStatement
+  assert(succs->size() > 0);
+  n->set_io_stmt_list(  isSgExprListExp(succs->at(0)) ); //FIXME: createExprListExp(fi, succs ));
+  n->set_unit(          isSgExpression(toRose(annot->at(0))) );
+  n->set_iostat(        isSgExpression(toRose(annot->at(1))) );
+  n->set_err(           isSgExpression(toRose(annot->at(2))) );
+  n->set_iomsg(         isSgExpression(toRose(annot->at(3))) );
+  // from PrintStatement
+  n->set_format(        isSgExpression(toRose(annot->at(4))) );
+
+  n->set_io_statement(SgIOStatement::e_print);
+  return n;
+}
+
 
 /**
  * create SgFormatItem
