@@ -6,9 +6,13 @@ C_TESTCODES_REQUIRED_TO_PASS = \
 
 CXX_TESTCODES_REQUIRED_TO_PASS =
 
-C_FILES = ${C_TESTCODES_REQUIRED_TO_PASS:.c=.c-o}
+ALL_TESTCODES = \
+		$(C_TESTCODES_REQUIRED_TO_PASS) \
+		$(CXX_TESTCODES_REQUIRED_TO_PASS)
 
 if ROSE_WITH_MPI_C
+
+C_FILES = ${C_TESTCODES_REQUIRED_TO_PASS:.c=.c-o}
 
 ../src/goalTranslator:
 	$(MAKE) -C ../src goalTranslator
@@ -24,6 +28,8 @@ check-c: $(C_FILES)
 check-local: check-c
 
 endif
+
+EXTRA_DIST = $(ALL_TESTCODES)
 
 clean-local:
 	rm -f $(C_FILES)

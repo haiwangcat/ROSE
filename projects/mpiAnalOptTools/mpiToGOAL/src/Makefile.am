@@ -11,7 +11,8 @@ INCLUDES = \
 	$(ROSE_INCLUDES)
 
 libMPItoGOAL_la_SOURCES = \
-			mtgTranslatorCommon.cpp
+			mtgTranslatorCommon.cpp \
+			mtgTranslatorCommon.h
 
 goalTranslator_SOURCES = \
 			main.cpp
@@ -21,5 +22,7 @@ goalTranslator_LDADD = \
 		 	$(ROSE_LIBS)
 
 endif
+
+EXTRA_DIST: README
 
 clean-local:
