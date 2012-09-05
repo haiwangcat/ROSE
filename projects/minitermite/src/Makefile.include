@@ -20,7 +20,7 @@ nobase_include_HEADERS = \
 	src/minitermite/swipl-term.h++ \
 	src/minitermite/stratego-term.h++
 
-nodist_nobase_include_HEADERS = src/minitermite/RoseEnumNames.h 
+nodist_include_HEADERS = src/minitermite/RoseEnumNames.h 
 
 ROSELDFLAGS=$(LIBS_WITH_RPATH) $(ROSE_LIBS)
 
