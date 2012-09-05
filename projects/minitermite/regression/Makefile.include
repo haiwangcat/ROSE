@@ -136,7 +136,8 @@ BROKEN_TESTS = \
 # Known Failures
 EXTRA_DIST += $(TERMITE_TESTS) \
 	regression/shape/success/README \
-	regression/README
+	regression/README \
+	regression/mrtc/success/PolicyControl.txt
 
 # gfortran 4.0.x will not be able to pass the F77 tests
 if ROSE_BUILD_FORTRAN_LANGUAGE_SUPPORT 
