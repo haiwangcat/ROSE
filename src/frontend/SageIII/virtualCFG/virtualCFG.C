@@ -26,8 +26,8 @@ namespace VirtualCFG {
 
   CFGNode::CFGNode(SgNode* node, unsigned int index): node(node), index(index) {
 #ifndef _MSC_VER 
-    assert (!node || isSgStatement(node) || isSgExpression(node) || isSgInitializedName(node));
-   
+    assert (!node || isSgStatement(node) || isSgExpression(node) || isSgInitializedName(node) || isSgOmpClause(node) || isSgOmpVariablesClause(node)  );
+  
     // Liao 11/8/2010, defUseAnalysis/DefUseAnalysis_perFunction.cpp calls CFGNode(NULL, 0), which triggers the warning unnecessarily
     //if (!(node && index <= node->cfgIndexForEnd())) {
     if (node && (index > node->cfgIndexForEnd())) {
@@ -244,9 +244,14 @@ namespace VirtualCFG {
 // DQ (10/8/2006): This is a link error when optimized using g++ -O2
 // inline bool CFGNode::isInteresting() const {
   bool CFGNode::isInteresting() const {
+  // SgOmpClause* tmp = isSgOmpClause(node);// edited by Hongyi
+  //  if( !tmp)
+  //  {
     ROSE_ASSERT (node);
+    
     return node->cfgIsIndexInteresting(index);
-  }
+  //  }
+   }
 
   static SgNode* leastCommonAncestor(SgNode* a, SgNode* b) {
     // Find the closest node which is an ancestor of both a and b
