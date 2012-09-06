@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- <!DOCTYPE parameters SYSTEM "compass_parameters.dtd"> //-->
 <parameters xmlns="http://www.rosecompiler.org"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://www.rosecompiler.org @ABS_COMPASS2_XML_SRCDIR@/compass_parameters.xsd">
+            <!-- xsi:schemaLocation="http://www.rosecompiler.org compass_parameters.xsd"> //-->
 
   <!-- General Compass Parameters for all checkers //-->
-
   <general>
     <parameter name="target_directory">
       @absolute_path_srcdir@
     </parameter>
-    <parameter name="enabled_checker">keywordMacros</parameter>
   </general>
 
   <!-- Checker-specific Compass Parameters //-->
-
   <checkers>
+    <checker name="allowedFunctions">
+      <parameter name="boost">join</parameter>
+      <parameter name="std">push</parameter>
+    </checker>
+
+    <checker name="allowedVariableNames">
+      <parameter name="variable1">foo</parameter>
+      <parameter name="variable1">bar</parameter>
+      <parameter name="variable2">xyz</parameter>
+    </checker>
+
     <checker name="keywordMacros">
       <parameter name="ROSE">SgProject</parameter>
       <parameter name="ROSE">SgNode</parameter>
