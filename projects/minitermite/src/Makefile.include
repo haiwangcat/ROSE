@@ -66,7 +66,17 @@ libtermsupport_la_SOURCES = \
 	src/RoseToTerm.cc \
 	src/TermToRose.cc \
 	src/PrologTerm.cc \
-	src/RoseEnums.cc
+	src/RoseEnums.cc \
+	src/minitermite/AstJanitor.h \
+	src/minitermite/TermPrinter.h \
+	src/minitermite/TermToRose.h \
+	src/minitermite/RoseToTerm.h \
+	src/minitermite/RoseEnums.h \
+	src/minitermite/term.h++ \
+	src/minitermite/stl-term.h++ \
+	src/minitermite/swipl-term.h++ \
+	src/minitermite/stratego-term.h++
+
 
 if ROSE_HAVE_SWI_PROLOG # ---------------------------------------------------
 

@@ -149,6 +149,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  //cerr<<"% frontend"<<endl;
+
   // Run the EDG frontend
   SgProject* project = frontend(argc1,&argv1[0]);
 
@@ -179,13 +181,18 @@ int main(int argc, char** argv) {
 
   // Create prolog term
   BasicTermPrinter tp(*termFactory);
+  //cerr<<"% conversion"<<endl;
   tp.traverse(project); // With headers
 
   Term* genTerm = tp.getTerm();
   
   if (outfile) {
     ofstream ofile(outfile);
-    ofile << genTerm->getRepresentation() << "." << endl;
+    //ofile << genTerm->getRepresentation() << "." << endl;
+    //cerr<<"% dump"<<endl;
+    genTerm->dump(ofile);
+    ofile << "." << endl;
+
     ofile.close();
   } else cout << genTerm->getRepresentation() << "." << endl;
 		

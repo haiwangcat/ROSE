@@ -11,14 +11,20 @@ namespace term {
       STLAtom(name, escapedRepresentation) { };
     /// return the string
     std::string getRepresentation() const {
-      // do not escape characters, but quote the whole string
-      return "\"" + escape(mName) + "\"";
+      std::ostringstream oss;
+      dump(oss);
+      return oss.str();
+    }
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const {
+      s << "\"";
+      escape(s, mName);
+      s << "\"";
     }
 
   protected:
     // Escape non-printable characters
-    static std::string escape(std::string s) {
-      std::ostringstream r;
+      static void escape(std::ostream& r, std::string s) {
       for (unsigned int i = 0; i < s.length(); ++i) {
 	unsigned char c = s[i];
 	switch (c) {
@@ -48,7 +54,6 @@ namespace term {
 	}
       }
       //cerr<<"escape("<<s<<") = "<< r <<endl;
-      return r.str();
     }
 
   };

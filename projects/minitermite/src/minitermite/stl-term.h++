@@ -28,20 +28,23 @@ namespace term {
     Float* isFloat();
     Variable* isVariable();
 
-    /// Properly quote and escape an atom if necessary
-    static std::string quote(const std::string atom) {
-      std::string s = escape(atom);
-      if (atom.length() == 0) return "''";
-      if (((atom.length() > 0) && (!islower(atom[0])) && (!isdigit(atom[0])))
-	  || needs_quotes(atom)) {
-	s = "'" + s + "'";
-	return s;
-      } else if (is_reserved_operator(atom)) {
-	s = "(" + s + ")";
-	return s;
-      }
-      return s;
-    }
+   /// Properly quote and escape an atom if necessary
+   static void quote(std::ostream& r, const std::string atom) {
+     if (atom.length() == 0) {
+       r << "''";
+     } else if (((atom.length() > 0) && (!islower(atom[0])) && (!isdigit(atom[0])))
+		|| needs_quotes(atom)) {
+       r << "'";
+       escape(r, atom);
+       r << "'";
+     } else if (is_reserved_operator(atom)) {
+       r << "(";
+       escape(r, atom);
+       r << ")";
+     } else {
+       escape(r, atom);
+     }
+   }
 
     // true if the pattern can be unified with the term
     bool matches(std::string pattern) { return false; assert(false && "not implemented"); }
@@ -74,8 +77,7 @@ namespace term {
     }
 
     // Escape non-printable characters
-    static std::string escape(std::string s) {
-      std::ostringstream r;
+      static void escape(std::ostream& r, std::string s) {
       for (unsigned int i = 0; i < s.length(); ++i) {
 	unsigned char c = s[i];
 	switch (c) {
@@ -103,7 +105,6 @@ namespace term {
 	}
       }
       //cerr<<"escape("<<s<<") = "<< r <<endl;
-      return r.str();
     }
 
   };
@@ -126,12 +127,19 @@ namespace term {
     std::string getName() const {return mName;};
     /// return the string
     std::string getRepresentation() const {
+      std::ostringstream oss;
+      dump(oss);
+      return oss.str();
+    }
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const { 
       if (mEscapedRepresentation)
-	return quote(mName);
+	quote(s, mName);
       else
 	// do not escape characters, but quote the whole string
-	return "'" + mName + "'";
+	s << "'" << mName << "'";
     }
+      
   protected:
     /// the string
     std::string mName;
@@ -140,18 +148,21 @@ namespace term {
     bool mEscapedRepresentation;
 
     /// Properly quote and escape an atom if necessary
-    static std::string quote(const std::string atom) {
-      std::string s = escape(atom);
-      if (atom.length() == 0) return "''";
-      if (((atom.length() > 0) && (!islower(atom[0])) && (!isdigit(atom[0])))
+    static void quote(std::ostream& r, const std::string atom) {
+      if (atom.length() == 0) {
+	r << "''";
+      } else if (((atom.length() > 0) && (!islower(atom[0])) && (!isdigit(atom[0])))
 	  || needs_quotes(atom)) {
-	s = "'" + s + "'";
-	return s;
+	r << "'";
+	escape(r, atom);
+	r << "'";
       } else if (is_reserved_operator(atom)) {
-	s = "(" + s + ")";
-	return s;
+	r << "(";
+	escape(r, atom);
+	r << ")";
+      } else {
+	escape(r, atom);
       }
-      return s;
     }
 
     static bool is_reserved_operator(const std::string s) {
@@ -180,39 +191,35 @@ namespace term {
     }
 
     // Escape non-printable characters
-    static std::string escape(std::string s) {
-      std::string r;
+    static void escape(std::ostream& r, std::string s) {
       for (unsigned int i = 0; i < s.length(); ++i) {
 	unsigned char c = s[i];
 	switch (c) {
-	case '\\': r += "\\\\"; break; // Literal backslash
-	case '\"': r += "\\\""; break; // Double quote
-	case '\'': r += "\\'"; break;  // Single quote
-	case '\n': r += "\\n"; break;  // Newline (line feed)
-	case '\r': r += "\\r"; break;  // Carriage return
-	case '\b': r += "\\b"; break;  // Backspace
-	case '\t': r += "\\t"; break;  // Horizontal tab
-	case '\f': r += "\\f"; break;  // Form feed
-	case '\a': r += "\\a"; break;  // Alert (bell)
-	case '\v': r += "\\v"; break;  // Vertical tab
+	case '\\': r << "\\\\"; break; // Literal backslash
+	case '\"': r << "\\\""; break; // Double quote
+	case '\'': r << "\\'"; break;  // Single quote
+	case '\n': r << "\\n"; break;  // Newline (line feed)
+	case '\r': r << "\\r"; break;  // Carriage return
+	case '\b': r << "\\b"; break;  // Backspace
+	case '\t': r << "\\t"; break;  // Horizontal tab
+	case '\f': r << "\\f"; break;  // Form feed
+	case '\a': r << "\\a"; break;  // Alert (bell)
+	case '\v': r << "\\v"; break;  // Vertical tab
 	default:
 	  if (c < 32 || c > 127) {
-	    std::stringstream strm;
-	    strm << '\\' 
-		 << std::oct 
-		 << std::setfill('0') 
-		 << std::setw(3) 
-		 << (unsigned int)c // \nnn Character with octal value nnn
-		 << '\\'; // STL expects this weird syntax with a
+	    r << '\\' 
+	      << std::oct 
+	      << std::setfill('0') 
+	      << std::setw(3) 
+	      << (unsigned int)c // \nnn Character with octal value nnn
+	      << '\\'; // STL expects this weird syntax with a
 	    // trailing backslash
-	    r += strm.str();
 	  } else {
-	    r += c;
+	    r << c;
 	  }
 	}
       }
       //cerr<<"escape("<<s<<") = "<< r <<endl;
-      return r;
     }
 
   };
@@ -231,8 +238,13 @@ namespace term {
     /// return string representation of integer
     virtual std::string getRepresentation() const {
       std::ostringstream oss;
-      oss << mValue;
+      dump(oss);
       return oss.str();
+    }
+
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const { 
+      s << mValue;
     }
 
     ///the arity is 0
@@ -261,10 +273,12 @@ namespace term {
     /// return string representation of integer
     std::string getRepresentation() const {
       std::ostringstream oss;
-      oss << std::fixed << mValue;
-      return /*oss.str().find('.') != std::string::npos
-	       ?*/ oss.str() /* 
-				: oss.str()+".0"*/;
+      dump(oss);
+      return oss.str();
+    }
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const { 
+      s << std::fixed << mValue;
     }
 
     /// return value
@@ -436,19 +450,25 @@ namespace term {
     /// Get the Functor
     std::string getName() const { return mName; };
     std::string getRepresentation() const {
+      std::ostringstream oss;
+      dump(oss);
+      return oss.str();
+    }
+
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const {
       /*Pattern: name(...all subterms separated by commas..) */
-      std::ostringstream rep;
-      rep << quote(getName()) << "(";
+      quote(s, getName());
+      s << "(";
       std::vector<Term*>::const_iterator it;
       it = mSubterms.begin();
       // append the representation of all subterms
       while (it != mSubterms.end()) {
-	rep << (*it)->getRepresentation();
+	(*it)->dump(s);
 	// all but the last subterm are followed by a comma
-	if(++it != mSubterms.end()) rep << ",";
+	if (++it != mSubterms.end()) s << ",";
       }
-      rep << ")";
-      return rep.str();
+      s << ")";
     };
 
     /// Get a vector of the subterms
@@ -474,9 +494,13 @@ namespace term {
   public:
     /// Creates a compound term with the given name. no subterms added yet.
     STLInfixOperator(std::string name) : STLCompTerm(name) {};
-    std::string getRepresentation() const {
+
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const {
       assert(mSubterms.size() == 2);
-      return mSubterms[0]->getRepresentation() + getName() + mSubterms[1]->getRepresentation();
+      mSubterms[0]->dump(s);
+      s << getName();
+      mSubterms[1]->dump(s);
     }
   };
 
@@ -495,7 +519,9 @@ namespace term {
     /// return the name
     std::string getName() const {return mName;};
     /// output the name
-    std::string getRepresentation() const {return mName;};
+    std::string getRepresentation() const {return mName;}
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const { s << mName; }
     
   protected:
     /// the name
@@ -529,19 +555,24 @@ namespace term {
     std::string getName() const {return ".";}
     /// output the representation
     std::string getRepresentation() const {
+      std::ostringstream oss;
+      dump(oss);
+      return oss.str();
+    }
+
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const {
       /*Pattern: name(...all subterms separated by commas..) */
-      std::ostringstream rep;
-      rep << "[";
+      s << "[";
       std::deque<Term*>::const_iterator it;
       it = mTerms.begin();
       // append the representation of all subterms
       while (it != mTerms.end()) {
-	rep << (*it)->getRepresentation();
+	(*it)->dump(s);
 	// all but the last subterm are followed by a comma
-	if(++it != mTerms.end()) rep << ",";
+	if(++it != mTerms.end()) s << ",";
       }
-      rep << "]";
-      return rep.str();
+      s << "]";
     }
 
     /// add a list element
