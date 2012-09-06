@@ -104,7 +104,8 @@ namespace term {
     }
     /// the actual prolog term that is represented by this object
     virtual std::string getRepresentation() const { return display(term); }
-
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const { s << getRepresentation(); }
     /// Properly quote an atom if necessary
     static std::string quote(const char* s) {
       return std::string(PL_quote('\'', s));

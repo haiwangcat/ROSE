@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdint.h>
 #include <string>
+#include <ostream>
 
 namespace term {
 
@@ -93,6 +94,8 @@ namespace term {
     std::string repr() const { return getRepresentation(); }
     /// conversion to string
     operator std::string () { return getRepresentation(); }
+    /// dump term representation to an ostream
+    virtual void dump(std::ostream& s) const = 0;
    
     // true if the pattern can be unified with the term
     virtual bool matches(std::string pattern) = 0;
