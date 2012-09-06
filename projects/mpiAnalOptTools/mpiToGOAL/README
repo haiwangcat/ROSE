@@ -1,0 +1,30 @@
+A project to transform MPI applications to use GOAL library.
+==============================================================
+Sriram Aananthakrishnan
+aananthakris1@llnl.gov
+09/04/2012
+
+* This project uses to ROSE to transform MPI applications
+to use the GOAL library. The transformation uses the dataflow
+framework in ROSE for analysis. 
+* Currently, the transformation is guided by annotations. These
+will be replaced by program analysis information.
+
+Package Contents
+------------------
+1. src
+2. tests
+
+src - code to build the translator
+tests - example MPI test codes
+
+Features
+-----------
+1. Inserts GOAL library headers into the MPI application
+2. Inserts the Init and finalize statements of GOAL library
+
+TODO
+--------
+1. Pragma parsing
+2. Transform annotated regions
+3. Dataflow analysis for transformation
