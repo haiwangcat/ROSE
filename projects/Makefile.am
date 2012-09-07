@@ -52,6 +52,12 @@ if ROSE_WITH_ISL
   SUBDIRS += RosePolly
 endif
 
+# ASR (09/04/2012)
+# MPI to GOAL translator project
+if ROSE_WITH_MPI_C
+  SUBDIRS += mpiAnalOptTools
+endif
+
 # DQ (9/26/2011): Directory removed for failing new AST consistancy test for references to deleted IR nodes.
 # UpcTranslation (fails only a single test code shared_2.upc)
 
