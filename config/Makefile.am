@@ -1,15 +1,5 @@
 include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 
-# DQ (9/3/2006): Reorganized the lists of EXTRA_DIST and include_HEADERS.
-# DQ (9/2/2006): Removed most of these files since I don't think that these are really required
-include_HEADERS = \
-     rose_stdarg.h \
-     rose_varargs.h \
-     rose-g++-headerfilefixup.h \
-     rose_specific_cdefs.h \
-     rose_specific_emmintrin.h \
-     rose_specific_xmmintrin.h
-
 # DQ (9/15/2010): Added UPC header files.
 # DQ (8/14/2010): Added modified header file iomanip-gnu-4.5 to fix code in new 4.5 header files 
 # that ROSE can't compile and which appear to be C++0X specific code included by mistake.
@@ -17,25 +7,45 @@ include_HEADERS = \
 # Note that without the file: config.guess, depend, install-sh, and dirincludes;
 # the configuration will exit and the backend specific compiler header file are not built.
 # DQ (10/22/2003) Support for GNU header file processing (including STL header file processing)
+# Phlin (8/22/2012): Add rose_specific_avxintrin.h (GCC 4.6+ starts to support AVX).
 EXTRA_DIST = CMakeLists.txt \
-     rose_edg_required_macros_and_functions.h.cmake \
-     Makefile.for.ROSE.includes.and.libs \
-     QMTest_makefile.inc \
-     gnu-3.x-headerfile-fixup.pl \
-     rose_edg_required_macros_and_functions.h.in \
-     config.guess \
-     depend \
-     install-sh \
-     dirincludes \
-     create_system_headers \
-     macro_names_to_remove \
-     cleanConfigGuessOutput \
-     get_compiler_header_dirs \
-     iomanip-gnu-4.5 \
-     upc.h upc_relaxed.h upc_strict.h upc_collective.h upc_io.h bupc_extensions.h \
-     automake_conditional_display_makefile \
-     preinclude-cuda.h \
-     preinclude-opencl.h
+    rose_edg_required_macros_and_functions.h.cmake \
+    Makefile.for.ROSE.includes.and.libs \
+    QMTest_makefile.inc \
+    gnu-3.x-headerfile-fixup.pl \
+    rose_edg_required_macros_and_functions.h.in \
+    config.guess \
+    depend \
+    install-sh \
+    dirincludes \
+    create_system_headers \
+    macro_names_to_remove \
+    cleanConfigGuessOutput \
+    get_compiler_header_dirs \
+    iomanip-gnu-4.5 \
+    automake_conditional_display_makefile \
+    include-staging/bupc_extensions.h \
+    include-staging/policy_hack.c \
+    include-staging/preinclude-cuda.h \
+    include-staging/preinclude-opencl.h \
+    include-staging/rose-g++-headerfilefixup.h \
+    include-staging/rose_specific_ammintrin.h \
+    include-staging/rose_specific_avxintrin.h \
+    include-staging/rose_specific_cdefs.h \
+    include-staging/rose_specific_complex.h \
+    include-staging/rose_specific_emmintrin.h \
+    include-staging/rose_specific_nmmintrin.h \
+    include-staging/rose_specific_pmmintrin.h \
+    include-staging/rose_specific_smmintrin.h \
+    include-staging/rose_specific_tmmintrin.h \
+    include-staging/rose_specific_xmmintrin.h \
+    include-staging/rose_stdarg.h \
+    include-staging/rose_varargs.h \
+    include-staging/upc.h \
+    include-staging/upc_collective.h \
+    include-staging/upc_io.h \
+    include-staging/upc_relaxed.h \
+    include-staging/upc_strict.h
 
 # DQ (9/3/2006): I think that if we have config.guess, depend, install-sh, and dirincludes; then we don't need "missing"
 # missing
