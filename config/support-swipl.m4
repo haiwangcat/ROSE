@@ -21,8 +21,8 @@ AC_DEFUN([ROSE_SUPPORT_SWIPL], [
             [AC_SUBST([SWIPL_PREFIX], [`$PKG_CONFIG swipl --variable prefix`])
              AC_SUBST([SWIPL], ["${SWIPL_PREFIX}/bin/swipl"])
              AC_SUBST([SWIPL_VERSION], [`${SWIPL} --version | awk '{print $3}'`])
-     	],
-     	[AC_MSG_NOTICE([Did not find SWI-Prolog version 5.8 or later! 
+        ],
+        [AC_MSG_NOTICE([Did not find SWI-Prolog version 5.8 or later! 
     Please remember to set PKG_CONFIG_PATH accordingly.])
              AC_SUBST([SWIPL], [""])
             ])
@@ -31,7 +31,7 @@ AC_DEFUN([ROSE_SUPPORT_SWIPL], [
     AS_IF([test "x$with_swi_prolog" != xno], dnl yes or autodetect
           [AS_IF([test -n "$SWIPL" -a -x "$SWIPL"], 
                  [with_swi_prolog=yes],
-          	     [AS_IF([test "x$with_swi_prolog" != xcheck],
+                 [AS_IF([test "x$with_swi_prolog" != xcheck],
                         [AC_MSG_FAILURE([--with-swi_prolog was given, but test for SWI Prolog failed])])],
                         [with_swi_prolog=no])])
      
