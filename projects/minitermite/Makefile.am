@@ -64,4 +64,5 @@ clean-local:
 	rm -rf doc/html
 	rm -rf doc/latex
 	rm -rf doc/man
+	rm -rf src/.libs # bug in automake 1.9
 	rm -f regression/*-[135].term regression/*-[246].[cf]* regression/*_postprocessed.f

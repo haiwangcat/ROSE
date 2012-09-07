@@ -134,7 +134,7 @@ BROKEN_TESTS = \
     regression/shape/success/srw98_listreverse.cxx
 
 # Known Failures
-EXTRA_DIST += $(TERMITE_TESTS) \
+EXTRA_DIST += $(TERMITE_TESTS) $(BROKEN_TESTS) \
 	regression/shape/success/README \
 	regression/README \
 	regression/mrtc/success/PolicyControl.txt
@@ -143,7 +143,11 @@ EXTRA_DIST += $(TERMITE_TESTS) \
 if ROSE_BUILD_FORTRAN_LANGUAGE_SUPPORT 
 if !ROSE_USING_GFORTRAN_VERSION_4_0
 TERMITE_TESTS += $(TERMITE_FORTRAN_TESTS)
+else
+EXTRA_DIST += $(TERMITE_FORTRAN_TESTS)
 endif
+else
+EXTRA_DIST += $(TERMITE_FORTRAN_TESTS)
 endif
 
 TESTS = $(TERMITE_TESTS) # $(BROKEN_TESTS)
