@@ -1209,7 +1209,7 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
     ve = valnode;
   }
   else if (vtype == "wchar_val")
-    createValue(SgWcharVal, ulong, fi, t);
+    createValue(SgWcharVal, unsigned long, fi, t);
     /* boolean*/
   else if (vtype == "bool_val_exp")
     createValue(SgBoolValExp, int, fi, t);
