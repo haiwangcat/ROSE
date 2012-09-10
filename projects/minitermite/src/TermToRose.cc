@@ -14,13 +14,7 @@ Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
 #include <assert.h>
 #include <boost/algorithm/string/predicate.hpp>
 #include <typeinfo>
-
-/* some single-word type names */
 #include <sys/types.h>
-typedef long double               longdouble;
-typedef long int                     longint;
-typedef long long int            longlongint;
-typedef unsigned long long int  ulonglongint;
 
 #include "termparser.tab.h++"
 extern int yyparse();
@@ -1136,19 +1130,19 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   if(vtype == "int_val")
     createValue(SgIntVal, int, fi, t);
   else if (vtype == "unsigned_int_val")
-    createValue(SgUnsignedIntVal, uint, fi, t);
+    createValue(SgUnsignedIntVal, unsigned int, fi, t);
   else if (vtype == "short_val")
     createValue(SgShortVal, short, fi,t);
   else if (vtype == "unsigned_short_val")
-    createValue(SgUnsignedShortVal, ushort, fi, t);
+    createValue(SgUnsignedShortVal, unsigned short, fi, t);
   else if (vtype == "long_int_val")
-    createValue(SgLongIntVal, longint, fi, t);
+    createValue(SgLongIntVal, long int, fi, t);
   else if (vtype == "unsigned_long_val")
-    createValue(SgUnsignedLongVal, ulong, fi, t);
+    createValue(SgUnsignedLongVal, unsigned long int, fi, t);
   else if (vtype == "long_long_int_val")
-    createValue(SgLongLongIntVal, longlongint, fi, t);
+    createValue(SgLongLongIntVal, long long int, fi, t);
   else if (vtype == "unsigned_long_long_int_val")
-    createValue(SgUnsignedLongLongIntVal, ulonglongint, fi, t);
+    createValue(SgUnsignedLongLongIntVal, unsigned long long int, fi, t);
 
   else if (vtype == "enum_val") {
     debug("unparsing enum value");
@@ -1180,7 +1174,7 @@ TermToRose::createValueExp(Sg_File_Info* fi, SgNode* succ, CompTerm* t) {
   else if (vtype == "double_val")
     createFloatValue(SgDoubleVal, double, fi, t);
   else if (vtype == "long_double_val")
-    createFloatValue(SgLongDoubleVal, longdouble, fi, t);
+    createFloatValue(SgLongDoubleVal, long double, fi, t);
 
   /* characters */
   else if (vtype == "char_val") {
