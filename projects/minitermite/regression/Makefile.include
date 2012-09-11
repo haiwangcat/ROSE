@@ -208,67 +208,72 @@ testdir=check-tests
 # The tests are split into separate targets to facilitate a
 # parallelized run of the regression (make -j #N installcheck)
 
+ABS_PATH=$(PERL) $(srcdir)/regression/abs_path.perl
+SRC2TERM=../$(BUILDDIR)/src/src2term
+TERM2SRC=../$(BUILDDIR)/src/term2src
+TERMLINT=../$(BUILDDIR)/src/termite_lint
+
 regression/c_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
-	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
+	@echo 'arg=`$(ABS_PATH) $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$1 .c`' >> $@
-	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.c || exit 2' >> $@
-	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
-	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.c -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.c || exit 6' >>$@
+	@echo '$(SRC2TERM) -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '$(TERM2SRC) $${NAME}-1.term -o $${NAME}-2.c || exit 2' >> $@
+	@echo '$(SRC2TERM) --stl-engine -I$$include $${NAME}-2.c -o $${NAME}-3.term || exit 3' >> $@
+	@echo '$(TERM2SRC) --stl-engine  $${NAME}-3.term -o $${NAME}-4.c || exit 4' >>$@
+	@echo '$(SRC2TERM) --stratego -I$$include $${NAME}-4.c -o $${NAME}-5.term || exit 5' >> $@
+	@echo '$(TERM2SRC) --stratego  $${NAME}-5.term -o $${NAME}-6.c || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '$(TERMLINT) $${NAME}-1.term || exit 7' >> $@
+	@echo '$(TERMLINT) $${NAME}-3.term || exit 8' >> $@
 endif
 
 regression/cxx_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
-	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
+	@echo 'arg=`$(ABS_PATH) $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .cxx`' >> $@
-	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.cxx || exit 2' >> $@
-	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
-	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.cxx -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.cxx || exit 6' >>$@
+	@echo '$(SRC2TERM) -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '$(TERM2SRC) $${NAME}-1.term -o $${NAME}-2.cxx || exit 2' >> $@
+	@echo '$(SRC2TERM) --stl-engine -I$$include $${NAME}-2.cxx -o $${NAME}-3.term || exit 3' >> $@
+	@echo '$(TERM2SRC) --stl-engine  $${NAME}-3.term -o $${NAME}-4.cxx || exit 4' >>$@
+	@echo '$(SRC2TERM) --stratego -I$$include $${NAME}-4.cxx -o $${NAME}-5.term || exit 5' >> $@
+	@echo '$(TERM2SRC) --stratego  $${NAME}-5.term -o $${NAME}-6.cxx || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '$(TERMLINT) $${NAME}-1.term || exit 7' >> $@
+	@echo '$(TERMLINT) $${NAME}-3.term || exit 8' >> $@
 endif
 
 regression/f90_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
-	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
+	@echo 'arg=`$(ABS_PATH) $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .f90`' >> $@
-	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f90 || exit 2' >> $@
-	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.f90 -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f90 || exit 4' >>$@
-	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.f90 -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f90 || exit 6' >>$@
+	@echo '$(SRC2TERM) -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '$(TERM2SRC) $${NAME}-1.term -o $${NAME}-2.f90 || exit 2' >> $@
+	@echo '$(SRC2TERM) --stl-engine -I$$include $${NAME}-2.f90 -o $${NAME}-3.term || exit 3' >> $@
+	@echo '$(TERM2SRC) --stl-engine  $${NAME}-3.term -o $${NAME}-4.f90 || exit 4' >>$@
+	@echo '$(SRC2TERM) --stratego -I$$include $${NAME}-4.f90 -o $${NAME}-5.term || exit 5' >> $@
+	@echo '$(TERM2SRC) --stratego  $${NAME}-5.term -o $${NAME}-6.f90 || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '$(TERMLINT) $${NAME}-1.term || exit 7' >> $@
+	@echo '$(TERMLINT) $${NAME}-3.term || exit 8' >> $@
 endif
 
 # disable gfortran-based syntax checking until ROSE can compile with gfortran >= 4.7
@@ -279,45 +284,45 @@ regression/f03_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
-	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
+	@echo 'arg=`$(ABS_PATH) $$1` # get absolute filename' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .f03`' >> $@
-	@echo '../$(BUILDDIR)/src/src2term $(F03FLAGS) -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f03 || exit 2' >> $@
-	@echo '../$(BUILDDIR)/src/src2term --stl-engine $(F03FLAGS) -I$$include $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f03 || exit 4' >>$@
-	@echo '../$(BUILDDIR)/src/src2term --stratego $(F03FLAGS) -I$$include $${NAME}-4.f03 -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f03 || exit 6' >>$@
+	@echo '$(SRC2TERM) $(F03FLAGS) -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '$(TERM2SRC) $${NAME}-1.term -o $${NAME}-2.f03 || exit 2' >> $@
+	@echo '$(SRC2TERM) --stl-engine $(F03FLAGS) -I$$include $${NAME}-2.f03 -o $${NAME}-3.term || exit 3' >> $@
+	@echo '$(TERM2SRC) --stl-engine  $${NAME}-3.term -o $${NAME}-4.f03 || exit 4' >>$@
+	@echo '$(SRC2TERM) --stratego $(F03FLAGS) -I$$include $${NAME}-4.f03 -o $${NAME}-5.term || exit 5' >> $@
+	@echo '$(TERM2SRC) --stratego  $${NAME}-5.term -o $${NAME}-6.f03 || exit 6' >>$@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '$(TERMLINT) $${NAME}-1.term || exit 7' >> $@
+	@echo '$(TERMLINT) $${NAME}-3.term || exit 8' >> $@
 endif
 
 regression/f77_driver.sh: Makefile
 	$(AM_V_GEN)
 	@mkdir -p $(BUILDDIR)/regression
 	@echo '#!/bin/sh' > $@
-	@echo 'arg=`readlink -f $$1` # get absolute filename' >> $@
-	@echo 'linewrap=`readlink -f $(srcdir)/regression/linewrap.awk`' >> $@
+	@echo 'arg=`$(ABS_PATH) $$1` # get absolute filename' >> $@
+	@echo 'linewrap=`$(ABS_PATH) $(srcdir)/regression/linewrap.awk`' >> $@
 	@echo 'include=`dirname $$arg`' >> $@
 	@echo 'cd $(BUILDDIR)/regression' >> $@
 	@echo 'echo "TERMITE: performing a translation circle of" $$arg' >> $@
 	@echo 'set -x' >> $@
 	@echo 'NAME=`basename $$arg .f`' >> $@
 	@echo >> $@
-	@echo '../$(BUILDDIR)/src/src2term -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
-	@echo '../$(BUILDDIR)/src/term2src $${NAME}-1.term -o $${NAME}-2.f || exit 2' >> $@
+	@echo '$(SRC2TERM) -I$$include $$arg -o $${NAME}-1.term || exit 1' >> $@
+	@echo '$(TERM2SRC) $${NAME}-1.term -o $${NAME}-2.f || exit 2' >> $@
 	@echo 'awk -f $$linewrap $${NAME}-2.f >wrap_$${NAME}-2.f && mv wrap_$${NAME}-2.f $${NAME}-2.f' >> $@
-	@echo '../$(BUILDDIR)/src/src2term --stl-engine -I$$include $${NAME}-2.f -o $${NAME}-3.term || exit 3' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stl-engine  $${NAME}-3.term -o $${NAME}-4.f || exit 4' >>$@
+	@echo '$(SRC2TERM) --stl-engine -I$$include $${NAME}-2.f -o $${NAME}-3.term || exit 3' >> $@
+	@echo '$(TERM2SRC) --stl-engine  $${NAME}-3.term -o $${NAME}-4.f || exit 4' >>$@
 	@echo 'awk -f $$linewrap $${NAME}-4.f >wrap_$${NAME}-4.f && mv wrap_$${NAME}-4.f $${NAME}-4.f' >> $@
-	@echo '../$(BUILDDIR)/src/src2term --stratego -I$$include $${NAME}-4.f -o $${NAME}-5.term || exit 5' >> $@
-	@echo '../$(BUILDDIR)/src/term2src --stratego  $${NAME}-5.term -o $${NAME}-6.f || exit 6' >>$@
+	@echo '$(SRC2TERM) --stratego -I$$include $${NAME}-4.f -o $${NAME}-5.term || exit 5' >> $@
+	@echo '$(TERM2SRC) --stratego  $${NAME}-5.term -o $${NAME}-6.f || exit 6' >>$@
 	@echo 'awk -f $$linewrap $${NAME}-6.f >wrap_$${NAME}-6.f && mv wrap_$${NAME}-6.f $${NAME}-6.f' >> $@
 if ROSE_HAVE_SWI_PROLOG
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-1.term || exit 7' >> $@
-	@echo '../$(BUILDDIR)/src/termite_lint $${NAME}-3.term || exit 8' >> $@
+	@echo '$(TERMLINT) $${NAME}-1.term || exit 7' >> $@
+	@echo '$(TERMLINT) $${NAME}-3.term || exit 8' >> $@
 endif
