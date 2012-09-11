@@ -207,7 +207,6 @@ testdir=check-tests
 
 # The tests are split into separate targets to facilitate a
 # parallelized run of the regression (make -j #N installcheck)
-
 ABS_PATH=$(PERL) $(srcdir)/regression/abs_path.perl
 SRC2TERM=../$(BUILDDIR)/src/src2term
 TERM2SRC=../$(BUILDDIR)/src/term2src
