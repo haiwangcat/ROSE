@@ -369,6 +369,7 @@ TermToRose::unaryToRose(CompTerm* t,std::string tname) {
   else if(isUnaryOp(tname)) s = createUnaryOp(fi,child1,t);
   else if (tname == "aggregate_initializer")        s = createAggregateInitializer(fi,child1,t);
   else if (tname == "assign_initializer")           s = createAssignInitializer(fi,child1,t);
+  else if (tname == "asm_op")                       s = createAsmOp(fi,child1,t);
   else if (tname == "common_block_object")          s = createCommonBlockObject(fi,child1,t);
   else if (tname == "constructor_initializer")      s = createConstructorInitializer(fi,child1,t);
   else if (tname == "default_option_stmt")          s = createDefaultOptionStmt(fi,child1,t);
@@ -657,6 +658,10 @@ TermToRose::listToRose(CompTerm* t,std::string tname) {
     s = createPrintStatement(fi,succs,t);
   } else if (tname == "write_statement") {
     s = createWriteStatement(fi,succs,t);
+  } else if (tname == "asm_stmt") {
+    s = createAsmStmt(fi, succs, t);
+  } else if (tname == "asmx86_instruction") {
+    s = createAsmx86Instruction(succs, t);
   }
   TERM_ASSERT_UPGRADE(t, s != NULL);
 
@@ -4314,4 +4319,84 @@ TermToRose::createLabelSymbol(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
   n->set_numeric_label_value(val->getValue());
   n->set_label_type(re.enum_label_type_enum[*annot->at(1)]);
   return n;
+}
+
+/**
+ * create SgAsmOp
+ */
+SgAsmOp*
+TermToRose::createAsmOp(Sg_File_Info* fi, SgNode* child1, CompTerm* t) {
+  CompTerm* annot = retrieveAnnotation(t);
+  EXPECT_TERM(Int*, val, annot->at(1));
+  SgAsmOp* op = 
+    new SgAsmOp(fi, 
+		re.enum_asm_operand_constraint_enum[*annot->at(0)],
+		(SgAsmOp::asm_operand_modifier_enum)val->getValue(),
+		isSgExpression(child1));
+
+  op->set_recordRawAsmOperandDescriptions(createFlag(annot->at(2)));
+  op->set_isOutputOperand(createFlag(annot->at(3)));
+  EXPECT_ATOM(cs, annot->at(4));
+  op->set_constraintString(cs);
+  EXPECT_ATOM(name, annot->at(5));
+  op->set_name(name);
+  return op;
+}
+
+/**
+ * create SgAsmStmt
+ */
+SgAsmStmt*
+TermToRose::createAsmStmt(Sg_File_Info* fi, std::deque<SgNode*>* succs, CompTerm *t) {
+  SgAsmStmt* stmt = new SgAsmStmt(fi);
+
+  SgExpressionPtrList &el = stmt->get_operands();
+  for (deque<SgNode*>::iterator it = succs->begin(); it != succs->end(); ++it) {
+    SgExpression* e = isSgExpression(*it);
+    ROSE_ASSERT(e != NULL);
+    el.push_back(e);
+    e->set_parent(stmt);
+  }
+
+  CompTerm* annot = retrieveAnnotation(t);
+  EXPECT_ATOM(code, annot->at(0));
+  stmt->set_assemblyCode(code);
+  stmt->set_useGnuExtendedFormat(createFlag(annot->at(1)));
+  stmt->set_isVolatile(createFlag(annot->at(2)));
+  return stmt;
+}
+
+/**
+ * create SgAsmx86Instruction
+ */
+SgAsmx86Instruction*
+TermToRose::createAsmx86Instruction(std::deque<SgNode*>* succs, CompTerm *t) {
+  SgAsmx86Instruction* i = new SgAsmx86Instruction();
+
+  /*append successors*/
+  deque<SgNode*>::iterator it = succs->begin();
+  while(it != succs->end()) {
+    if((*it) != NULL) {
+      //i->append_sources(isSgAsmStatement(*it));
+      (*it)->set_parent(i);
+    }
+    it++;
+  }
+
+  CompTerm* annot = retrieveAnnotation(t);
+         i->set_kind(re.enum_X86InstructionKind[*annot->at(0)]);
+     i->set_baseSize(re.enum_X86InstructionSize[*annot->at(1)]);
+  i->set_operandSize(re.enum_X86InstructionSize[*annot->at(2)]);
+  i->set_addressSize(re.enum_X86InstructionSize[*annot->at(3)]);
+  i->set_lockPrefix(createFlag(annot->at(4)));
+  i->set_repeatPrefix(re.enum_X86RepeatPrefix[*annot->at(5)]);
+  i->set_branchPrediction(re.enum_X86BranchPrediction[*annot->at(6)]);
+  i->set_segmentOverride(re.enum_X86SegmentRegister[*annot->at(7)]);
+
+  EXPECT_ATOM(mn, annot->at(8));
+  i->set_mnemonic(mn);
+
+  EXPECT_ATOM(comment, annot->at(9));
+  i->set_comment(comment);
+  return i;
 }

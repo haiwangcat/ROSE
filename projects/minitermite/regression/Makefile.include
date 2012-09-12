@@ -5,6 +5,7 @@ TERMITE_TESTS = \
     regression/mrtc/success/statemate.c \
     regression/mrtc/success/nsichneu.c \
     regression/base/ab.c \
+    regression/base/asm.c \
     regression/base/bigger.c \
     regression/base/blocks.c \
     regression/base/bound_t.c \

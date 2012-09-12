@@ -200,6 +200,9 @@ private:
   SgFormatItem* createFormatItem(Sg_File_Info*, term::CompTerm*);
   SgLabelRefExp* createLabelRefExp(Sg_File_Info*, term::CompTerm*);
   SgLabelSymbol* createLabelSymbol(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgAsmOp* createAsmOp(Sg_File_Info*, SgNode*, term::CompTerm*);
+  SgAsmStmt* createAsmStmt(Sg_File_Info*, std::deque<SgNode*>*, term::CompTerm*);
+  SgAsmx86Instruction* createAsmx86Instruction(std::deque<SgNode*>*, term::CompTerm*);
 
   void register_func_decl(SgName, SgFunctionDeclaration*, term::Term*);
   char unescape_char(std::string s);

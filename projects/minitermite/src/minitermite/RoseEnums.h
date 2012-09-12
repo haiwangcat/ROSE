@@ -18,8 +18,8 @@ class RoseEnums {
 #define ROSEENUMS_DECLARE(TYPE, NAME)					\
   std::map<std::string, TYPE> enum_ ## NAME; /* TERMITE -> ROSE */	\
   std::vector<std::string>     vec_ ## NAME;				\
-  std::string& str(TYPE i)	             /* ROSE -> TERMITE */	\
-  { return vec_ ## NAME[i]; }						\
+  const std::string& str(TYPE i)            /* ROSE -> TERMITE */	\
+    const { return vec_ ## NAME[i]; }					\
 
 #undef ROSEENUM_DEFS
 #include <RoseEnumNames.h>
