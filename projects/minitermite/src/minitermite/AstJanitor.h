@@ -63,6 +63,7 @@ public:
     if (SgDeclarationStatement* decl = isSgDeclarationStatement(n)) {
       VariantT v = decl->variantT();
       if (   v != V_SgAttributeSpecificationStatement
+	  && v != V_SgAsmStmt
 	  && v != V_SgCommonBlock
 	  && v != V_SgContainsStatement
 	  && v != V_SgCtorInitializerList

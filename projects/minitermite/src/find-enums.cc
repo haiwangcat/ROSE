@@ -22,10 +22,6 @@ public:
     if (fi->isCompilerGenerated()) return;
     if (name[0] == '_') return;
     if (all_names.find(name) != all_names.end()) return;
-    if (boost::starts_with(qname, "::SgAsm"))    return;
-    if (boost::starts_with(qname, "::X86"))      return;
-    if (boost::starts_with(qname, "::Arm"))      return;
-    if (boost::starts_with(qname, "::Powerpc"))  return;
     all_names[name] = qname;
 
     cout << "// "<<qname<<"\n";

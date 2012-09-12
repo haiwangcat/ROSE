@@ -55,6 +55,9 @@ RoseToTerm::getSpecific(SgNode* astNode) {
 
   switch (v) {
 
+  CASE_SPECIFIC(AsmOp)
+  CASE_SPECIFIC(AsmStmt)
+  CASE_SPECIFIC(Asmx86Instruction)
   CASE_SPECIFIC(AssignInitializer)
   CASE_SPECIFIC(AsteriskShapeExp)
   CASE_SPECIFIC(AttributeSpecificationStatement)
@@ -932,6 +935,7 @@ RoseToTerm::getBitVector(const SgBitVector &v, const std::vector<std::string> &n
   name++; // skip over e_last_xxx
   ROSE_ASSERT(v.size()+1 <= names.size());
   while(it != v.rend()) {
+    ROSE_ASSERT(name != names.rend());
     if (*it == true)
       l->addFirstElement(termFactory.makeAtom(*name));
     it++;
@@ -1712,3 +1716,44 @@ RoseToTerm::getLabelSymbolSpecific(SgLabelSymbol* n) {
      );
 }
 
+CompTerm*
+RoseToTerm::getAsmOpSpecific(SgAsmOp* op) {
+  return termFactory.makeCompTerm("asm_op_annotation",
+				  enum_atom(op->get_constraint()),
+				  // there can be multiple or'ed values
+				  termFactory.makeInt(op->get_modifiers()),
+				  MAKE_FLAG(op, recordRawAsmOperandDescriptions),
+				  MAKE_FLAG(op, isOutputOperand),
+				  termFactory.makeAtom(op->get_constraintString()),
+				  termFactory.makeAtom(op->get_name()),
+				  PPI(op));
+}
+
+CompTerm*
+RoseToTerm::getAsmStmtSpecific(SgAsmStmt* stmt) {
+  return termFactory.makeCompTerm("asm_stmt_annotation",
+				  termFactory.makeAtom(stmt->get_assemblyCode()),
+				  MAKE_FLAG(stmt, useGnuExtendedFormat),
+				  MAKE_FLAG(stmt, isVolatile),
+				  PPI(stmt));
+}
+
+CompTerm*
+RoseToTerm::getAsmx86InstructionSpecific(SgAsmx86Instruction* i) {
+  return termFactory.makeCompTerm("asm_x64instruction_annotation",
+				  enum_atom(i->get_kind()),
+				  enum_atom(i->get_baseSize()),
+				  enum_atom(i->get_operandSize()),
+				  enum_atom(i->get_addressSize()),
+				  MAKE_FLAG(i, lockPrefix),
+				  enum_atom(i->get_repeatPrefix()),
+				  enum_atom(i->get_branchPrediction()),
+				  enum_atom(i->get_segmentOverride()),
+				  /* From SgAsmInstruction */
+				  termFactory.makeAtom(i->get_mnemonic()),
+				  //get_raw_bytes(),
+				  /* From SgAsmStatement */
+				  //get_address()
+				  termFactory.makeAtom(i->get_comment())
+				 );
+}

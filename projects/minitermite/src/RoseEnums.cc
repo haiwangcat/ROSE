@@ -10,10 +10,11 @@
 
 
 // CAVEAT: this assumes that all enum values are contiguous!
-#define INIT(TYPE, NAME)					   \
+#define INIT(TYPE, NAME)				   \
   for (i = 0; i < sizeof(e_ ## NAME)/sizeof(char*); ++i) { \
+    ROSE_ASSERT(sizeof(e_ ## NAME)/sizeof(const char*)>i); \
     enum_ ## NAME[e_ ## NAME[i]] = (TYPE)i;		   \
-    vec_  ## NAME.push_back(e_ ## NAME[i]); \
+    vec_  ## NAME.push_back(e_ ## NAME[i]);		   \
   }
 
 #define ROSEENUM_DEFS 1

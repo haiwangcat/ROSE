@@ -103,6 +103,9 @@ private:
   term::CompTerm* getLabelRefExpSpecific(SgLabelRefExp*);
   term::CompTerm* getLabelSymbolSpecific(SgLabelSymbol*);
   term::List*     getFormatItemList(SgFormatItemList*);
+  term::CompTerm* getAsmOpSpecific(SgAsmOp*);
+  term::CompTerm* getAsmStmtSpecific(SgAsmStmt*);
+  term::CompTerm* getAsmx86InstructionSpecific(SgAsmx86Instruction*);
 
 		
   template <class A> term::List* traverseList(const A& list) {
