@@ -153,8 +153,8 @@ endif
 
 TESTS = $(TERMITE_TESTS) # $(BROKEN_TESTS)
 
-bin_SCRIPTS += regression/linewrap.awk
-EXTRA_DIST  += regression/linewrap.awk
+bin_SCRIPTS += regression/linewrap.awk regression/abs_path.perl
+EXTRA_DIST  += regression/linewrap.awk regression/abs_path.perl
 
 noinst_SCRIPTS = \
   regression/c_driver.sh \
