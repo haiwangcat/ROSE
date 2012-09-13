@@ -1877,6 +1877,7 @@ stamp-h
 Makefile
 rose.docs
 config/Makefile
+config/include-staging/Makefile
 src/Makefile
 src/util/Makefile
 src/util/stringSupport/Makefile

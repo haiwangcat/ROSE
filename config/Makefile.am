@@ -1,5 +1,8 @@
 include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 
+SUBDIRS = \
+	include-staging
+
 # DQ (9/15/2010): Added UPC header files.
 # DQ (8/14/2010): Added modified header file iomanip-gnu-4.5 to fix code in new 4.5 header files 
 # that ROSE can't compile and which appear to be C++0X specific code included by mistake.
@@ -23,29 +26,7 @@ EXTRA_DIST = CMakeLists.txt \
     cleanConfigGuessOutput \
     get_compiler_header_dirs \
     iomanip-gnu-4.5 \
-    automake_conditional_display_makefile \
-    include-staging/bupc_extensions.h \
-    include-staging/policy_hack.c \
-    include-staging/preinclude-cuda.h \
-    include-staging/preinclude-opencl.h \
-    include-staging/rose-g++-headerfilefixup.h \
-    include-staging/rose_specific_ammintrin.h \
-    include-staging/rose_specific_avxintrin.h \
-    include-staging/rose_specific_cdefs.h \
-    include-staging/rose_specific_complex.h \
-    include-staging/rose_specific_emmintrin.h \
-    include-staging/rose_specific_nmmintrin.h \
-    include-staging/rose_specific_pmmintrin.h \
-    include-staging/rose_specific_smmintrin.h \
-    include-staging/rose_specific_tmmintrin.h \
-    include-staging/rose_specific_xmmintrin.h \
-    include-staging/rose_stdarg.h \
-    include-staging/rose_varargs.h \
-    include-staging/upc.h \
-    include-staging/upc_collective.h \
-    include-staging/upc_io.h \
-    include-staging/upc_relaxed.h \
-    include-staging/upc_strict.h
+    automake_conditional_display_makefile
 
 # DQ (9/3/2006): I think that if we have config.guess, depend, install-sh, and dirincludes; then we don't need "missing"
 # missing
