@@ -27,10 +27,49 @@ doxygen documentation in docs/testDoxygen directory instead).
 */
 HEADER_GRAPH_PREDECLARATION_END
 
+//! edited by Hongyi for SgOmpVariablesClause
+
+HEADER_OMP_VARIABLES_CLAUSE_START
+
+  //! edited by Hongyi 08/10/2012
+         #ifndef ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
+
+        virtual unsigned int cfgIndexForEnd() const;
+        virtual std::vector<VirtualCFG::CFGEdge> cfgOutEdges(unsigned int index);
+        virtual std::vector<VirtualCFG::CFGEdge> cfgInEdges(unsigned int index);
+
+       #endif
+
+       //! end of edited by Hongyi
+
+
+
+HEADER_OMP_VARIABLES_CLAUSE_END
+
+//! end of SgOmpVariablesClause
+
 HEADER_OMP_CLAUSE_START
 	/*!\brief  OpenMP default clause values
        */
 
+       //! edited by Hongyi 08/10/2012 
+         #ifndef ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
+      
+          virtual unsigned int cfgIndexForEnd() const;
+          virtual std::vector<VirtualCFG::CFGEdge> cfgOutEdges(unsigned int index);
+          virtual std::vector<VirtualCFG::CFGEdge> cfgInEdges(unsigned int index);
+  
+
+//         virtual unsigned int cfgIndexForEnd() const;
+            virtual bool cfgIsIndexInteresting(unsigned int index) const;
+            virtual unsigned int cfgFindChildIndex(SgNode* n);
+            virtual unsigned int cfgFindNextChildIndex(SgNode* n);
+//          virtual std::vector<VirtualCFG::CFGEdge> cfgOutEdges(unsigned int index);
+//          virtual std::vector<VirtualCFG::CFGEdge> cfgInEdges(unsigned int index);
+    
+       #endif
+
+       //! end of edited by Hongyi
        // Liao (5/30/2009): Added support for reduction clauses within an OpenMP directive
 	enum omp_default_option_enum{
 	  e_omp_default_unkown =0,
@@ -4257,10 +4296,11 @@ HEADER_INITIALIZED_NAME_START
        //   virtual void set_file_info(Sg_File_Info* X);
 
        // DQ (2/6/2007): Added support to get the symbol from the declaration (via the symbol table in the scope)
-      //! Get the associated SgSymbol from the symbol table located in the scope
+      //! Get the associated SgSymbol from the symbol table located in the scope, without considering possible prev_decl_item. Internal use only. Users should use search_for_symbol_from_symbol_table() instead.
           SgSymbol* get_symbol_from_symbol_table() const;
 
        // PC (10/1/2009): Added support to get the symbol from the correct associated declaration
+       //! User interface for retrieving the associated symbol. It searches through the possible chain of prev_decl_item.
           SgSymbol* search_for_symbol_from_symbol_table() const;
 
 #if ALT_FIXUP_COPY
