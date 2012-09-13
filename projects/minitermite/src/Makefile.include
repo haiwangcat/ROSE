@@ -10,11 +10,9 @@ nobase_include_HEADERS = \
 	src/minitermite/AstJanitor.h \
 	src/minitermite/minitermite.h \
 	src/minitermite/TermPrinter.h \
-	\
 	src/minitermite/TermToRose.h \
 	src/minitermite/RoseToTerm.h \
 	src/minitermite/RoseEnums.h \
-	\
 	src/minitermite/term.h++ \
 	src/minitermite/stl-term.h++ \
 	src/minitermite/swipl-term.h++ \

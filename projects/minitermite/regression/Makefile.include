@@ -138,6 +138,7 @@ BROKEN_TESTS = \
 EXTRA_DIST += $(TERMITE_TESTS) $(BROKEN_TESTS) \
 	regression/shape/success/README \
 	regression/README \
+	regression/shape/success/srw98_data.h \
 	regression/mrtc/success/PolicyControl.txt \
 	regression/mrtc/failure/PolicyControl.txt
 
