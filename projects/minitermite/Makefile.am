@@ -17,8 +17,8 @@ $(top_builddir)/clang/build/Makefile:
 EXTRA_DIST= README COPYING
 
 bin_SCRIPTS=
-include src/Makefile.include
-include regression/Makefile.include
+include src/make_rule.inc
+include regression/make_rule.inc
 
 # ############################################
 # Documentation
