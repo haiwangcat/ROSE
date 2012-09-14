@@ -295,6 +295,7 @@ docs: FORCE_DOCS_TO_BE_MADE
 	   echo "    Generate all possible documentation cd docs; make documentation;"; \
 	   $(MAKE) -Ctutorial docs && \
 	   $(MAKE) -Cprojects/haskellport docs && \
+	   $(MAKE) -Cprojects/minitermite docs && \
 	   $(MAKE) -Ctests/roseTests/astInterfaceTests check && \
 	   $(MAKE) -Ctests/roseTests/ompLoweringTests check && \
 	   $(MAKE) -Ctests/CompileTests/UPC_tests check && \
