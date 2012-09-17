@@ -44,6 +44,7 @@ SUBDIRS = \
 	Fortran_to_C \
         minitermite \
 	mint \
+	vectorization \
 	extractMPISkeleton \
 	$(OPTIONAL_PROJECTS)
 
