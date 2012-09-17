@@ -1,7 +1,11 @@
 include $(top_srcdir)/config/Makefile.for.ROSE.includes.and.libs
 
 # Add Projects that are associated with capabilities that belong to ROSE here
-SUBDIRS = outliner intelPin binaryAnalysis
+SUBDIRS = outliner intelPin
+
+if ROSE_BUILD_BINARY_ANALYSIS_SUPPORT
+SUBDIRS += binaryAnalysis
+endif
 
 # TOO (2/16/2011): Errors with Tensilica's Xtensa compilers as alternative backend compilers. We can
 # gradually enable these tests at a later stage if necessary.
@@ -55,15 +59,10 @@ NOINST_TUTORIAL_EXAMPLES = \
    addVariableDeclaration \
    addVariableDeclaration2 \
    AST_PDF_Generator \
-   astFileIO_GenerateBinaryFile \
    astFileIO_ReadMultipleASTs \
    ASTGraphGenerator \
    ASTGraphGeneratorCustomized \
    bin_example \
-   binaryAnalysisExample \
-   binaryAnalysis_symbolTable \
-   binaryFileRead \
-   binaryFileWrite \
    sb_callgraphAnalysis \
    buildCFG \
    buildVFA \
@@ -133,6 +132,15 @@ NOINST_TUTORIAL_EXAMPLES = \
    wholeASTGraphGenerator \
    wholeGraphAST \
    wholeGraphFilterOnPersistantAttributes
+
+if ROSE_BUILD_BINARY_ANALYSIS_SUPPORT
+NOINST_TUTORIAL_EXAMPLES += \
+   astFileIO_GenerateBinaryFile \
+   binaryAnalysisExample \
+   binaryAnalysis_symbolTable \
+   binaryFileRead \
+   binaryFileWrite
+endif
 
 # DQ (3/21/2009): Separate those that compile under Cygwin from those that don't.
 if ROSE_BUILD_OS_IS_CYGWIN
