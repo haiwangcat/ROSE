@@ -48,17 +48,34 @@ dnl it depends upon the CHOOSE BACKEND COMPILER macro to have already been calle
  # DQ (9/19/2010): Copy the upc.h header file from the config directory to our include-staging/${BACKEND_CXX_COMPILER}_HEADERS directory.
  # It might be that these should be put into a UPC specific subdirectory (so that the C compiler can't accedentally find them), but this should be discussed.
    echo "Copying UPC++ header files into ./include-staging/${compilerName}_HEADERS directory ..."
-   cp ${srcdir}/config/upc.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/upc_io.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/upc_relaxed.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/upc_strict.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/upc_collective.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/bupc_extensions.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging/upc.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging/upc_io.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging/upc_relaxed.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging/upc_strict.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging/upc_collective.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging/bupc_extensions.h ./include-staging/${compilerName}_HEADERS
 
  # DQ (8/22/2011): Added support for SSE.
  # Copy alternative SSE and MMX headers to be seen by ROSE ahead of the originals.
-   cp ${srcdir}/config/rose_specific_emmintrin.h ./include-staging/${compilerName}_HEADERS/emmintrin.h
-   cp ${srcdir}/config/rose_specific_xmmintrin.h ./include-staging/${compilerName}_HEADERS/xmmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_emmintrin.h ./include-staging/${compilerName}_HEADERS/emmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_xmmintrin.h ./include-staging/${compilerName}_HEADERS/xmmintrin.h
+
+# Phlin (6/18/2012): Added support for SSE4.2.
+   cp ${srcdir}/config/include-staging/rose_specific_ammintrin.h ./include-staging/${compilerName}_HEADERS/ammintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_nmmintrin.h ./include-staging/${compilerName}_HEADERS/nmmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_pmmintrin.h ./include-staging/${compilerName}_HEADERS/pmmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_smmintrin.h ./include-staging/${compilerName}_HEADERS/smmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_tmmintrin.h ./include-staging/${compilerName}_HEADERS/tmmintrin.h
+
+# Phlin (6/18/2012): Added support for AVX.
+# Only GCC 4.6+ supports AVX instructions.
+   if test x$BACKEND_CXX_COMPILER_MAJOR_VERSION_NUMBER == x4; then
+      if test "$BACKEND_CXX_COMPILER_MINOR_VERSION_NUMBER" -ge "6"; then
+   cp ${srcdir}/config/include-staging/rose_specific_avxintrin.h ./include-staging/${compilerName}_HEADERS/avxintrin.h
+      fi
+   fi
+
+
 
    error_code=$?
    echo "error_code = $error_code"
@@ -158,17 +175,32 @@ AC_DEFUN([GENERATE_BACKEND_C_COMPILER_SPECIFIC_HEADERS],
  # DQ (9/15/2010): Copy the upc.h header file from the config directory to our include-staging/${compilerName}_HEADERS directory.
  # It might be that these should be put into a UPC specific subdirectory (so that the C compiler can't accedentally find them), but this should be discussed.
    echo "Copying UPC header files into ./include-staging/${compilerName}_HEADERS directory ..."
-   cp ${srcdir}/config/upc.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/upc_io.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/upc_relaxed.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/upc_strict.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/upc_collective.h ./include-staging/${compilerName}_HEADERS
-   cp ${srcdir}/config/bupc_extensions.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging//upc.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging//upc_io.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging//upc_relaxed.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging//upc_strict.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging//upc_collective.h ./include-staging/${compilerName}_HEADERS
+   cp ${srcdir}/config/include-staging//bupc_extensions.h ./include-staging/${compilerName}_HEADERS
 
  # DQ (8/22/2011): Added support for SSE.
  # Copy alternative SSE and MMX headers to be seen by ROSE ahead of the originals.
-   cp ${srcdir}/config/rose_specific_emmintrin.h ./include-staging/${compilerName}_HEADERS/emmintrin.h
-   cp ${srcdir}/config/rose_specific_xmmintrin.h ./include-staging/${compilerName}_HEADERS/xmmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_emmintrin.h ./include-staging/${compilerName}_HEADERS/emmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_xmmintrin.h ./include-staging/${compilerName}_HEADERS/xmmintrin.h
+
+ # Phlin (6/18/2012): Added support for SSE4.2.
+   cp ${srcdir}/config/include-staging/rose_specific_ammintrin.h ./include-staging/${compilerName}_HEADERS/ammintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_nmmintrin.h ./include-staging/${compilerName}_HEADERS/nmmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_pmmintrin.h ./include-staging/${compilerName}_HEADERS/pmmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_smmintrin.h ./include-staging/${compilerName}_HEADERS/smmintrin.h
+   cp ${srcdir}/config/include-staging/rose_specific_tmmintrin.h ./include-staging/${compilerName}_HEADERS/tmmintrin.h
+
+# Phlin (6/18/2012): Added support for AVX.
+# Only GCC 4.6+ supports AVX instructions.
+   if test x$BACKEND_CXX_COMPILER_MAJOR_VERSION_NUMBER == x4; then
+      if test "$BACKEND_CXX_COMPILER_MINOR_VERSION_NUMBER" -ge "6"; then
+   cp ${srcdir}/config/include-staging/rose_specific_avxintrin.h ./include-staging/${compilerName}_HEADERS/avxintrin.h
+      fi
+   fi
 
    error_code=$?
    echo "error_code = $error_code"
