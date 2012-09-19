@@ -36,6 +36,212 @@ namespace OmpSupport
   // 2/1/2008, try to use MiddleLevelRewrite to parse the content of the header, which
   //  should generate function symbols used for runtime function calls 
   //  But it is not stable!
+
+ //! This makeDataSharingExplicit() is added by Hongyi on July/23/2012. 
+ //! Consider private, firstprivate, lastprivate, shared, reduction  is it correct?@Leo
+ //TODO: consider the initialized name of variable in function call or definitions  
+ 
+   /** Algorithm for patchUpSharedVariables edited by Hongyi Ma on August 7th 2012
+   *   1. find all variables references in  parallel region
+   *   2. find all varibale declarations in this parallel region
+   *   3. check whether these variables has been in private or shared clause already
+   *   4. if not, add them into shared clause
+  */
+ 
+  //! function prototypes for  patch up shared variables 
+
+/*    Get name of varrefexp  */
+string getName( SgNode * n )
+{
+    string name;
+    SgVarRefExp * var = isSgVarRefExp( n );
+    if ( var )
+        name = var->get_symbol()->get_name().getString();
+    
+    return name;
+}
+
+   /*    Remove duplicate list entries  */
+void getUnique( Rose_STL_Container< SgNode* > & list )
+{
+    Rose_STL_Container< SgNode* >::iterator start = list.begin();
+    unsigned int size = list.size();
+    unsigned int i, j;
+
+    if ( size > 1 )
+    {
+        for ( i = 0; i < size - 1; i++ )
+        {
+            j = i + 1;
+            while ( j < size )
+            {
+               SgVarRefExp* iis = isSgVarRefExp( list.at(i) );
+               SgVarRefExp* jjs = isSgVarRefExp( list.at(j) );
+
+               SgInitializedName* is = isSgInitializedName( iis->get_symbol()->get_declaration() );
+               SgInitializedName* js = isSgInitializedName( jjs->get_symbol()->get_declaration() );
+                if ( is == js )
+                {
+                    list.erase( start + j );
+                    size--;
+                    continue;
+                }
+
+                j++;
+            }
+        }
+    }
+}
+/* the end of getUnique name */
+
+ /* gather varaible references from remaining expressions */
+
+
+void gatherReferences( const Rose_STL_Container< SgNode* >& expr, Rose_STL_Container< SgNode* >& vars)
+{
+ Rose_STL_Container< SgNode* >::const_iterator iter = expr.begin();
+ 
+  while (iter != expr.end() )
+  {
+     
+     Rose_STL_Container< SgNode* > tempList = NodeQuery::querySubTree(*iter, V_SgVarRefExp );
+      
+     Rose_STL_Container< SgNode* >::iterator ti = tempList.begin();
+     while ( ti != tempList.end() )
+       {
+         vars.push_back( *ti );
+         ti++;
+       }
+     iter++;
+         
+ 
+  }
+   /* then remove the duplicate variables */
+   
+  getUnique( vars );
+
+
+
+} 
+
+ /* the end of gatherReferences function*/
+
+  //! end of function prototypes for patch up shared variables
+          
+   //! patch up all variables to make them explicit in data-sharing explicit 
+  
+   int patchUpSharedVariables(SgFile* file)
+        {
+
+
+           int result = 0; // record for the number of shared variables added
+
+           ROSE_ASSERT( file != NULL );
+           Rose_STL_Container< SgNode* > allParallelRegion = NodeQuery::querySubTree( file, V_SgOmpParallelStatement );
+           Rose_STL_Container< SgNode* >::iterator  allParallelRegionItr = allParallelRegion.begin();
+           
+           for( ; allParallelRegionItr != allParallelRegion.end(); allParallelRegionItr++ )
+           {
+             //! gather all expressions statements
+                Rose_STL_Container< SgNode* > expressions = NodeQuery::querySubTree( *allParallelRegionItr, V_SgExprStatement );
+             //! store all variable references
+                Rose_STL_Container< SgNode* > allRef;   
+                gatherReferences(expressions, allRef );
+  
+             //!find all local variables in parallel region 
+               Rose_STL_Container< SgNode* > localVariables = NodeQuery::querySubTree( *allParallelRegionItr, V_SgVariableDeclaration );
+               
+              //! check variables are not local, not variables in clauses already
+             
+              Rose_STL_Container< SgNode* >::iterator allRefItr = allRef.begin();
+              while( allRefItr != allRef.end() )
+               {
+                    SgVarRefExp* item = isSgVarRefExp( *allRefItr );
+                    string varName = item->get_symbol()->get_name().getString();
+                    
+                    Rose_STL_Container< SgNode* >::iterator localVariablesItr = localVariables.begin();
+                   
+                    bool isLocal = false; // record whether this variable should be added into shared clause
+
+                    while( localVariablesItr != localVariables.end() )
+                      {
+                             SgInitializedNamePtrList vars = ((SgVariableDeclaration*)(*localVariablesItr))->get_variables();
+ 
+                            string localName = vars.at(0)->get_name().getString();
+                            if( varName == localName )
+                            {
+                              isLocal == true;
+                            }             
+                         localVariablesItr++;
+                                           
+                      }
+                    
+                    bool isInPrivate = false;
+                    SgInitializedName* reg = isSgInitializedName( item->get_symbol()->get_declaration() );
+                   
+                    isInPrivate = isInClauseVariableList( reg, isSgOmpClauseBodyStatement( *allParallelRegionItr ), V_SgOmpPrivateClause);
+                    
+                    bool isInShared = false;
+                 
+                    isInShared = isInClauseVariableList( reg, isSgOmpClauseBodyStatement( *allParallelRegionItr ), V_SgOmpSharedClause );
+                  
+                    bool isInFirstprivate = false;
+           
+                    isInFirstprivate = isInClauseVariableList( reg, isSgOmpClauseBodyStatement( *allParallelRegionItr ), V_SgOmpFirstprivateClause );
+ 
+                    bool isInReduction = false;
+                  
+                    isInReduction = isInClauseVariableList( reg, isSgOmpClauseBodyStatement( *allParallelRegionItr ), V_SgOmpReductionClause );
+     
+                    if( !isLocal && !isInShared && !isInPrivate && !isInFirstprivate && ! isInReduction )
+                    {
+                     std::cout<<" the insert variable is: "<<item->unparseToString()<<std::endl;
+                      addClauseVariable( reg, isSgOmpClauseBodyStatement( * allParallelRegionItr ), V_SgOmpSharedClause );
+                      result++; 
+                     std::cout<<" successfully !"<<std::endl;
+                    }
+                   allRefItr++;                 
+               }          
+      
+  
+           } // end of all parallel region  
+                  
+             return result;
+       } // the end of patchUpSharedVariables()
+          
+
+
+
+
+  
+
+
+            
+         
+   
+   //! make all data-sharing attribute explicit 
+
+   int makeDataSharingExplicit(SgFile* file)
+    {
+       int result = 0; // to record the number of varbaile added 
+       ROSE_ASSERT(file != NULL );
+       
+       int p = patchUpPrivateVariables(file); // private variable first
+   
+       int f = patchUpFirstprivateVariables(file);// then firstprivate variable
+  
+       int s = patchUpSharedVariables(file);// consider shared variables 
+
+     
+      //TODO:  patchUpDefaultVariables(file);  
+       
+    
+      result = p + f  + s;
+      return result;
+
+   }  //! the end of makeDataSharingExplicit() 
+
+                          
   void insertRTLHeaders(SgSourceFile* file)
   {
     ROSE_ASSERT(file != NULL);    

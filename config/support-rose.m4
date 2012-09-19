@@ -164,6 +164,7 @@ fi
   ROSE_SUPPORT_COMPASS2
   ROSE_SUPPORT_GMP
   ROSE_SUPPORT_ISL
+  ROSE_SUPPORT_MPI
 
 ##
 #########################################################################################
@@ -330,13 +331,7 @@ AM_CONDITIONAL(ROSE_USE_NEW_EDG_INTERFACE, [test "x$enable_new_edg_interface" = 
 AM_CONDITIONAL(ROSE_USE_EDG_VERSION_4, [test "x$enable_edg_version4" = xyes])
 AM_CONDITIONAL(ROSE_USE_EDG_VERSION_4_3, [test "x$enable_edg_version43" = xyes])
 
-AC_ARG_ENABLE(clang-frontend, AS_HELP_STRING([--enable-clang-frontend], [Use Clang frontend instead of EDG]))
-AM_CONDITIONAL(ROSE_USE_CLANG_FRONTEND, [test "x$enable_clang_frontend" = xyes])
-if test "x$enable_clang_frontend" = "xyes"; then
-  ROSE_SUPPORT_CLANG
-else
-  AC_MSG_NOTICE([Clang frontend support disabled])
-fi
+ROSE_SUPPORT_CLANG
 
 # DQ (1/4/2009) Added support for optional GNU language extensions in new EDG/ROSE interface.
 # This value will be substituted into EDG/4.0/src/rose_lang_feat.h in the future (not used at present!)
@@ -804,6 +799,8 @@ AC_SUBST(TEST_SMT_SOLVER)
 
 ROSE_SUPPORT_MINT
 
+ROSE_SUPPORT_VECTORIZATION
+
 ROSE_SUPPORT_PHP
 
 AM_CONDITIONAL(ROSE_USE_PHP,test ! "$with_php" = no)
@@ -976,6 +973,12 @@ fi
 # Call supporting macro for Haskell
 ROSE_SUPPORT_HASKELL
 
+# Call supporting macro for SWI Prolog
+ROSE_SUPPORT_SWIPL
+
+# Call supporting macro for minitermite
+ROSE_CONFIGURE_MINITERMITE
+
 # Call supporting macro for bddbddb
 ROSE_SUPPORT_BDDBDDB
 
@@ -1058,6 +1061,9 @@ if test x$edg_opencl = xtrue; then
   AC_MSG_WARN([Add OpenCL specific headers to the include-staging directory.])
   GENERATE_OPENCL_SPECIFIC_HEADERS
 fi
+
+# support for Unified Parallel Runtime, check for CUDA and OpenCL
+ROSE_SUPPORT_UPR
 
 # *********************************************************************
 # Option to control internal support of PPL (Parma Polyhedron Library)
@@ -1875,6 +1881,7 @@ stamp-h
 Makefile
 rose.docs
 config/Makefile
+config/include-staging/Makefile
 src/Makefile
 src/util/Makefile
 src/util/stringSupport/Makefile
@@ -1896,6 +1903,18 @@ src/3rdPartyLibraries/qrose/Components/Common/icons/Makefile
 src/3rdPartyLibraries/qrose/Components/QueryBox/Makefile
 src/3rdPartyLibraries/qrose/Components/SourceBox/Makefile
 src/3rdPartyLibraries/qrose/Components/TreeBox/Makefile
+src/3rdPartyLibraries/UPR/Makefile
+src/3rdPartyLibraries/UPR/docs/Makefile
+src/3rdPartyLibraries/UPR/docs/doxygen/Makefile
+src/3rdPartyLibraries/UPR/docs/doxygen/doxy.conf
+src/3rdPartyLibraries/UPR/examples/Makefile
+src/3rdPartyLibraries/UPR/examples/cuda/Makefile
+src/3rdPartyLibraries/UPR/examples/opencl/Makefile
+src/3rdPartyLibraries/UPR/examples/xomp/Makefile
+src/3rdPartyLibraries/UPR/include/Makefile
+src/3rdPartyLibraries/UPR/include/UPR/Makefile
+src/3rdPartyLibraries/UPR/lib/Makefile
+src/3rdPartyLibraries/UPR/tools/Makefile
 src/ROSETTA/Makefile
 src/ROSETTA/src/Makefile
 src/frontend/Makefile
@@ -2147,9 +2166,18 @@ projects/RTC/Makefile
 projects/PowerAwareCompiler/Makefile
 projects/ManyCoreRuntime/Makefile
 projects/ManyCoreRuntime/docs/Makefile
+projects/minitermite/Makefile
+projects/minitermite/Doxyfile
+projects/minitermite/src/minitermite/minitermite.h
 projects/mint/Makefile
 projects/mint/src/Makefile
 projects/mint/tests/Makefile
+projects/vectorization/Makefile
+projects/vectorization/src/Makefile
+projects/vectorization/tests/Makefile
+projects/Fortran_to_C/Makefile
+projects/Fortran_to_C/src/Makefile
+projects/Fortran_to_C/tests/Makefile
 projects/traceAnalysis/Makefile
 projects/PolyhedralModel/Makefile
 projects/PolyhedralModel/src/Makefile
@@ -2163,6 +2191,10 @@ projects/PolyhedralModel/projects/loop-ocl/Makefile
 projects/PolyhedralModel/projects/spmd-generator/Makefile
 projects/PolyhedralModel/projects/polygraph/Makefile
 projects/PolyhedralModel/projects/utils/Makefile
+projects/mpiAnalOptTools/Makefile
+projects/mpiAnalOptTools/mpiToGOAL/Makefile
+projects/mpiAnalOptTools/mpiToGOAL/src/Makefile
+projects/mpiAnalOptTools/mpiToGOAL/tests/Makefile
 tests/Makefile
 tests/RunTests/Makefile
 tests/RunTests/A++Tests/Makefile
@@ -2287,8 +2319,6 @@ tests/roseTests/utilTests/Makefile
 tests/roseTests/fileLocation_tests/Makefile
 tests/roseTests/graph_tests/Makefile
 tests/roseTests/mergeTraversal_tests/Makefile
-tests/roseTests/cudaTests/Makefile
-tests/roseTests/openclTests/Makefile
 tests/translatorTests/Makefile
 tutorial/Makefile
 tutorial/exampleMakefile
@@ -2344,10 +2374,26 @@ projects/compass2/docs/doxygen/doxygen.config
 projects/compass2/docs/doxygen/Makefile
 projects/compass2/tests/Makefile
 projects/compass2/tests/checkers/Makefile
+projects/compass2/tests/checkers/dead_function/Makefile
+projects/compass2/tests/checkers/dead_function/compass_parameters.xml
+projects/compass2/tests/checkers/default_argument/Makefile
+projects/compass2/tests/checkers/default_argument/compass_parameters.xml
 projects/compass2/tests/checkers/function_pointer/Makefile
 projects/compass2/tests/checkers/function_pointer/compass_parameters.xml
+projects/compass2/tests/checkers/function_prototype/Makefile
+projects/compass2/tests/checkers/function_prototype/compass_parameters.xml
+projects/compass2/tests/checkers/function_with_multiple_returns/Makefile
+projects/compass2/tests/checkers/function_with_multiple_returns/compass_parameters.xml
+projects/compass2/tests/checkers/global_variables/Makefile
+projects/compass2/tests/checkers/global_variables/compass_parameters.xml
 projects/compass2/tests/checkers/keyword_macro/Makefile
 projects/compass2/tests/checkers/keyword_macro/compass_parameters.xml
+projects/compass2/tests/checkers/non_global_cpp_directive/Makefile
+projects/compass2/tests/checkers/non_global_cpp_directive/compass_parameters.xml
+projects/compass2/tests/checkers/non_static_array_size/Makefile
+projects/compass2/tests/checkers/non_static_array_size/compass_parameters.xml
+projects/compass2/tests/checkers/variable_name_similarity/Makefile
+projects/compass2/tests/checkers/variable_name_similarity/compass_parameters.xml
 projects/compass2/tests/core/Makefile
 projects/compass2/tests/core/compass_parameters.xml
 ])
