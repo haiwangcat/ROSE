@@ -510,7 +510,9 @@ if test "x$rose_boost_version" = "x103600" -o "x$_version" = "x1.36" \
    -o "x$rose_boost_version" = "x104500" -o "x$_version" = "x1.45" \
    -o "x$rose_boost_version" = "x104600" -o "x$_version" = "x1.46" \
    -o "x$rose_boost_version" = "x104601" -o "x$_version" = "x1.46" \
-   -o "x$rose_boost_version" = "x104700" -o "x$_version" = "x1.47"
+   -o "x$rose_boost_version" = "x104700" -o "x$_version" = "x1.47" 
+# Not ready   
+#   -o "x$rose_boost_version" = "x104800" -o "x$_version" = "x1.48"
 then
     echo "Supported version of Boost (1.36 to 1.47) has been found!"
 else
