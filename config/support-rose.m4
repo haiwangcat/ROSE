@@ -801,6 +801,8 @@ AC_SUBST(TEST_SMT_SOLVER)
 
 ROSE_SUPPORT_MINT
 
+ROSE_SUPPORT_VECTORIZATION
+
 ROSE_SUPPORT_PHP
 
 AM_CONDITIONAL(ROSE_USE_PHP,test ! "$with_php" = no)
@@ -1881,6 +1883,7 @@ stamp-h
 Makefile
 rose.docs
 config/Makefile
+config/include-staging/Makefile
 src/Makefile
 src/util/Makefile
 src/util/stringSupport/Makefile
@@ -2171,6 +2174,9 @@ projects/minitermite/src/minitermite/minitermite.h
 projects/mint/Makefile
 projects/mint/src/Makefile
 projects/mint/tests/Makefile
+projects/vectorization/Makefile
+projects/vectorization/src/Makefile
+projects/vectorization/tests/Makefile
 projects/Fortran_to_C/Makefile
 projects/Fortran_to_C/src/Makefile
 projects/Fortran_to_C/tests/Makefile
