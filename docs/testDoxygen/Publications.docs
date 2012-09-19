@@ -140,6 +140,9 @@ In Proceedings of the 5th international Workshop on OpenMP: Evolving OpenMP in A
 - Daniel J. Quinlan, Gergo Barany and Thomas Panas, Towards Distributed Memory Parallel Program Analysis, Scalable Program Analysis, Dagstuhl Seminar Proceedings, 1862-4405,Dagstuhl, Germany, 2008
 <a href="../ROSE_ResearchPapers/2008-TowardsDistributedMemoryParallelProgramAnalysis-DAGSTUHL.pdf"> pdf </a>
 
+- Jeff Keasler, Terry Jones, and Dan Quinlan, TALC: A Simple C Language Extension For ImprovedPerformance and Code Maintainability, 9th LCI International Conference on High-Performance Clustered Computing - Urbana, IL, May, 2008.
+<a href="../ROSE_ResearchPapers/2008-Keasler-TALC.pdf"> pdf </a>
+
 \section Label07 2007
 
 - Quinlan, D ; Barany, G ; Panas, T, Shared and Distributed Memory Parallel Security Analysis of Large-Scale Source Code and Binary Applications, Static Analysis Summit II, Fairfax, VA, United States, Nov 08 - Nov 09, 2007

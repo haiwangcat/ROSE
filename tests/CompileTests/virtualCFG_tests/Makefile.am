@@ -19,6 +19,7 @@ include $(srcdir)/../Cxx_tests/Makefile-pass.inc
 
 
 EXAMPLE_C_TESTCODES_VERIFIED_TO_PASS = \
+ompCFG.C \
 test_CplusplusMacro_C.C \
 test2001_02.C \
 test2001_03.C \
@@ -583,7 +584,7 @@ endif # ROSE_USE_LONG_MAKE_CHECK_RULE
 
 # Some of these test codes reference A++ header fiels as part of their tests
 # Include the path to A++ and the transformation specification
-TESTCODE_INCLUDES = -I$(top_srcdir)/tests/CompileTests/A++Code
+TESTCODE_INCLUDES = -I$(top_srcdir)/tests/CompileTests/A++Code -I$(top_srcdir)/src/frontend/SageIII
 
 # Automake's testing mechanism (which defines the "make check" rule) requires passing tests.
 TESTCODES = $(TESTCODES_REQUIRED_TO_PASS)
@@ -591,7 +592,7 @@ TESTCODES = $(TESTCODES_REQUIRED_TO_PASS)
 # QMTest allows both passing and failing tests.
 ALL_TESTCODES = $(TESTCODES_REQUIRED_TO_PASS) 
 
-ROSE_FLAGS = --edg:no_warnings -w -rose:verbose 0 --edg:restrict
+ROSE_FLAGS = -rose:openmp:ast_only --edg:no_warnings -w -rose:verbose 0 --edg:restrict
 
 PASSING_TEST_Objects = ${TESTCODES:.C=.o}
 TEST_Objects = ${ALL_TESTCODES:.C=.o}
