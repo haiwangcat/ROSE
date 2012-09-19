@@ -27,10 +27,49 @@ doxygen documentation in docs/testDoxygen directory instead).
 */
 HEADER_GRAPH_PREDECLARATION_END
 
+//! edited by Hongyi for SgOmpVariablesClause
+
+HEADER_OMP_VARIABLES_CLAUSE_START
+
+  //! edited by Hongyi 08/10/2012
+         #ifndef ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
+
+        virtual unsigned int cfgIndexForEnd() const;
+        virtual std::vector<VirtualCFG::CFGEdge> cfgOutEdges(unsigned int index);
+        virtual std::vector<VirtualCFG::CFGEdge> cfgInEdges(unsigned int index);
+
+       #endif
+
+       //! end of edited by Hongyi
+
+
+
+HEADER_OMP_VARIABLES_CLAUSE_END
+
+//! end of SgOmpVariablesClause
+
 HEADER_OMP_CLAUSE_START
 	/*!\brief  OpenMP default clause values
        */
 
+       //! edited by Hongyi 08/10/2012 
+         #ifndef ROSE_USE_INTERNAL_FRONTEND_DEVELOPMENT
+      
+          virtual unsigned int cfgIndexForEnd() const;
+          virtual std::vector<VirtualCFG::CFGEdge> cfgOutEdges(unsigned int index);
+          virtual std::vector<VirtualCFG::CFGEdge> cfgInEdges(unsigned int index);
+  
+
+//         virtual unsigned int cfgIndexForEnd() const;
+            virtual bool cfgIsIndexInteresting(unsigned int index) const;
+            virtual unsigned int cfgFindChildIndex(SgNode* n);
+            virtual unsigned int cfgFindNextChildIndex(SgNode* n);
+//          virtual std::vector<VirtualCFG::CFGEdge> cfgOutEdges(unsigned int index);
+//          virtual std::vector<VirtualCFG::CFGEdge> cfgInEdges(unsigned int index);
+    
+       #endif
+
+       //! end of edited by Hongyi
        // Liao (5/30/2009): Added support for reduction clauses within an OpenMP directive
 	enum omp_default_option_enum{
 	  e_omp_default_unkown =0,
