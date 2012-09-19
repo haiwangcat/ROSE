@@ -494,7 +494,8 @@ AM_CONDITIONAL(ROSE_USING_BOOST_VERSION_1_45,test "x$rose_boost_version" = "x104
 AM_CONDITIONAL(ROSE_USING_BOOST_VERSION_1_46,test "x$rose_boost_version" = "x104600" -o "x$_version" = "x1.46")
 AM_CONDITIONAL(ROSE_USING_BOOST_VERSION_1_46,test "x$rose_boost_version" = "x104601" -o "x$_version" = "x1.46")
 AM_CONDITIONAL(ROSE_USING_BOOST_VERSION_1_47,test "x$rose_boost_version" = "x104700" -o "x$_version" = "x1.47")
-AM_CONDITIONAL(ROSE_USING_BOOST_VERSION_1_48,test "x$rose_boost_version" = "x104800" -o "x$_version" = "x1.48")
+# Liao 9/19/2012, 1.48 is not yet supported
+#AM_CONDITIONAL(ROSE_USING_BOOST_VERSION_1_48,test "x$rose_boost_version" = "x104800" -o "x$_version" = "x1.48")
 
 # DQ (10/18/2010): Error checking for Boost version.
 if test "x$rose_boost_version" = "x103600" -o "x$_version" = "x1.36" \
@@ -509,12 +510,11 @@ if test "x$rose_boost_version" = "x103600" -o "x$_version" = "x1.36" \
    -o "x$rose_boost_version" = "x104500" -o "x$_version" = "x1.45" \
    -o "x$rose_boost_version" = "x104600" -o "x$_version" = "x1.46" \
    -o "x$rose_boost_version" = "x104601" -o "x$_version" = "x1.46" \
-   -o "x$rose_boost_version" = "x104700" -o "x$_version" = "x1.47" \
-   -o "x$rose_boost_version" = "x104800" -o "x$_version" = "x1.48"
+   -o "x$rose_boost_version" = "x104700" -o "x$_version" = "x1.47"
 then
-    echo "Supported version of Boost (1.36 to 1.48) has been found!"
+    echo "Supported version of Boost (1.36 to 1.47) has been found!"
 else
-    ROSE_MSG_ERROR([Unsupported version of Boost: '$_version' ('$rose_boost_version'). Only 1.36 to 1.48 is supported now.])
+    ROSE_MSG_ERROR([Unsupported version of Boost: '$_version' ('$rose_boost_version'). Only 1.36 to 1.47 is supported now.])
 fi
 
 # DQ (12/22/2008): Fix boost configure to handle OS with older version of Boost that will
