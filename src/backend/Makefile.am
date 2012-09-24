@@ -35,7 +35,8 @@ javaCodeGenerationPath=$(srcdir)/unparser/JavaCodeGeneration#
 ###############################################################################
 
 INCLUDES=\
-	$(ROSE_INCLUDES)
+	$(ROSE_INCLUDES) \
+	-I${top_builddir}/src/3rdPartyLibraries/fortran-parser
 
 
 noinst_LTLIBRARIES = libbackend.la
