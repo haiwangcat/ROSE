@@ -89,6 +89,9 @@ static inline string makeFunctionID(const string& func_name,
            << "certain node types may have changed.\n"                  \
            << "In any case, please report this bug to\n"                \
            << PACKAGE_BUGREPORT << "\n"                                 \
+           << "To fix this error please consult\n"			\
+           << "HOWTO_ADD_NEW_SGNODE_VARIANTS in the\n"			\
+	   << "minitermite source directory.\n"				\
            << "====================================\n"                  \
            << endl;                                                     \
     ROSE_ASSERT(assertion);                                             \

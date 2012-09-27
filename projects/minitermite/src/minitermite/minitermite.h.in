@@ -139,6 +139,7 @@
 
 extern bool yy_use_stratego_filter;
 
+#include <rosePublicConfig.h>
 #include <stl-term.h++>
 #include <swipl-term.h++>
 #include <stratego-term.h++>
