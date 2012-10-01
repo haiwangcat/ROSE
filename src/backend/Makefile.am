@@ -35,7 +35,7 @@ javaCodeGenerationPath=$(srcdir)/unparser/JavaCodeGeneration#
 ###############################################################################
 
 INCLUDES=\
-	$(ROSE_INCLUDES) 
+	$(ROSE_INCLUDES)
 
 
 noinst_LTLIBRARIES = libbackend.la
