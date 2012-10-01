@@ -46,7 +46,8 @@ initialized_name ::=
 
 % --- statements ---
 statement ::=
-    break_stmt
+    asm_stmt
+  | break_stmt
   | attribute_specification_statement
   | case_option_stmt
   | common_block
@@ -61,10 +62,17 @@ statement ::=
   | implicit_statement
   | label_statement
   | null_statement
+  | print_statement
   | return_stmt
   | scope_statement
   | write_statement
   .
+
+asm_stmt ::=
+    asm_stmt([expression], asm_stmt_annotation, analysis_info, file_info).
+
+asm_stmt_annotation ::=
+    asm_stmt_annotation(todo, todo, todo, preprocessing_info).	 
 
 break_stmt ::=
     break_stmt(default_annotation, analysis_info, file_info).
@@ -141,6 +149,12 @@ write_statement_annotation ::=
 			       expression?, expression?, expression?, expression?,
 			       expression?, preprocessing_info).
 
+print_statement ::=
+    print_statement([expression], print_statement_annotation, analysis_info, file_info).
+
+print_statement_annotation ::=
+    print_statement_annotation(expression?, expression?, expression?, expression?,
+			       expression?, preprocessing_info).
 
 pragma_declaration ::=
     pragma_declaration(todo).
@@ -272,7 +286,8 @@ while_stmt ::=
 
 % --- expressions ---
 expression ::=
-  asterisk_shape_exp
+  asm_op
+  | asterisk_shape_exp
   | binary_op
   | cast_exp(expression, /*expression? * original expression tree ,*/
              unary_op_annotation, analysis_info, file_info)
@@ -311,6 +326,12 @@ binary_op ::=
         xor_assign_op]
     with (expression /* lhs */, expression /* rhs */,
           binary_op_annotation, analysis_info, file_info).
+
+asm_op ::=
+    asm_op(expression, asm_op_annotation, analysis_info, file_info).	 
+
+asm_op_annotation ::=
+    asm_op_annotation(todo, number_or_string, todo, todo, todo, todo, preprocessing_info).	 
 
 asterisk_shape_exp ::= asterisk_shape_exp(asterisk_shape_exp_annotation, analysis_info, file_info).
 

@@ -14,7 +14,7 @@ clang: $(top_srcdir)/src/minitermite/clang/clang-termite.patch $(top_builddir)/c
 $(top_builddir)/clang/build/Makefile:
 	cd $(top_builddir)/src/termite/clang && sh BUILD-clang.sh
 
-EXTRA_DIST= README COPYING
+EXTRA_DIST= README COPYING HOWTO_ADD_NEW_SGNODE_VARIANTS
 
 bin_SCRIPTS=
 include src/make_rule.inc
