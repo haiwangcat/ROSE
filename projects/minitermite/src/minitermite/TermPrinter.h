@@ -108,7 +108,7 @@ protected:
 private:
   /** should generate list instead of tuple? */
   bool isContainer(SgNode* astNode);
-  void padArity(SynthesizedAttributesList synList, int arity);
+  void padArity(SynthesizedAttributesList synList, unsigned arity);
   void ensureArity(SgNode* astNode, SynthesizedAttributesList synList);
   /** return the number of successors */
   int getArity(SgNode* astNode);
@@ -135,9 +135,11 @@ private:
   /** the current term */
   term::Term* rootTerm;
 
+  /** the term factory */
+  term::TermFactory& termFactory;
+
   /** the converter */
   RoseToTerm termConv;
-  term::TermFactory& termFactory;
 
   /** the name of the analysis, if available */
   std::string analysisname;
@@ -203,7 +205,7 @@ TermPrinter<DFI_STORE_TYPE>::isContainer(SgNode* astNode)
 
 template<typename DFI_STORE_TYPE>
 void
-TermPrinter<DFI_STORE_TYPE>::padArity(SynthesizedAttributesList synList, int arity)
+TermPrinter<DFI_STORE_TYPE>::padArity(SynthesizedAttributesList synList, unsigned arity)
 {
   size_t l = synList.size();
   ROSE_ASSERT(l <= arity);
