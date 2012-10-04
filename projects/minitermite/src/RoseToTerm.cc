@@ -422,7 +422,7 @@ RoseToTerm::getEnumTypeSpecific(SgType* mtype) {
   if (id == "") {
     /* nameless enum declarations can occur in typedefs */
     SgTypedefDeclaration *td;
-    if (td = isSgTypedefDeclaration(ctype->get_declaration()->get_parent())) {
+    if ((td = isSgTypedefDeclaration(ctype->get_declaration()->get_parent()))) {
       id = td->get_mangled_name().str();
     }
   }
@@ -999,7 +999,7 @@ RoseToTerm::getEnumDeclarationSpecific(SgEnumDeclaration* d) {
   if (ename == "") {
     /* nameless enum declarations can occur in typedefs */
     SgTypedefDeclaration *td;
-    if (td = isSgTypedefDeclaration(d->get_parent())) {
+    if ((td = isSgTypedefDeclaration(d->get_parent()))) {
       ename = td->get_mangled_name().str();
     }
   }

@@ -25,7 +25,7 @@ user:message_hook(_Term, error, _Lines) :-
    op(1200, xfx, ::=),	    % grammar rule
    op(754,   fy, atoms),    % enumeration of terminal atoms
    op(754,   fy, functors), % enumeration of terminal functors...
-   op(753,  yfy, with),	    % ... with identical argument structure
+   op(753,  xfy, with),	    % ... with identical argument structure
    op(752,  xfx, where),    % semantic constraints
    op(751,  xf,	 ?),	    % optional occurrence of nonterminal
 
@@ -48,4 +48,5 @@ print_signature(A|B) :- !,
 print_signature(CompoundTerm) :-
    functor(CompoundTerm, F, Arity),
    format('~w : ~w;~n', [F, Arity]),
-   fail.
+   fail
+

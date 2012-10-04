@@ -7,8 +7,12 @@
 #endif
 
 #if ROSE_HAVE_SWI_PROLOG
-#include <SWI-Prolog.h>
 
+// SWI-Prolog.h includes inttypes.h and ROSE needs the STDC_FORMAT_MACROS to be defined
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include <SWI-Prolog.h>
 
 // debugging
 #include <iostream>

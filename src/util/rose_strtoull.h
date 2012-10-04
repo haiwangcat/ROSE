@@ -1,6 +1,9 @@
 #ifndef ROSE_strtoull_H
 #define ROSE_strtoull_H
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 /** Convert a string to an unsigned long integer.

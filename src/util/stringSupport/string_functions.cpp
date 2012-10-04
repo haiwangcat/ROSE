@@ -2,7 +2,9 @@
 // the automake manual request that we use <> instead of ""
 #include <rose_config.h>
 
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 // DQ (3/22/2009): Added MSVS support for ROSE.
