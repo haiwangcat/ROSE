@@ -147,24 +147,6 @@ namespace term {
     /// accessed -- in rare cases (preprocessing info) we do not want quoting
     bool mEscapedRepresentation;
 
-    /// Properly quote and escape an atom if necessary
-    static void quote(std::ostream& r, const std::string atom) {
-      if (atom.length() == 0) {
-	r << "''";
-      } else if (((atom.length() > 0) && (!islower(atom[0])) && (!isdigit(atom[0])))
-	  || needs_quotes(atom)) {
-	r << "'";
-	escape(r, atom);
-	r << "'";
-      } else if (is_reserved_operator(atom)) {
-	r << "(";
-	escape(r, atom);
-	r << ")";
-      } else {
-	escape(r, atom);
-      }
-    }
-
     static bool is_reserved_operator(const std::string s) {
       return s == "volatile";
     }
@@ -455,10 +437,15 @@ namespace term {
       return oss.str();
     }
 
+    virtual void quote1(std::ostream& r, const std::string atom) const {
+      // get around diamond inheritance woes
+      quote(r, atom);
+    }
+
     /// dump term representation to an ostream
     virtual void dump(std::ostream& s) const {
       /*Pattern: name(...all subterms separated by commas..) */
-      quote(s, getName());
+      quote1(s, getName());
       s << "(";
       std::vector<Term*>::const_iterator it;
       it = mSubterms.begin();

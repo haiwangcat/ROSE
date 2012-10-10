@@ -141,8 +141,8 @@ RoseToTerm::getPreprocessingInfo(AttachedPreprocessingInfoType* inf) {
       bool escape = (*it)->getTypeOfDirective()
 	!= PreprocessingInfo::CpreprocessorIncludeDeclaration;
 
-      CompTerm* ppd = termFactory.makeCompTerm
-	(re.str((*it)->getTypeOfDirective()), //3,
+      CompTerm* ppd = termFactory.makeCompTerm("directive",
+	 enum_atom((*it)->getTypeOfDirective()),
 	 termFactory.makeAtom((*it)->getString(), escape),
 	 enum_atom((*it)->getRelativePosition()),
 	 getFileInfo((*it)->get_file_info()));

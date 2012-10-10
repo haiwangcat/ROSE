@@ -317,15 +317,16 @@ TermToRose::toRose(Term* t) {
       if (l) {
         for (int i = 0; i < l->getArity(); ++i) {
 
-          EXPECT_TERM(CompTerm*, ppi, l->at(i));
+          EXPECT_TERM_NAME(CompTerm*, ppi, l->at(i), "directive");
 
           Sg_File_Info* fi = createFileInfo(ppi->at(ppi->getArity()-1));
           PreprocessingInfo::RelativePositionType locationInL =
-            re.enum_RelativePositionType[*ppi->at(1)];
+            re.enum_RelativePositionType[*ppi->at(2)];
 
-          ln->addToAttachedPreprocessingInfo(
-	     new PreprocessingInfo(re.enum_DirectiveType[ppi->getName()],
-                                   ppi->at(0)->getName(),
+	  EXPECT_ATOM(directive, ppi->at(0));
+          ln->addToAttachedPreprocessingInfo
+	    (new PreprocessingInfo(re.enum_DirectiveType[directive],
+                                   ppi->at(1)->getName(),
                                    fi->get_filenameString(),
                                    fi->get_line(),
                                    fi->get_col(),
