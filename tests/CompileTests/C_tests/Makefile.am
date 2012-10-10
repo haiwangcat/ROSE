@@ -104,6 +104,7 @@ TESTCODES_REQUIRED_TO_PASS = \
      test2010_17.c \
      test2011_05.c \
      test2007_177.c \
+     test2012_12_release.c \
      math.c \
      complex_01.c \
      constants.c
@@ -181,6 +182,7 @@ TESTCODE_CURRENTLY_FAILING = \
      test2006_100.c \
      test2006_134.c \
      test2006_136.c \
+     test2007_70.c \
      test2009_06.c \
      test2010_02.c \
      test2010_03.c \
@@ -190,7 +192,8 @@ TESTCODE_CURRENTLY_FAILING = \
      test2011_04.c \
      Yarden_client.c
 
-
+# DQ (10/9/2012): Found existing test for transparent unions.
+# test2007_70.c tests for transparent union support.
 
 # Automake's testing mechanism (which defines the "make check" rule) requires passing tests.
 TESTCODES = \
