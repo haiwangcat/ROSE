@@ -786,11 +786,12 @@ ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/astPostProcessing.C
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/resolveFortranReferences.C 
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/insertFortranContainsStatement.C 
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/markLhsValues.C 
-     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupUseAndUsingDeclarations.C 
+     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupUseAndUsingDeclarations.C
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/buildStatementNumbering.C
-     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupCxxSymbolTablesToSupportAliasingSymbols.C 
+     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupCxxSymbolTablesToSupportAliasingSymbols.C
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/normalizeTypedefSequenceLists.C
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupConstantFoldedValues.C
+     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupSelfReferentialMacros.C
    )
 
 
