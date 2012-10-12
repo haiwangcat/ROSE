@@ -104,12 +104,15 @@ TESTCODES_REQUIRED_TO_PASS = \
      test2010_17.c \
      test2011_05.c \
      test2007_177.c \
-     test2012_12_release.c \
      math.c \
      complex_01.c \
      constants.c
 
-
+# DQ (10/11/2012): Don't process this file within OSX since the socket API is different there.
+if !OS_MACOSX
+TESTCODES_REQUIRED_TO_PASS += \
+     test2012_12_release.c
+endif
 
 if ROSE_USE_CLANG_FRONTEND
    TESTCODES_REQUIRED_TO_PASS += \
