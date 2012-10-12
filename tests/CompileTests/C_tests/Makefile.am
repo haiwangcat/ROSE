@@ -110,8 +110,10 @@ TESTCODES_REQUIRED_TO_PASS = \
 
 # DQ (10/11/2012): Don't process this file within OSX since the socket API is different there.
 if !OS_MACOSX
+if !ROSE_USE_CLANG_FRONTEND
 TESTCODES_REQUIRED_TO_PASS += \
      test2012_12_release.c
+endif
 endif
 
 if ROSE_USE_CLANG_FRONTEND
