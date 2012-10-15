@@ -508,6 +508,9 @@ void postProcessingSupport (SgNode* node)
   // will provide a default when it is more fully implemented.
      resetConstantFoldedValues(node);
 
+  // DQ (10/9/2012): Fixup known macros that might expand into a recursive mess in the unparsed code.
+     fixupSelfReferentialMacrosInAST(node);
+
   // DQ (5/22/2005): Nearly all AST fixup should be done before this closing step
   // QY: check the isModified flag
   // CheckIsModifiedFlagSupport(node); 

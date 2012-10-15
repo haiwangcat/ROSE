@@ -108,7 +108,13 @@ TESTCODES_REQUIRED_TO_PASS = \
      complex_01.c \
      constants.c
 
-
+# DQ (10/11/2012): Don't process this file within OSX since the socket API is different there.
+if !OS_MACOSX
+if !ROSE_USE_CLANG_FRONTEND
+TESTCODES_REQUIRED_TO_PASS += \
+     test2012_12_release.c
+endif
+endif
 
 if ROSE_USE_CLANG_FRONTEND
    TESTCODES_REQUIRED_TO_PASS += \
@@ -181,6 +187,7 @@ TESTCODE_CURRENTLY_FAILING = \
      test2006_100.c \
      test2006_134.c \
      test2006_136.c \
+     test2007_70.c \
      test2009_06.c \
      test2010_02.c \
      test2010_03.c \
@@ -190,7 +197,8 @@ TESTCODE_CURRENTLY_FAILING = \
      test2011_04.c \
      Yarden_client.c
 
-
+# DQ (10/9/2012): Found existing test for transparent unions.
+# test2007_70.c tests for transparent union support.
 
 # Automake's testing mechanism (which defines the "make check" rule) requires passing tests.
 TESTCODES = \
