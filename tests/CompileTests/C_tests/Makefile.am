@@ -74,6 +74,7 @@ TESTCODES_REQUIRED_TO_PASS = \
      testAnsiC.c \
      YardenPragmaPackExample.c \
      commentTest.c \
+     test_multiline_string_01.c \
      test2003_12.c \
      test2004_20.c \
      test2005_172.c \
