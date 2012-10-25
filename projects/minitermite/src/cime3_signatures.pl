@@ -48,5 +48,5 @@ print_signature(A|B) :- !,
 print_signature(CompoundTerm) :-
    functor(CompoundTerm, F, Arity),
    format('~w : ~w;~n', [F, Arity]),
-   fail
+   fail.
 
