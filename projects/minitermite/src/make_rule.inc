@@ -29,11 +29,16 @@ noinst_bindir = $(BUILDDIR)
 noinst_PROGRAMS = src/find-enums
 
 if ROSE_HAVE_SWI_PROLOG
-bin_SCRIPTS += src/termite_lint src/cime3_signatures src/stratego-signatures
+bin_SCRIPTS += src/termite_lint \
+               src/cime3_signatures \
+               src/stratego-signatures \
+               src/haskell-signatures
 
 BUILT_SOURCES += $(BUILDDIR)/PP_termite_spec.pl
 CLEANFILES += $(BUILDDIR)/PP_termite_spec.pl \
-              src/termite_lint src/cime3_signatures src/stratego-signatures
+              src/termite_lint src/cime3_signatures \
+              src/stratego-signatures \
+	      src/haskell-signatures
 
 $(BUILDDIR)/PP_termite_spec.pl: src/termite/termite_spec.pl Makefile
 if ROSE_HAVE_MINITERMITE_ANALYSIS_RESULTS
@@ -51,6 +56,10 @@ src/cime3_signatures: $(srcdir)/src/cime3_signatures.pl $(BUILDDIR)/PP_termite_s
 	$(SWI_PLC) -o $@ -c $<
 
 src/stratego-signatures: $(srcdir)/src/stratego-signatures.pl $(BUILDDIR)/PP_termite_spec.pl
+	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
+	$(SWI_PLC) -o $@ -c $<
+
+src/haskell-signatures: $(srcdir)/src/haskell-signatures.pl $(BUILDDIR)/PP_termite_spec.pl
 	$(AM_V_GEN) TERMITE_LIB=$(srcdir)/src/termite \
 	$(SWI_PLC) -o $@ -c $<
 
