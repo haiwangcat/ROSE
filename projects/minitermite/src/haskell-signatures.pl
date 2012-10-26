@@ -122,7 +122,7 @@ print_aterm_mtt(_:(C-Ch, Args)) :-
     writeln('] t) ->'),
     aterm_constructor(C, Ch),
     %(map (\i -> atermToMTT (getShATerm i t) t) ss)
-    print_aterm_mtt1(0, Args), nl.
+    maplistn(print_aterm_mtt1, 0, Args), nl.
 
 aterm_constructor(null, _) :- !,
     format('      "null" ').
@@ -134,26 +134,19 @@ aterm_constructor(_, Ch) :-
     format('      ~w ', [Ch]).
 
 
-print_aterm_mtt1(_, []).
-print_aterm_mtt1(N, [[A]|As]) :-
+print_aterm_mtt1(N, [A]) :- !,
     spellout(A, AH),
     format('~n        (map (\\x -> aterm~wToMTT (getShATerm x t) t)~n', [AH]),
-    format('            (getList (getShATerm '), argchain1(N,[A]), format(' t) t))'),
-    N1 is N+1,
-    print_aterm_mtt1(N1, As).
+    format('            (getList (getShATerm '), argchain1(N,[A]), format(' t) t))').
 
-print_aterm_mtt1(N, [A?|As]) :-
+print_aterm_mtt1(N, A?) :- !,
     spellout(A, AH),
     format('\n        (atermMaybeToMTT aterm~wToMTT (getShATerm ', [AH]),
-    argchain1(N,A), write(' t) t)'),
-    N1 is N+1,
-    print_aterm_mtt1(N1, As).
+    argchain1(N,A), write(' t) t)').
 
-print_aterm_mtt1(N, [A|As]) :-
+print_aterm_mtt1(N, A) :-
     spellout(A, AH),
-    format('\n        (aterm~wToMTT (getShATerm ', [AH]), argchain1(N,A), write(' t) t)'),
-    N1 is N+1,
-    print_aterm_mtt1(N1, As).
+    format('\n        (aterm~wToMTT (getShATerm ', [AH]), argchain1(N,A), write(' t) t)').
 
 spellout(A, AH) :- atom(A), haskellized_atom(A, AH).
 spellout({A}, AH) :- atom(A), haskellized_atom(A, AH).
@@ -284,7 +277,7 @@ print_conv(Type, C, Ch, Args) :-
     argchain(0,Args),
     format('] _) t =~n'),
     aterm_constructor(C, Ch),
-    print_aterm_mtt1(0, Args), nl,
+    maplistn(print_aterm_mtt1, 0, Args), nl,
     format('aterm~wToMTT _ _ = error "malformed term"~n~n', [Type]).
 
 
@@ -334,6 +327,7 @@ print_functors(N, Args, [F], O) :-
     print_type(N,T,O1),
     append(O1,[t-' '], O).
 
+
 listify((A,As), [A|As1]) :- !,
     listify(As, As1).
 listify(A, [A]).
@@ -375,6 +369,14 @@ haskellized_atom(A, A1) :-
    haskellized(Cs, Cs1),
    atom_chars(A1, Cs1), !.
 
+
+%% maplistn/3:
+% like map f (zip [i..] xs)
+maplistn(_, _, []).
+maplistn(F, I, [X|Xs]) :-
+    call(F, I, X),
+    I1 is I+1,
+    maplistn(F, I1, Xs).
 
 % Finish error handling (see top of source file) by halting with an error
 % condition of Prolog generated any warnings or errors.
