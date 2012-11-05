@@ -1,4 +1,109 @@
-2011-12-05  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+2012-03-12  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* configure.ac: Bump to 0.2.1. Stop building legacy (broken) test
+	scripts.
+	* pocc-installer.sh: Update to pocc-1.1, which contains numerous
+	fixes.
+
+	* install.sh,
+	* doc/polyopt.texi,
+	* AUTHORS,
+	* README,
+	* INSTALL: Update the documentation. The project is now PolyOpt/C,
+	to differentiate with Fortran.
+
+	* src/Makefile.am,
+	* tests/Makefile.am,
+	* doc/Makefile.am,
+	* polyopt/Makefile.am,
+	* Makefile.am,
+	* benchmarks/Makefile.am: Makefile massaging to make 'make dist'
+	work.
+
+2012-03-01 Mohanish Narayan <narayanm@cse.ohio-state.edu>
+	Adding log2tex by swaroop.
+	*    tests/regression/checker/scripts/log2tex
+	*    tests/regression/checker/scripts/log2tex/icc.demo.speedup.csv
+	*    tests/regression/checker/scripts/log2tex/configfile
+	*    tests/regression/checker/scripts/log2tex/speedup-gen.sh
+	*   tests/regression/checker/scripts/log2tex/speedup-gen.pl
+	*   tests/regression/checker/scripts/log2tex/gengraphs.sh
+	*    tests/regression/checker/scripts/log2tex/transpose.pl
+	*    tests/regression/checker/scripts/log2tex/genh.pl
+	*   tests/regression/checker/scripts/log2tex/log2tex.sh
+	*    tests/regression/checker/scripts/log2tex/gcc.demo.speedup.csv
+
+	Adding patch for generating combined speedup and data files.
+	*    tests/regression/checker/scripts/speedup-gen.sh
+	*    tests/regression/checker/scripts/speedup-gen.pl
+	Adding a seprate MACRO for providing STACK_ARRAYS
+	*    tests/regression/checker/scripts/checker_perfcorrect.sh
+
+2012-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/ScopParser.cpp: Fix a regression reg. scop splitting.
+
+2012-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/ScopParser.cpp,
+	* polyopt/PastToSage.cpp: Fix a bug in the generation of new
+	iterator names (was: incomplete symbol collection).
+
+	* tests/unitary/bug-fix/rose_bug13.c,
+	* tests/unitary/bug-fix/bug13.c: Associated regression tests.
+
+2012-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* tests/unitary/bug-fix/rose_bug9.c,
+	* tests/unitary/bug-fix/bug1.c,
+	* tests/unitary/bug-fix/rose_bug8b.c,
+	* tests/unitary/bug-fix/bug2.c,
+	* tests/unitary/bug-fix/rose_bug9b.c,
+	* tests/unitary/bug-fix/rose_bug8c.c,
+	* tests/unitary/bug-fix/bug8.c,
+	* tests/unitary/bug-fix/bug9.c,
+	* tests/unitary/bug-fix/bug8b.c,
+	* tests/unitary/bug-fix/rose_bug12.c,
+	* tests/unitary/bug-fix/bug8c.c,
+	* tests/unitary/bug-fix/bug9b.c,
+	* tests/unitary/bug-fix/bug12.c,
+	* tests/unitary/bug-fix/rose_bug1.c,
+	* tests/unitary/bug-fix/rose_bug2.c,
+	* tests/unitary/bug-fix/rose_bug8.c: Add regression test files for
+	recently fixed bugs.
+
+2012-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/SageTools.cpp: Fix missing case in ceil/floor parser.
+	* polyopt/AffineConverter.cpp: Fix missing support of unary operators.
+
+2012-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/ScopParser.cpp: Prevent '>' and '>=' from appearing in a
+	loop test.
+
+2012-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/AffineConverter.cpp,
+	* polyopt/ScopParser.cpp: Support min/max function calls inside
+	control expressions. Prevent linear combinations of min/max to be
+	parsed.
+
+2012-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/SageTools.cpp: Fix a bug in checkGeneralEquivalence.
+
+2012-02-24  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/ScopExtractorVisitor.cpp: Update function documentation.
+	* polyopt/ScopParser.cpp: Fix checkAffineExpressionsReadOnlySymbols.
+
+2012-02-20 Mohanish Narayan <narayanm@cse.ohio-state.edu>
+	Changing checker_perfcorrect.sh to support polybench-3.1
+	* tests/regression/checker/scripts/checker_perfcorrect.sh
+
+
+2012-01-20  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
 	* AUTHORS,
 	* src/Main.cpp,
@@ -38,17 +143,11 @@
 	* LICENSE.txt,
 	* README.txt: Update license and authors everywhere needed.
 
-2011-11-22  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
-
 	* polyopt/PolyRoseOptions.cpp: Add options for various Pluto
 	fusion heuristics.
 
-2011-11-16  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
-
 	* polyopt/PastToSage.cpp: Add a missing guard when privatization is
 	off.
-
-2011-11-16  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
 	* polyopt/include/polyopt/SageNodeAnnotation.hpp,
 	* polyopt/include/polyopt/PolyRoseOptions.hpp,
@@ -57,11 +156,41 @@
 	* polyopt/PolyRoseOptions.cpp: Add integrated support for scalar
 	privatization. Create the --polyopt-scalar-privatization flag.
 
-2011-11-14  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
-
 	* polyopt/SageTools.cpp,
 	* polyopt/PastToSage.cpp: Fix a bug in the handling of structs in
 	loop bounds/conditionals.
+
+2011-11-21 Mohanish Narayan <narayanm@cse.ohio-state.edu>
+	Adding graph-gen scripts to checker
+	* tests/regression/checker/README
+	* tests/regression/checker/scripts/genh.pl
+	* tests/regression/checker/scripts/speedup-gen.pl
+	* tests/regression/checker/scripts/speedup-gen.sh
+	* tests/regression/checker/scripts/gen-c-gcc-icc-graphs.sh
+	* tests/regression/checker/scripts/transform-gcc-icc.template
+	* tests/regression/checker/scripts/benchmark-gcc-icc.template
+
+	Adding fixes to ctests. Computing run time by taking avg
+	* tests/regression/ctests/scripts/PolyoptTestSuite-perfonly.py
+	* tests/regression/ctests/scripts/PolyoptTestSuite-perfrefcorrect.py
+	* tests/regression/ctests/scripts/PolyoptTestSuite-perfcorrect.py
+	* tests/regression/ctests/scripts/postprocess
+
+	Fixing the regression calculation
+	* tests/regression/checker/scripts/checker_perfcorrect.sh
+
+2011-11-19 Mohanish Narayan <narayanm@cse.ohio-state.edu>
+	Adding fixes to test suites.
+	*   tests/regression/ctests/scripts/PolyoptTestSuite-perfrefcorrect.py
+	*   tests/regression/ctests/scripts/PolyoptTestSuite-perfcorrect.py
+	*   tests/regression/ctests/scripts/PolyoptTestSuite-perfonly.py
+	*   tests/regression/ctests/scripts/run.user
+	*   tests/regression/ctests/scripts/run.default
+	*   tests/regression/ctests/scripts/postprocess
+	*   tests/regression/ctests/scripts/prepare
+	*   tests/regression/ctests/scripts/csv.pl
+	*   tests/regression/ctests/scripts/chk-begin-loop.sh
+	*   tests/regression/ctests/scripts/runtest.sh
 
 2011-09-09  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
@@ -97,10 +226,93 @@
 	* polyopt/ScopParser.cpp: Fix a bug when a loop iterator is
 	live-in to the scop.
 
-2011-07-27  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+2011-07-29 Mohanish Narayan <narayanm@cse.ohio-state.edu>
+	Adding fixes to test suites.
 
-	* README.txt,
-	* doc/polyopt.texi: Fix a funny typo in the doc.
+	* tests/regression/checker/scripts/checker_perfcorrect.sh
+
+	Adding polybench-2.1, and a robust csv generator
+	* tests/regression/ctests/polybench-2.1.tar.gz
+	* tests/regression/ctests/scripts/run.user
+	* tests/regression/ctests/scripts/postprocess
+	* tests/regression/ctests/scripts/csv.pl
+	* tests/regression/ctests/scripts/prepare
+	* tests/regression/ctests/Env
+
+	Adding pending reference files
+	* unitary/unitparametericloopbound.c
+	* unitary/references/simplecond.passthru.reference.c
+	* unitary/references/unitparametericloopbound.tile.reference.c
+	* unitary/references/unitparametericloopbound.passthru.c
+	* unitary/references/segfault1.pluto.reference.c
+	* unitary/references/segfault2.pluto.reference.c
+	* unitary/references/unitparametericloopbound.tile.c
+	* unitary/references/redefiter.passthru.reference.c
+	* unitary/references/unitparametericloopbound.passthru.reference.c
+
+
+
+
+2011-07-28 Mohanish Narayan <narayanm@cse.ohio-state.edu>
+	Adding checker_perfcorrect test suite
+	*  tests/regression/checker
+	*  tests/regression/checker/scripts
+	*  tests/regression/checker/scripts/conflist-small.txt
+	*  tests/regression/checker/scripts/checker_perfcorrect.sh
+	*  tests/regression/checker/scripts/checker_plutotile.sh
+	*  tests/regression/checker/scripts/checker_ptpup.sh
+	*  tests/regression/checker/scripts/conflist-large.txt
+	*  tests/regression/checker/scripts/checker.sh
+	*  tests/regression/checker/scripts/compute_regressions.sh
+	*  tests/regression/checker/scripts/add-benchmark.sh
+	*  tests/regression/checker/scripts/tester.sh
+	*  tests/regression/checker/scripts/checker_plutotilepar.sh
+	*  tests/regression/checker/scripts/checker_correctness.sh
+	*  tests/regression/checker/scripts/data_to_csv.sh
+	*  tests/regression/checker/scripts/checker_passthru.sh
+	*  tests/regression/checker/scripts/checker_plutotilemf.sh
+	*  tests/regression/checker/scripts/checker_plutotileparunroll.sh
+	*  tests/regression/checker/scripts/conflist-passthru.txt
+	*  tests/regression/checker/scripts/checker_plutotileparmf.sh
+
+2011-07-28  Mohanish Narayan <narayanm@cse.ohio-state.edu>
+	Adding new unitary test suite files.
+	*     tests/unitary/Makefile
+	*     tests/unitary/test.sh
+	*     tests/unitary/README
+
+	Adding a new test
+	*     tests/unitary/pasttosageassert.c
+
+	Adding all the reference files
+	*     tests/unitary/references
+	*     tests/unitary/references/looptempvar2.passthru.reference.c
+	*     tests/unitary/references/assigniter2.passthru.reference.c
+	*     tests/unitary/references/parallel.passthru.reference.c
+	*     tests/unitary/references/pasttosageassert.passthru.reference.c
+	*     tests/unitary/references/twoconds.passthru.reference.c
+	*     tests/unitary/references/parallel.par-tile.reference.c
+	*     tests/unitary/references/empty.passthru.c
+	*     tests/unitary/references/object.passthru.reference.c
+	*     tests/unitary/references/noloop.passthru.reference.c
+	*     tests/unitary/references/complexop.passthru.reference.c
+	*     tests/unitary/references/binop.passthru.reference.c
+	*     tests/unitary/references/twocondincond.passthru.reference.c
+	*     tests/unitary/references/basicnest.passthru.reference.c
+	*     tests/unitary/references/jacobi1d.passthru.reference.c
+	*     tests/unitary/references/unitparametericloopbound.passthru.c
+	*     tests/unitary/references/field.passthru.reference.c
+	*     tests/unitary/references/loopbounds.passthru.reference.c
+	*     tests/unitary/references/parenthesis.passthru.reference.c
+	*     tests/unitary/references/noloop2.passthru.reference.c
+	*     tests/unitary/references/initaddit.passthru.references.c
+	*     tests/unitary/references/switch.passthru.reference.c
+	*     tests/unitary/references/memory.pluto.reference.c
+	*     tests/unitary/references/assigniter.pluto.reference.c
+	*     tests/unitary/references/functioncall2.passthru.reference.c
+	*     tests/unitary/references/float.passthru.reference.c
+	*     tests/unitary/references/parallel.par.reference.c
+
 
 2011-07-26  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
@@ -121,7 +333,7 @@
 
 2011-07-21  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
-	* polyopt/PastToSage.cpp: Generate #pragma simd, for ICC 12.0.
+	* polyopt/PastToSage.cpp: Generate #pragma simd for ICC 12.0.
 
 2011-07-18  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
@@ -209,6 +421,8 @@
 	* polyopt/PolyRoseOptions.cpp: Implement PTile API for parametric
 	tiling.
 
+	* pace_tiling_api.c: Example of API.
+
 2011-06-28  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
 	* polyopt/SageTools.cpp: Add missing case (cast operator) in
@@ -281,6 +495,46 @@
 	* polyopt/PastToSage.cpp,
 	* polyopt/PolyRoseOptions.cpp: Provide option --polyopt-quiet.
 
+2011-06-25  Mohanish Narayan  <narayanm@cse.ohio-state.edu>
+	Adding INSTALL.standard file.
+	This file contains install instructions for boost, rose
+	and polyopt.
+	* INSTALL.standard
+
+2011-06-21  Mohanish Narayan  <narayanm@cse.ohio-state.edu>
+	Adding fixes for ptile tests.
+	The following files have been updated.
+	*    ctests/scripts/run.ptile
+	*    ctests/scripts/csv.pl
+	*    ctests/scripts/PolyoptTestSuite.py
+	*    ctests/scripts/chk-begin-loop.sh
+	*    ctests/scripts/run.ptile.gcc
+	*    ctests/scripts/prepare
+
+
+2011-06-20  Mohanish Narayan  <narayanm@cse.ohio-state.edu>
+	Added the ctest suite for polybench kernels.
+
+	* tests/regression/ctests/
+	* tests/regression/ctests/references
+	* tests/regression/ctests/README
+	* tests/regression/ctests/polybench-2.0.tar.gz
+	* tests/regression/ctests/Makefile
+	* tests/regression/ctests/Env
+	* tests/regression/ctests/scripts
+	* tests/regression/ctests/scripts/run.ptile
+	* tests/regression/ctests/scripts/run.ptile.gcc
+	* tests/regression/ctests/scripts/run.user
+	* tests/regression/ctests/scripts/prepare
+	* tests/regression/ctests/scripts/chk.sh
+	* tests/regression/ctests/scripts/PolyoptTestSuite.py
+	* tests/regression/ctests/scripts/postprocess
+	* tests/regression/ctests/scripts/run.default
+	* tests/regression/ctests/scripts/chk.pl
+	* tests/regression/ctests/scripts/csv.pl
+	* tests/regression/ctests/scripts/chk-begin-loop.sh
+
+
 2011-06-13  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 	This patch changes the default back-end of PolyOpt. Was:
 	ClastToSage, now: PastToSage.
@@ -296,6 +550,11 @@
 	* polyopt/PastToSage.cpp: Enable assignment of loop iterator
 	value, as generated by CLooG for some cases of one-time-loop
 	optimizations.
+
+2011-06-12  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* src/Makefile.am,
+	* polyopt/Makefile.am: Fix missing includes.
 
 2011-06-11  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
@@ -358,7 +617,7 @@
 	extraction.
 
 2011-06-09  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
-	Insert temporary headers, to be replaced when the correct license
+	Modify temporary headers, to be replaced when the correct license
 	has been determined. As of now, LGPL v3 with copyright to OSU and
 	myself.
 
@@ -390,11 +649,20 @@
 
 	* polyopt/PolyOptOptions.cpp: Delete.
 
+2011-05-31  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/ScopExtractor.cpp,
+	* polyopt/include/polyopt/ScopParser.hpp,
+	* polyopt/ClastToSage.cpp,
+	* polyopt/ScopParser.cpp: Restore to rev 7557 (was: incorrect SVN
+	commands issued by an external user).
+
 2011-05-29  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
 	* polyopt/SageTools.cpp: Fix a bug in collectReadWriteRefFastImpl.
 
 2011-05-29  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
 	This patch provides the option --polyopt-safe-math-func, which
 	will interpret math function call (eg, sin, cos, sqrt, etc.) as
 	side-effect free functions.
@@ -408,13 +676,48 @@
 	* polyopt/ScopExtractorVisitor.cpp: Implement a dedicated method
 	to collect read/write references.
 
+2011-05-26  Mohanish Narayan  <narayanm@cse.ohio-state.edu>
+	* Added the following files in tests/unitary
+	* - correlation.c correlation.passthru.c ifthenelse.c ifthenelse.passthru.c
+	* - jacobi1d.c loopbounds.c looptempvar.c looptempvar2.c
+	* - ludcmp.c ludcmp.passthru.c memory.c parallel.c
+	* - segfault1.c segfault2.c switch.c while.c
+
 2011-05-19  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
 	* polyopt/PastToSage.cpp: Fix a bug in root node handling.
 
 2011-05-19  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
-	* polyopt/PastToSage.cpp: Minor update to match latest PAST API.
+	* polyopt/PastToSage.cpp: Update to match latest PAST API.
+
+2011-05-19  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* INSTALL.lab: Minor update.
+
+2011-05-19  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* pocc-installer.sh: Minor fix.
+
+2011-05-18  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* INSTALL.lab: New. File to describe the installation for a lab
+	machine.
+
+2011-05-18  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* install.sh,
+	* pocc-installer.sh: Provide routines to install on lab machines.
+
+2011-05-12  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* polyopt/PoCCOptimize.cpp: Update to support latest PAST update.
+	* pocc-installer.sh: Improve, automagically re-download/upgrade
+	pocc.
+
+2011-05-16  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* pocc-installer.sh: Minor fix.
 
 2011-05-13  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 
@@ -463,6 +766,39 @@
 
 	* polyopt/ClastToSage.cpp: Fix a bug when a for loop is declared
 	both vectorizable and OpenMP parallelizable at the same time.
+
+2011-04-08  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
+
+	* COPYING.LESSER: New. License file for GNU Lesser GPL v3.
+
+	* polyopt/ScopExtractor.cpp,
+	* polyopt/SageTools.cpp,
+	* polyopt/include/polyopt/ClastToSage.hpp,
+	* polyopt/include/polyopt/ScopExtractor.hpp,
+	* polyopt/include/polyopt/PlutoRoseUtility.hpp,
+	* polyopt/include/polyopt/SageTools.hpp,
+	* polyopt/include/polyopt/ScopExtractorVisitor.hpp,
+	* polyopt/include/polyopt/AffineConverter.hpp,
+	* polyopt/include/polyopt/SageNodeAnnotation.hpp,
+	* polyopt/include/polyopt/ScopParser.hpp,
+	* polyopt/include/polyopt/PolyDDV.hpp,
+	* polyopt/include/polyopt/PolyRoseModule.hpp,
+	* polyopt/include/polyopt/PoCCOptimize.hpp,
+	* polyopt/include/polyopt/PolyOpt.hpp,
+	* polyopt/include/polyopt/PolyRoseOptions.hpp,
+	* polyopt/PoCCOptimize.cpp,
+	* polyopt/PolyOpt.cpp,
+	* polyopt/ClastToSage.cpp,
+	* polyopt/SageNodeAnnotation.cpp,
+	* polyopt/ScopExtractorVisitor.cpp,
+	* polyopt/AffineConverter.cpp,
+	* polyopt/ScopParser.cpp,
+	* polyopt/PolyDDV.cpp,
+	* polyopt/PolyOptOptions.cpp,
+	* polyopt/PolyRoseModule.cpp,
+	* polyopt/PolyRoseOptions.cpp: Add a temporary header to all
+	source files. Note: this header is technically not the good one as
+	OSU should claim the copyright. But it's better than nothing.
 
 2011-04-08  Louis-Noel Pouchet  <pouchet@cse.ohio-state.edu>
 

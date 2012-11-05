@@ -8,7 +8,6 @@
 
 #############################################################################
 SUBDIRS			=			\
-	benchmarks				\
 	doc					\
 	polyopt					\
 	src					\
@@ -21,12 +20,12 @@ ACLOCAL_AMFLAGS		= -I config
 
 CONFIGURE_DEPENDENCIES	=			\
 	$(srcdir)/config/ax_boost.m4		\
-	$(srcdir)/config/ax_boost_base.m4 \
+	$(srcdir)/config/ax_boost_base.m4	\
 	$(srcdir)/config/ax_pocc.m4
 
 m4datadir		= $(datadir)/aclocal
 
-AUX_DIST								=			\
+AUX_DIST		=			\
 	$(ac_aux_dir)/config.guess		\
 	$(ac_aux_dir)/config.sub		\
 	$(ac_aux_dir)/install-sh		\
@@ -35,8 +34,12 @@ AUX_DIST								=			\
 	$(ac_aux_dir)/depcomp
 
 
-EXTRA_DIST		=				\
-	README
+EXTRA_DIST		=			\
+	LICENSE.txt				\
+	dgemm.c					\
+	install.sh				\
+	INSTALL.standard			\
+	pocc-installer.sh
 
 
 MAINTAINERCLEANFILES	=			\
@@ -51,18 +54,6 @@ dist-hook:
 	for file in $(AUX_DIST); do \
 		cp $$file $(distdir)/$$file; \
 	done
-
-build-pocc:
-	(cd pocc && bin/pocc-util buildall)
-
-update-pocc:
-	(cd pocc && svn up && ./install.sh)
-
-update-polyrose: update-pocc
-	(svn up && make)
-
-sanity-check:
-	(cd tests/sanity && sh run-sanity-check.sh)
 
 
 #############################################################################

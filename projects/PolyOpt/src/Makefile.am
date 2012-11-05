@@ -67,17 +67,17 @@ EXTRA_DIST		 =
 
 noinst_HEADERS		=
 
-bin_PROGRAMS		= PolyRose
+bin_PROGRAMS		= PolyOpt
 
 
-PolyRose_SOURCES	=			\
+PolyOpt_SOURCES	=			\
 	Main.cpp
 
-PolyRose_CFLAGS		=					\
+PolyOpt_CFLAGS		=					\
 	-DPOCC_ROOT_DIR=$(abs_top_srcdir)/pocc $(ROSE_CPPFLAGS) $(BOOST_CPPFLAGS)
 
-PolyRose_CPPFLAGS	= -Wno-deprecated
+PolyOpt_CPPFLAGS	= -Wno-deprecated
 
-PolyRose_LDADD		= $(top_builddir)/polyopt/libpolyopt.la $(ROSE_ROOT)/lib/librose.la
+PolyOpt_LDADD		= $(top_builddir)/polyopt/libpolyopt.la $(ROSE_ROOT)/lib/librose.la
 
 #############################################################################
