@@ -122,8 +122,12 @@ TERMITE_FORTRAN_TESTS = \
     regression/fortran/funCall.F \
     regression/fortran/precision.f03 \
     regression/fortran/rose_dim.F \
-    regression/fortran/hello77.f
+    regression/fortran/hello77.f \
+    regression/fortran/expanded.f90 \
+    regression/fortran/reduceSync.f90 \
+    regression/fortran/timing.f90
 
+# Known Failures
 BROKEN_TESTS = \
     regression/base/classes2.cxx \
     regression/base/classes3.cxx \
@@ -134,7 +138,6 @@ BROKEN_TESTS = \
     regression/mrtc/failure/des.c \
     regression/shape/success/srw98_listreverse.cxx
 
-# Known Failures
 EXTRA_DIST += $(TERMITE_TESTS) $(BROKEN_TESTS) \
 	regression/shape/success/README \
 	regression/README \

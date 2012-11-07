@@ -434,8 +434,7 @@ var_ref_exp ::=
 
 % --- annotations ---
 default_annotation ::=
-    default_annotation({null})
-  | default_annotation({null}, preprocessing_info).
+    default_annotation(preprocessing_info?).
 
 initialized_name_annotation ::=
     initialized_name_annotation(type, name, todo /* storage modifier */,
@@ -485,8 +484,7 @@ size_of_op_annotation ::=
                           preprocessing_info).
 
 value_annotation ::=
-    value_annotation(number_or_string, /*string: */ todo, todo, /*enum: name, type,*/
-		    preprocessing_info)
+    enum_value_annotation(number_or_string, number_or_string, name, preprocessing_info)
     | value_annotation(number_or_string, preprocessing_info).
 
 binary_op_annotation ::=
@@ -524,16 +522,21 @@ analysis_info ::=
     analysis_info([_]).
 
 file_info ::=
-    file_info({_}, {_}, {_}).
+    file_info(name, number, number).
 
 preprocessing_info ::=
-    preprocessing_info([_]).
+    preprocessing_info([directive]).
+
+directive ::=
+    directive(name, name, placement, file_info).
+
+placement ::=
+    atoms [ defaultValue, undef, before, after, inside, before_syntax, after_syntax ].
 
 type ::=
     basic_type
   | array_type(type, expression?, number_or_string /* rank */, expr_list_exp?)
-  | function_type
-  | member_function_type
+  | some_function_type
   | modifier_type(type, type_modifier)
   | named_type
   | type_complex(basic_type)
@@ -575,6 +578,9 @@ class_kind ::=
 
 number_or_string ::=
     {It} where ( numberatom(It) ; number(It) ; string(It) ; atom(It) ).
+
+number ::=
+    {It} where ( number(It) ).
 
 fixity ::=  % fixity of unary operators
     {prefix}
