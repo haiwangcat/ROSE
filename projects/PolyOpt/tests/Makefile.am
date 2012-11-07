@@ -14,7 +14,7 @@ MAINTAINERCLEANFILES    = Makefile.in
 
 TESTS_ENVIRONMENT       = top_builddir=$(top_builddir)
 
-EXTRA_DIST              = scripts/checker.sh
+#EXTRA_DIST              = scripts/checker.sh
 #############################################################################
 check_SCRIPTS		=			\
 	scripts/checker_passthru.sh		
@@ -95,17 +95,17 @@ TESTS				= $(check_SCRIPTS)
 
 CLEANFILES			= $(TEST_SUITE_CLEAN)
 
-EXTRA_DIST	+=				\
-	$(BENCH_FILES)				\
-	$(TEST_SUITE)				\
-	$(TEST_SUITE_REF_PASSTHRU)		\
-	$(TEST_SUITE_REF_PLUTOTILE)		\
-	$(TEST_SUITE_REF_PLUTOTILEPAR)		\
-	$(TEST_SUITE_REF_PLUTOTILE_MF)		\
-	$(TEST_SUITE_REF_PLUTOTILEPAR_MF)	\
-	$(TEST_SUITE_REF_PLUTOTILEPARUNR)	\
-	$(TEST_SUITE_REF_PTPUP)			\
-	$(check_SCRIPTS)
+# EXTRA_DIST	+=				\
+# 	$(BENCH_FILES)				\
+# 	$(TEST_SUITE)				\
+# 	$(TEST_SUITE_REF_PASSTHRU)		\
+# 	$(TEST_SUITE_REF_PLUTOTILE)		\
+# 	$(TEST_SUITE_REF_PLUTOTILEPAR)		\
+# 	$(TEST_SUITE_REF_PLUTOTILE_MF)		\
+# 	$(TEST_SUITE_REF_PLUTOTILEPAR_MF)	\
+# 	$(TEST_SUITE_REF_PLUTOTILEPARUNR)	\
+# 	$(TEST_SUITE_REF_PTPUP)			\
+# 	$(check_SCRIPTS)
 
 TESTS_ENVIRONMENT +=							\
 	CHECKER="$(top_srcdir)/tests/scripts/checker.sh"		\

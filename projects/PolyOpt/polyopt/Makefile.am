@@ -64,7 +64,7 @@ INCLUDES		=						\
 #############################################################################
 
 pkginclude_HEADERS 	=				\
-	include/polyopt/PolyOptDriver.hpp		\
+	include/polyopt/PoCCOptimize.hpp		\
 	include/polyopt/PolyoptModule.hpp		\
 	include/polyopt/AffineConverter.hpp		\
 	include/polyopt/ClastToSage.hpp			\
@@ -82,7 +82,6 @@ lib_LTLIBRARIES 	= libpolyopt.la
 
 
 libpolyopt_la_SOURCES 	=			\
-	PolyOptDriver.cpp			\
 	PolyoptModule.cpp			\
 	AffineConverter.cpp			\
 	ClastToSage.cpp				\

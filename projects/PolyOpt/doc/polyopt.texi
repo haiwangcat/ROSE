@@ -6,9 +6,9 @@
 @setfilename polyopt.info
 @settitle PolyOpt - Polyhedral Optimization Framework
 
-@set EDITION 0.1
-@set VERSION 0.1.0
-@set UPDATED July 1st 2011
+@set EDITION 0.2
+@set VERSION 0.2.1
+@set UPDATED March 12th 2012
 @setchapternewpage odd
 
 
@@ -17,8 +17,8 @@
 @c %  *************************************************************************/
 
 @copying
-This manual is dedicated to PolyOpt version @value{VERSION}, a
-framework for Polyhedral Optimization in the ROSE compiler.
+This manual is dedicated to PolyOpt/C version @value{VERSION}, a
+framework for Polyhedral Optimization in the ROSE compiler. 
 
 Copyright @copyright{} 2009-2011 Louis-No@"el Pouchet / the Ohio State University.
 
@@ -35,9 +35,9 @@ GNU Free Documentation License, write to the Free Software Foundation, Inc.,
 @c %  *                 PART III: TITLEPAGE, CONTENTS, COPYRIGHT              *
 @c %  *************************************************************************/
 @titlepage
-@title PolyOpt
+@title PolyOpt/C
 @subtitle A Polyhedral Optimizer for the ROSE compiler
-@subtitle Edition @value{EDITION}, for PolyOpt @value{VERSION}
+@subtitle Edition @value{EDITION}, for PolyOpt/C @value{VERSION}
 @subtitle @value{UPDATED}
 @author Louis-No@"el Pouchet
 
@@ -56,7 +56,7 @@ GNU Free Documentation License, write to the Free Software Foundation, Inc.,
 @c %  *************************************************************************/
 @ifnottex
 @node Top
-@top PolyOpt
+@top PolyOpt/C
 
 @insertcopying
 @end ifnottex
@@ -95,13 +95,12 @@ PolyOpt is a polyhedral loop optimization framework, integrated in the ROSE comp
 @end itemize
 @end itemize
 
-Note, only a subset of C is currently supported by PolyOpt: C++ and Fortran
-programs are not supported.
+Note, only a subset of C/C++ is currently supported by PolyOpt/C. See PolyOpt/Fortran for Fortran support.
 
 
 @*
 @b{Communication}:
-Please contact  directly Louis-Noel Pouchet @uref{mailto:pouchet@@cse.ohio-state.edu,pouchet@@cse.ohio-state.edu} for any question. PoCC is also  available as a stand-alone software on @uref{http://pocc.sourceforge.net, sourceforge}
+The main mailing list is @uref{mailto:polyhedral@@cse.ohio-state.edu,polyhedral@@cse.ohio-state.edu}. You can also contact  directly Louis-Noel Pouchet @uref{mailto:pouchet@@cse.ohio-state.edu,pouchet@@cse.ohio-state.edu} for any question. PoCC is also  available as a stand-alone software on @uref{http://pocc.sourceforge.net, sourceforge}
 @*
 
 @c % /*************************************************************************
@@ -149,11 +148,11 @@ Numerous elements can break the SCoP property, for instance:
 @end itemize
 @*
 
-@section Additional Restrictions in PolyOpt
+@section Additional Restrictions in PolyOpt/C
 
 @*
 
-PolyOpt automatically extracts maximal regions that can be optimized
+PolyOpt/C automatically extracts maximal regions that can be optimized
 in the Polyhedral framework. We enforce numerous additional
 constraints to ensure the correctness of the SCoP extraction, in
 particular due to dependence analysis consideration:
@@ -162,7 +161,7 @@ particular due to dependence analysis consideration:
 @item There is no function call in the SCoP.
 @item There is no explicit pointer arithmetic/manipulation in the SCoP (no @code{&} nor @code{*} operators).
 @item @code{goto}, @code{break} and @code{continue} statements are forbidden.
-@item Arrays represent distinct memory locations (one per accessed array cell), and arrays are not aliased (note: @b{no check is performed by PolyOpt for this property, it is the responsibility of the user to not feed ill-formed arrays}).
+@item Arrays represent distinct memory locations (one per accessed array cell), and arrays are not aliased (note: @b{no check is performed by PolyOpt/C for this property, it is the responsibility of the user to not feed ill-formed arrays}).
 @item Loops increment by step of one.
 @end itemize
 
@@ -173,7 +172,7 @@ particular due to dependence analysis consideration:
 
 @*
 
-PolyOpt supports a wide range of affine expressions, in particular
+PolyOpt/C supports a wide range of affine expressions, in particular
 conjunctions of affine constraints can be used to bound the space. In
 all the following, we recall that an affine expression must involve
 only surrounding loop iterators and parameters (scalar variables that
@@ -184,7 +183,7 @@ of what is allowed in @code{for (init; test; increment)} and @code{if
 (condition)} statements. We note that if the loop iterator of a
 @code{for} statement is used outside the scope of the loop, or is
 assigned in the loop body, the @emph{loop will conservatively not be
-considered for SCoP extraction} since PolyOpt may change the exit
+considered for SCoP extraction} since PolyOpt/C may change the exit
 value of loop iterators.
 
 @*
@@ -213,8 +212,8 @@ a valid SCoP.
 @example
     for (int i = max(max(N,M),P); i < N; i++)
         for (j = max(i + 2 + 3*M, Q); j < N; j++)
-           for (k = i - 2 < 0 ? i - 2 : 0); k < N; k++)
-               for (; ; l++)
+           for (k = i - 2 > 0 ? i - 2 : 0); k < N; k++)
+               for (l = 0; ; l++)
                    A[i][j] -= 2;
 @end example
 @end cartouche
@@ -224,7 +223,7 @@ Some examples of incorrect loop lower bound include:
 @item @code{for (i = 0, j = 0; ...)}: more than one initialization.
 @item @code{for (i = max(a,b) + max(c,d); ...)}: not a valid conjunction.
 @item @code{for (i = max(a,b) + P; ...)}: not a valid conjunction.
-@item @code{for (i = a > b ? a : b; ...)}: not a (syntactically) valid ternary @code{max} operator.
+@item @code{for (i = a < b ? b : a; ...)}: not a (syntactically) valid ternary @code{max} operator.
 @end itemize
 
 @*
@@ -251,7 +250,7 @@ code form a valid SCoP.
     for (int i = 0; i < N && i < min(min(P,Q),R); i++)
         for (j = 0; j <= (i < P ? P : i); j++)
            for (k = 0; k <= 0; k++)
-               for (; ; l++)
+               for (l = 0; ; l++)
                    A[i][j] -= 2;
 @end example
 @end cartouche
@@ -296,7 +295,7 @@ code form a valid SCoP.
 @cartouche
 @example
     if (i > max(M,N) && j == 0)
-       if (k < 32 && k < min(max(i,j),P))
+       if (k < 32 && k < min(min(i,j),P))
           A[i][j] = 42;
 @end example
 @end cartouche
@@ -313,7 +312,7 @@ Some examples of incorrect conditional expressions include:
 
 @*
 We conclude by showing some examples of SCoPs automatically
-detected by PolyOpt. Note that the only constraints for the statements
+detected by PolyOpt/C. Note that the only constraints for the statements
 (e.g., @code{R,S,T} in the next example) involve the lack of function
 calls, @emph{at most one variable is assigned in the statement}, and
 using affine functions to dereference arrays.
@@ -357,7 +356,7 @@ T:         A[i][j] = ((DATA_TYPE) i*j) / N;
 
 @*
 
-Three main optimization paths are available in PolyOpt. They are
+Three main optimization paths are available in PolyOpt/C. They are
 geared towards improving data locality for fewer data cache misses,
 and both coarse- and fine-grain shared memory parallelization with
 OpenMP.  They will be applied on all Static Control Parts that were
@@ -384,7 +383,7 @@ or pipeline-parallel tile execution is achieved when tiling is possible.
 The Pluto module is used to compute the loop transformation sequence,
 in the form of a series of affine multidimensional schedules.
 
-Giving the flag @code{--polyopt-fixed-tiling} to PolyOpt is
+Giving the flag @code{--polyopt-fixed-tiling} to PolyOpt/C is
 equivalent to giving the sequence:
 @itemize
 @item @code{--polyopt-pluto-fuse-smartfuse}
@@ -513,7 +512,7 @@ that makes tiling legal, when possible, and the PTile module performs
 parametric tiling. Parallel or pipeline-parallel tile execution is
 achieved if tiling is possible.
 
-Giving the flag @code{--polyopt-parametric-tiling} to PolyOpt is
+Giving the flag @code{--polyopt-parametric-tiling} to PolyOpt/C is
 equivalent to giving the sequence:
 @itemize
 @item @code{--polyopt-pluto-fuse-smartfuse}
@@ -611,7 +610,7 @@ with OpenMP pragmas. The Pluto module is used to compute a loop
 transformation sequence that expose coarse-grain parallelism when
 possible.
 
-Giving the flag @code{--polyopt-parallel-only} to PolyOpt is
+Giving the flag @code{--polyopt-parallel-only} to PolyOpt/C is
 equivalent to giving the sequence:
 @itemize
 @item @code{--polyopt-pluto-fuse-smartfuse}
@@ -660,7 +659,7 @@ the fine-tuning flags, e.g., @code{--polyopt-pluto-fuse-maxfuse}.
 @chapter Fine-tuning Optimizations
 
 @*
-PolyOpt offer numerous tuning possibilities, use @code{--polyopt-help}
+PolyOpt/C offer numerous tuning possibilities, use @code{--polyopt-help}
 for a comprehensive list. We distinguish two main categories of
 options that impact how the program will be transformed: (1) options
 that control how SCoP are extracted; and (2) options that control how
@@ -703,8 +702,6 @@ SCoP.
 @item @code{--polyopt-pluto-prevector}: Activate fine-grain parallelization.
 @item @code{--polyopt-pluto-fuse-<maxfuse,smartfuse,nofuse>}: Control which fusion heuristic to use (default is smartfuse).
 @item @code{--polyopt-pluto-rar}: Consider Read-After-Read dependences for improved data locality.
-@item @code{--polyopt-pluto-ft <value>}: Control the first level at which CLooG will start to optimize.
-@item @code{--polyopt-pluto-lt <value>}: Control the last level at which CLooG will start to optimize.
 @end itemize
 @*
 
@@ -715,7 +712,7 @@ SCoP.
 @chapter Troubleshooting
 
 @*
-In PolyOpt, polyhedral programs are a constrained subset of C programs
+In PolyOpt/C, polyhedral programs are a constrained subset of C programs
 and it can be difficult at start to understand why a program is not
 detected as a SCoP. Try using the
 @code{--polyopt-scop-extractor-verbose=4} option, and reading the
