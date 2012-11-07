@@ -493,7 +493,6 @@ OptimizeSingleScopWithPoccGeneric (scoplib_scop_p scop,
       coptions->scalar_privatization = 1;
       CandlProgram* cprogram = candl_program_convert_scop (scop, NULL);
       CandlDependence* deps = candl_dependence (cprogram, coptions);
-
       for (int k = 0; cprogram->scalars_privatizable[k] != -1; k += 2)
 	privateVars.insert(cprogram->scalars_privatizable[k]);
 

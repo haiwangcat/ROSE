@@ -15,7 +15,7 @@ check_error()
     else
 	ERRMESSAGE="Error";
     fi;
-    echo "[PolyRose] $ERRMESSAGE";
+    echo "[PolyOpt] $ERRMESSAGE";
     exit $ERRCODE;
 }
 
@@ -35,22 +35,21 @@ else
 	POCC_INSTALL_ROOT="`pwd`/pocc"
 fi
 
-echo "*** Installation of PolyRose ***"
-echo "If using plooto@cse, you should have exported LD_LIBRARY_PATH=/usr/local/lib64/gcj-4.3.0-9:/usr/local/boost/lib"
-echo "[PolyRose] Install PoCC..."
-POCC_INSTALL_PREFIX="$POCC_INSTALL_ROOT" ./pocc-installer.sh devel
+echo "*** Installation of PolyOpt ***"
+echo "[PolyOpt] Install PoCC..."
+POCC_INSTALL_PREFIX="$POCC_INSTALL_ROOT" ./pocc-installer.sh 
 check_error "$?" "Installation of PoCC failed";
-echo "[PolyRose] Bootstrap..."
+echo "[PolyOpt] Bootstrap..."
 if ! [ -f configure ]; then
     ./bootstrap.sh
     check_error "$?" "Bootstrap failed";
 fi;
-echo "[PolyRose] Configure..."
+echo "[PolyOpt] Configure..."
 if ! [ -f Makefile ]; then
     ./configure --with-boost=${BOOST_ROOT} --with-rose=${ROSE_ROOT} ${INSTALL_ROOT} --with-pocc-prefix=$POCC_INSTALL_ROOT
     check_error "$?" "Configure failed";
 fi;
-echo "[PolyRose] Make..."
+echo "[PolyOpt] Make..."
 make
 check_error "$?" "Build failed";
 
@@ -59,21 +58,19 @@ if [ -n "${INSTALL_ROOT}" ]; then
 	check_error "$?" "make install failed";
 fi
 
-echo "[PolyRose] Installation complete."
+echo "[PolyOpt] Installation complete."
 echo "
 
 * Usage
 -------
 
-$> src/PolyRose <filename.c>
+$> src/PolyOpt <filename.c>
 
 To use tiling with pluto:
-$> src/PolyRose --polyopt-pluto-tile <filename.c>
+$> src/PolyOpt --polyopt-pluto-tile <filename.c>
 
-Options are:
---polyopt-pluto-tile
---polyopt-pluto-parallel (do not generate the OpenMP pragmas at this time)
---polyopt-pluto-prevector
+To get available options:
+$> src/PolyOpt --polyopt-help
 
 
 

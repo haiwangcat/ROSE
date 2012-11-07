@@ -93,8 +93,9 @@ PastToSage::createNewIterators(std::vector<void*> vars,
   std::vector<void*>::const_iterator i;
   for (i = vars.begin(); i != vars.end(); ++i)
     {
+      std::string availablename = getAvailableName(std::string((char*)(*i)));
       SgVariableDeclaration* decl =
-	SageBuilder::buildVariableDeclaration(std::string((char*)*i),
+	SageBuilder::buildVariableDeclaration(availablename,
 					      SageBuilder::buildIntType(),
 					      NULL, scope);
       std::pair<void*, SgVariableDeclaration*> newelt(*i, decl);
@@ -395,6 +396,7 @@ PastToSage::PastToSage(SgScopeStatement* scopScope,
   // where XX is an integer.
   _scoplibIterators = collectAllIterators(root);
 
+  
   // 2- Create the basic block containing the transformed scop.
   SgBasicBlock* bb = SageBuilder::buildBasicBlock();
   bb->set_parent(scopRoot->get_parent());
@@ -514,24 +516,17 @@ std::string PastToSage::getAvailableName(std::string templatestr)
 	  ROSE_ASSERT(annot);
 	  std::map<std::string, SgVariableSymbol*> fakeSymbolMap =
 	    annot->fakeSymbolMap;
-	  std::vector<SgNode*> readRefs;
-	  std::vector<SgNode*> writeRefs;
-	  bool collect =
-	    SageTools::collectReadWriteRefs(stmt, readRefs, writeRefs, 1);
-	  ROSE_ASSERT(collect);
-	  if (collect)
-	    {
-	      std::set<SgVariableSymbol*> readSymbs =
-		SageTools::convertToSymbolSet(readRefs, fakeSymbolMap);
-	      std::set<SgVariableSymbol*> writeSymbs =
-		SageTools::convertToSymbolSet(writeRefs, fakeSymbolMap);
-	      std::set<SgVariableSymbol*>::const_iterator i;
-	      set_union(readSymbs.begin(), readSymbs.end(),
-			writeSymbs.begin(), writeSymbs.end(),
-			std::inserter(usedSymbols, usedSymbols.begin()));
-	      for (i = usedSymbols.begin(); i != usedSymbols.end(); ++i)
-		_usedSymbols.push_back(std::string((*i)->get_name().str()));
-	    }
+	  std::vector<SgVarRefExp*> vrefs = 
+	    SageInterface::querySubTree<SgVarRefExp>(stmt, V_SgVarRefExp);
+	  std::vector<SgNode*> varrefs;
+	  for (std::vector<SgVarRefExp*>::iterator i = vrefs.begin();
+	       i != vrefs.end(); ++i)
+	    varrefs.push_back(*i);
+	  usedSymbols =
+	    SageTools::convertToSymbolSet(varrefs, fakeSymbolMap);
+	  std::set<SgVariableSymbol*>::const_iterator i;
+	  for (i = usedSymbols.begin(); i != usedSymbols.end(); ++i)
+	    _usedSymbols.push_back(std::string((*i)->get_name().str()));
 	}
     }
 

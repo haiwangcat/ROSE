@@ -1,6 +1,9 @@
 Installation Instructions
 *************************
 
+$> export ROSE_ROOT=/path/to/rose/install/root
+$> export BOOST_ROOT=/path/to/boost/install/root
 $> ./install.sh
 
-See README.txt for more info.
+See INSTALL.standard for a detailed manual on how to install PolyOpt.
+See README for more info on how to use PolyOpt.
