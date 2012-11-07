@@ -3,7 +3,7 @@ dnl Autoconf script for plutorose
 dnl Created 2009-03-14 - Justin Holewinski
 dnl Fully redesigned 2010-01-11 - Louis-Noel Pouchet
 
-AC_INIT([polyopt], [0.2.0], [polyhedral@cse.ohio-state.edu])
+AC_INIT([polyopt-c], [0.2.1], [polyhedral@cse.ohio-state.edu])
 ## A common file, which should be included by every source file.
 AC_CONFIG_SRCDIR([polyopt/include/polyopt/PolyOpt.hpp])
 ## Put as most as possible configuration files to an auxialiry
@@ -104,12 +104,7 @@ AC_CONFIG_FILES([
   doc/Makefile
   polyopt/Makefile
   src/Makefile
-  benchmarks/Makefile
-  benchmarks/run.pl
   tests/Makefile
-  tests/sanity/run-sanity-check.sh
-  tests/regression/polybenchs/run-regression.pl
-  tests/correctness/run-correctness.pl
   ],
   [test -z "$CONFIG_HEADERS" || echo timestamp > polyopt/include/polyopt/stamp-h.in; ])
 ## Output the result.
