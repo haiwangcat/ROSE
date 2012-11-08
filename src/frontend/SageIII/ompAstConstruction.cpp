@@ -209,77 +209,105 @@ namespace OmpSupport
     ROSE_ASSERT(result);
     return result;
   }
-
+    
+  
   // Sara Royuela ( Nov 2, 2012 ): Check for clause parameters that can be defined in macros
-  static SgExpression* checkOmpExpressionClause( SgExpression* clause_expression, SgGlobal* global )
+  // This adds support for the use of macro definitions in OpenMP clauses
+  // We need a traversal over SgExpression to support macros in any possition of an "assignment_expr"
+  // F.i.:   #define THREADS_1 16
+  //         #define THREADS_2 8
+  //         int main( int arg, char** argv ) {
+  //         #pragma omp parallel num_threads( THREADS_1 + THREADS_2 )
+  //           {}
+  //         }
+  SgVarRefExpVisitor::SgVarRefExpVisitor()
+        : expressions()
+  {}
+  std::vector<SgVarRefExp*> SgVarRefExpVisitor::get_expressions()
+  {
+      return expressions;
+  }
+  void SgVarRefExpVisitor::visit(SgNode* node)
+  {
+      SgVarRefExp* expr = isSgVarRefExp(node);
+      if(expr != NULL)
+      {
+          expressions.push_back(expr);
+      }
+  }
+  SgExpression* checkOmpExpressionClause( SgExpression* clause_expression, SgGlobal* global )
   {
       ROSE_ASSERT(clause_expression != NULL);
       SgExpression* clause_value = clause_expression;
       if( isSgTypeUnknown( clause_expression->get_type( ) ) )
       {
-          // FIXME We can hace expressions like NT_A + NT_B, where NT_A and NT_B are madro definitions
-          SgVarRefExp* var_ref = isSgVarRefExp(clause_expression);
-          if( var_ref != NULL )
+          SgVarRefExpVisitor v;
+          v.traverse(clause_expression, preorder);
+          std::vector<SgVarRefExp*> expressions = v.get_expressions();
+          if( !expressions.empty() )
           {
-              SgName clause_name = var_ref->get_symbol()->get_name( );
               SgDeclarationStatementPtrList& declarations = global->get_declarations();
-              for(SgDeclarationStatementPtrList::iterator it = declarations.begin(); it != declarations.end(); ++it) 
+              while( !expressions.empty() )
               {
-                  SgDeclarationStatement * declaration = *it;
-                  AttachedPreprocessingInfoType * preproc_info = declaration->getAttachedPreprocessingInfo();
-                  if( preproc_info != NULL )
-                  {   // There is preprocessed info attached to the current node
-                      for(AttachedPreprocessingInfoType::iterator current_preproc_info = preproc_info->begin(); 
-                          current_preproc_info != preproc_info->end(); current_preproc_info++)
-                      {
-                          if((*current_preproc_info)->getTypeOfDirective() == PreprocessingInfo::CpreprocessorDefineDeclaration)
+                  SgName clause_name = expressions.back()->get_symbol()->get_name( );
+                  for(SgDeclarationStatementPtrList::iterator it = declarations.begin(); it != declarations.end(); ++it) 
+                  {
+                      SgDeclarationStatement * declaration = *it;
+                      AttachedPreprocessingInfoType * preproc_info = declaration->getAttachedPreprocessingInfo();
+                      if( preproc_info != NULL )
+                      {   // There is preprocessed info attached to the current node
+                          for(AttachedPreprocessingInfoType::iterator current_preproc_info = preproc_info->begin(); 
+                              current_preproc_info != preproc_info->end(); current_preproc_info++)
                           {
-                              std::string define_macro = (*current_preproc_info)->getString();
+                              if((*current_preproc_info)->getTypeOfDirective() == PreprocessingInfo::CpreprocessorDefineDeclaration)
+                              {
+                                  std::string define_macro = (*current_preproc_info)->getString();
 
-                              // Parse the macro: we are only interested in macros with the form #define MACRO_NAME MACRO_VALUE
-                              size_t parenthesis = define_macro.find("(");
-                              if(parenthesis == string::npos)
-                              {   // Non function macro
-                                  unsigned int macro_name_init_pos = (unsigned int)(define_macro.find("define")) + 6;
-                                  while(macro_name_init_pos<define_macro.size() && define_macro[macro_name_init_pos]==' ')
-                                      macro_name_init_pos++;
-                                  unsigned int macro_name_end_pos = define_macro.find(" ", macro_name_init_pos);
-                                  std::string macro_name = define_macro.substr(macro_name_init_pos, macro_name_end_pos-macro_name_init_pos);
+                                  // Parse the macro: we are only interested in macros with the form #define MACRO_NAME MACRO_VALUE
+                                  size_t parenthesis = define_macro.find("(");
+                                  if(parenthesis == string::npos)
+                                  {   // Non function macro
+                                      unsigned int macro_name_init_pos = (unsigned int)(define_macro.find("define")) + 6;
+                                      while(macro_name_init_pos<define_macro.size() && define_macro[macro_name_init_pos]==' ')
+                                          macro_name_init_pos++;
+                                      unsigned int macro_name_end_pos = define_macro.find(" ", macro_name_init_pos);
+                                      std::string macro_name = define_macro.substr(macro_name_init_pos, macro_name_end_pos-macro_name_init_pos);
                                   
-                                  if(macro_name==clause_name.getString())
-                                  {   // Clause is defined in a macro
-                                      size_t comma = define_macro.find(",");
-                                      if(comma == string::npos);       // Macros like "#define MACRO_NAME VALUE1, VALUE2" are not accepted
-                                      {   // We create here an expression with the value of the clause defined in the macro
-                                          unsigned int macro_value_init_pos = macro_name_end_pos + 1;
-                                          while(macro_value_init_pos<define_macro.size() && define_macro[macro_value_init_pos]==' ')
-                                              macro_value_init_pos++;
-                                          unsigned int macro_value_end_pos = macro_value_init_pos; 
-                                          while(macro_value_end_pos<define_macro.size() && 
-                                                define_macro[macro_value_end_pos]!=' ' && define_macro[macro_value_end_pos]!='\n')
-                                              macro_value_end_pos++;        
-                                          std::string macro_value = define_macro.substr(macro_value_init_pos, macro_value_end_pos-macro_value_init_pos);
+                                      if(macro_name==clause_name.getString())
+                                      {   // Clause is defined in a macro
+                                          size_t comma = define_macro.find(",");
+                                          if(comma == string::npos);       // Macros like "#define MACRO_NAME VALUE1, VALUE2" are not accepted
+                                          {   // We create here an expression with the value of the clause defined in the macro
+                                              unsigned int macro_value_init_pos = macro_name_end_pos + 1;
+                                              while(macro_value_init_pos<define_macro.size() && define_macro[macro_value_init_pos]==' ')
+                                                  macro_value_init_pos++;
+                                              unsigned int macro_value_end_pos = macro_value_init_pos; 
+                                              while(macro_value_end_pos<define_macro.size() && 
+                                                    define_macro[macro_value_end_pos]!=' ' && define_macro[macro_value_end_pos]!='\n')
+                                                  macro_value_end_pos++;        
+                                              std::string macro_value = define_macro.substr(macro_value_init_pos, macro_value_end_pos-macro_value_init_pos);
                                                                                    
-                                          // Check whether the value is a valid integer
-                                          std::string::const_iterator it = macro_value.begin();
-                                          while (it != macro_value.end() && std::isdigit(*it)) 
-                                              ++it;
-                                          ROSE_ASSERT(!macro_value.empty() && it == macro_value.end());
+                                              // Check whether the value is a valid integer
+                                              std::string::const_iterator it = macro_value.begin();
+                                              while (it != macro_value.end() && std::isdigit(*it)) 
+                                                  ++it;
+                                              ROSE_ASSERT(!macro_value.empty() && it == macro_value.end());
                                 
-                                          int macro_int_value = atoi(macro_value.c_str());
-                                          clause_value = buildIntVal(macro_int_value);
+                                              int macro_int_value = atoi(macro_value.c_str());
+                                              clause_value = buildIntVal(macro_int_value);
+                                          }
                                       }
                                   }
                               }
-                              
                           }
                       }
                   }
+                  expressions.pop_back();
               }
           }
           else
           {
-              printf("error in buildOmpExpressionClause(): unacceptable clause parameter in clause\n");
+              printf("error in buildOmpExpressionClause(): unacceptable parameter in OpenMP clause\n");
               ROSE_ASSERT(false);
           }
       }
@@ -287,7 +315,6 @@ namespace OmpSupport
       return clause_value;
   }
   
-  //Build if clause
   SgOmpExpressionClause* buildOmpExpressionClause(OmpAttribute* att, omp_construct_enum clause_type)
   {
     ROSE_ASSERT(att != NULL);
