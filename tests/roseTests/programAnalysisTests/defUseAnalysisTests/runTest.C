@@ -28,9 +28,9 @@ void testOneFunction( std::string funcParamName,
   if (debug==false)
     defuse->dfaToDOT();
 
-  //std::list<SgNode*> vars = NodeQuery::querySubTree(project, V_SgFunctionDefinition); 
+  //std::list<SgNode*> vars = NodeQuery::querySubTree(project, V_SgFunctionDefinition);
   //std::list<SgNode*>::const_iterator i = vars.begin();
-  NodeQuerySynthesizedAttributeType vars = NodeQuery::querySubTree(project, V_SgFunctionDefinition); 
+  NodeQuerySynthesizedAttributeType vars = NodeQuery::querySubTree(project, V_SgFunctionDefinition);
   NodeQuerySynthesizedAttributeType::const_iterator i = vars.begin();
   for (; i!=vars.end();++i) {
     SgFunctionDefinition* func = isSgFunctionDefinition(*i);
@@ -411,7 +411,7 @@ int main( int argc, char * argv[] )
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("a", 12));
       results.insert(pair<string,int>("b", 6));
-      testOneFunction("::foo", argvList, debug, 14, results,useresults);
+      testOneFunction("::f", argvList, debug, 14, results,useresults);
     }
 
     if (startNr<=15 && 15<=stopNr) {
