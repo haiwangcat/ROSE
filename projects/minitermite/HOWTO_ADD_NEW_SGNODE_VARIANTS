@@ -50,7 +50,8 @@ test case
    resembles the original input.
 8. Add the test file to the TERMITE_[FORTRAN_]TESTS variable in 
    projects/minitermite/regression/make_rule.inc
-
+9. Make sure that 'make check -C projects/minitermite' succeeds for a
+   ROSE configured using the --with-swi-prolog=yes option!
    
 It doesn't work! Help?
 ----------------------
