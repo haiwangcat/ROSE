@@ -1536,13 +1536,7 @@ RoseToTerm::getTypePtrListSpecific(SgTypePtrList& tl) {
  */
 CompTerm*
 RoseToTerm::getPragmaSpecific(SgPragma* n) {
-  // Adrian 2007-11-27:
-  // This is to work around a bug in ROSE?/EDG? that inserts whitespaces
-  // Hopefully I can remove it in a later revision
   string s = n->get_pragma();
-  s.erase(remove_if( s.begin(), s.end(),
-		     bind1st(equal_to<char>(), ' ')),
-	  s.end());
   return termFactory.makeCompTerm("pragma_annotation", /*1,*/ termFactory.makeAtom(s));
 }
 
