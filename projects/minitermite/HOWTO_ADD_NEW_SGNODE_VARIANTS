@@ -1,4 +1,4 @@
-                                                        -*- markdown -*-
+                                                          -*- rst -*-
           How to add new variants of SgNode to minitermite
 
 
@@ -38,7 +38,19 @@ termite grammar
 ---------------
 5. Add the node to the formal termite grammar in
    src/termite/termite_spec.pl following the documentation there.
-   
+
+test case
+---------
+6. Most importantly, create a new test case in the
+   projects/minitermite/regression directory. 
+7. Execute
+   >>> src2term <yourtest> -o yourtest.term
+   >>> term2src yourtest.term
+   and verify that the output file <yourtest>.unparsed.<ext>
+   resembles the original input.
+8. Add the test file to the TERMITE_[FORTRAN_]TESTS variable in 
+   projects/minitermite/regression/make_rule.inc
+
    
 It doesn't work! Help?
 ----------------------
