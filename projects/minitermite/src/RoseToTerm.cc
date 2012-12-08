@@ -122,9 +122,7 @@ RoseToTerm::getSpecific(SgNode* astNode) {
       return getBinaryOpSpecific(n);
     } else if (SgLocatedNode* n = dynamic_cast<SgLocatedNode*>(astNode)) {
       // add preprocessing info
-      return termFactory.makeCompTerm("default_annotation", //2,
-			     termFactory.makeAtom("null"),
-			     PPI(n));
+      return termFactory.makeCompTerm("default_annotation", PPI(n));
     } else {
       return termFactory.makeCompTerm("default_annotation", /*1,*/ termFactory.makeAtom("null"));
     }
@@ -141,8 +139,8 @@ RoseToTerm::getPreprocessingInfo(AttachedPreprocessingInfoType* inf) {
       bool escape = (*it)->getTypeOfDirective()
 	!= PreprocessingInfo::CpreprocessorIncludeDeclaration;
 
-      CompTerm* ppd = termFactory.makeCompTerm
-	(re.str((*it)->getTypeOfDirective()), //3,
+      CompTerm* ppd = termFactory.makeCompTerm("directive",
+	 enum_atom((*it)->getTypeOfDirective()),
 	 termFactory.makeAtom((*it)->getString(), escape),
 	 enum_atom((*it)->getRelativePosition()),
 	 getFileInfo((*it)->get_file_info()));
@@ -725,7 +723,7 @@ RoseToTerm::getValueExpSpecific(SgValueExp* astNode) {
     SgEnumType *type = isSgEnumDeclaration(n->get_declaration())->get_type();
     ROSE_ASSERT(type != NULL);
     // val = getEnumTypeSpecific(type);
-    return termFactory.makeCompTerm("value_annotation",
+    return termFactory.makeCompTerm("enum_value_annotation",
 			      termFactory.makeInt(n->get_value()),
 			      termFactory.makeAtom(n->get_name().getString()),
 			      getEnumTypeSpecific(type),
@@ -1538,13 +1536,7 @@ RoseToTerm::getTypePtrListSpecific(SgTypePtrList& tl) {
  */
 CompTerm*
 RoseToTerm::getPragmaSpecific(SgPragma* n) {
-  // Adrian 2007-11-27:
-  // This is to work around a bug in ROSE?/EDG? that inserts whitespaces
-  // Hopefully I can remove it in a later revision
   string s = n->get_pragma();
-  s.erase(remove_if( s.begin(), s.end(),
-		     bind1st(equal_to<char>(), ' ')),
-	  s.end());
   return termFactory.makeCompTerm("pragma_annotation", /*1,*/ termFactory.makeAtom(s));
 }
 
