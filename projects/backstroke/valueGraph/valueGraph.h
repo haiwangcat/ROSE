@@ -106,7 +106,7 @@ private:
     ValueGraph valueGraph_;
 
     //! A special node in VG whose in edges are state saving edges.
-    VGVertex root_;
+    VGVertex ssnode_;
     
     //! The graph representing the search result, which we call route.
     ValueGraph routeGraph_;
@@ -140,6 +140,9 @@ private:
 
 	//! All state variables.
 	std::set<SgInitializedName*> stateVariables_;
+    
+    //! All desired variables.
+    std::set<SgInitializedName*> desiredVariables_;
 
 	//! All edges in the VG which are used to reverse values.
 	std::vector<VGEdge> dagEdges_;
@@ -425,9 +428,16 @@ private:
     //! Connect all phi nodes to their defs.
     void addPhiEdges();
     
+    
+    std::set<VersionedVariable> getReachingDefinitions(SgNode* node);
+    
     //! Add a state variable.
     void addStateVariable(SgInitializedName* name)
     { stateVariables_.insert(name); }
+    
+    //! Add a desired variable.
+    void addDesiredVariable(SgInitializedName* name)
+    { desiredVariables_.insert(name); }
     
     //! Check if a variable is a state variable.
 	bool isStateVariable(SgInitializedName* name) const
@@ -438,6 +448,13 @@ private:
 	{
         if (name.empty()) return false;
         return isStateVariable(name[0]);
+    }
+    
+    //! Check if a variable is a state variable.
+	bool isDesiredVariable(const VarName& name) const
+	{
+        if (name.empty()) return false;
+        return desiredVariables_.find(name[0]) != desiredVariables_.end();
     }
 
 	/** Given a SgNode, return its variable name and version.
@@ -455,7 +472,7 @@ private:
             const SubValueGraph& subgraph) const;
 
     //! Get all operands of an operator node.
-    std::pair<ScalarValueNode*, ScalarValueNode*>
+    std::pair<ValueNode*, ValueNode*>
     getOperands(VGVertex opNode) const;
 
     //! Generate the reverse function.
@@ -490,6 +507,9 @@ private:
             SgScopeStatement* rvsFuncBody,
             SgScopeStatement* cmtFuncBody,
             const std::string& pathNumName);
+    
+    //! Check if an edge belongs to a loop.
+    bool isInLoop(const VGEdge& edge);
     
 	static VGVertex nullVertex()
 	{ return boost::graph_traits<ValueGraph>::null_vertex(); }

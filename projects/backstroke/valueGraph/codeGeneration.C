@@ -284,7 +284,9 @@ SgStatement* buildOperationStatement(
 {
     //SgExpression* resExpr = buildVariable(result);
     SgExpression* lhsExpr = buildVariable(lhs);
+    //cout << lhsExpr->unparseToString() << endl;
     SgExpression* rhsExpr = rhs ? buildVariable(rhs) : NULL;
+    //if (rhsExpr) cout << rhs << rhsExpr->unparseToString() << endl;
     SgExpression* opExpr  = NULL;
 
     // Unary expression case.
@@ -384,6 +386,7 @@ case V_Sg##suffix: opExpr = build##suffix(lhsExpr, rhsExpr); break;
     if (type == V_SgMinusMinusOp || type == V_SgPlusPlusOp)
         return buildExprStatement(opExpr);
     
+    ROSE_ASSERT(opExpr);
     return buildExprStatement(buildAssignOp(buildVariable(result), opExpr));
 }
 

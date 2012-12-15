@@ -28,7 +28,7 @@ struct ValueGraphNode
 	{ return ""; }
 
     virtual int getCost() const
-    { return 0; }
+    { return 100; }
 
     //! The corresponding AST node of this value graph node.
     SgNode* astNode;
@@ -44,6 +44,7 @@ struct ValueNode : ValueGraphNode
     virtual VarName getVarName() const = 0;
 	virtual bool isAvailable() const { return false; }
     virtual SgType* getType() const {return NULL; }
+    virtual bool isTemp() const { return false; }
     
     //! Indicates if the variable is a state one.
     bool isStateVar;
@@ -63,6 +64,8 @@ struct ScalarValueNode : ValueNode
     
     virtual SgExpression* buildExpression() const
     {
+        if (SgExpression* val = isSgValueExp(astNode))
+            return SageInterface::copyExpression(val);
         return var.getVarRefExp();
     }
     
@@ -74,10 +77,11 @@ struct ScalarValueNode : ValueNode
 
     //void addVariable(const VersionedVariable& newVar);
 
-	bool isTemp() const { return var.isNull(); }
+	virtual bool isTemp() const 
+    { return !isAvailable() && var.isNull(); }
 
     //! If the AST node is a value expression, it is avaiable.
-	bool isAvailable() const { return isSgValueExp(astNode) != NULL; }
+	virtual bool isAvailable() const { return isSgValueExp(astNode) != NULL; }
 
     //! Get the type of the value.
     virtual SgType* getType() const;
@@ -95,7 +99,16 @@ struct ScalarValueNode : ValueNode
     
 };
 
+  
+struct ArrayNode : ValueNode
+{
+    explicit ArrayNode(SgNode* node = NULL)
+    : ValueNode(node) {}
     
+    virtual int getCost() const
+    { return 10000; }
+};
+
 struct ArrayElementNode : ValueNode
 {
     explicit ArrayElementNode(SgNode* node = NULL)
@@ -148,12 +161,16 @@ struct PhiNode : ScalarValueNode
 //    };
 
 	PhiNode(const VersionedVariable& v, SgNode* node)
-    : ScalarValueNode(v, node) {}
+    : ScalarValueNode(v, node), isMuNode(false) {}
 
 	//std::vector<ValueGraphNode*> nodes;
 
 	virtual std::string toString() const
-    { return "PHI_" + var.toString(); }
+    { 
+        if (isMuNode) 
+            return "MU_" + var.toString(); 
+        return "PHI_" + var.toString(); 
+    }
 
     virtual int getCost() const;
 
@@ -163,7 +180,7 @@ struct PhiNode : ScalarValueNode
 //    //! The DAG index.
 //    int dagIndex;
     
-    //bool mu;
+    bool isMuNode;
 
     //! The type of this gate function
     //GateType type;
@@ -299,9 +316,9 @@ struct BinaryOperaterNode : OperatorNode
 
 struct ValueGraphEdge
 {
-    ValueGraphEdge() : cost(TRIVIAL_COST) {}
+    ValueGraphEdge() : cost(TRIVIAL_COST), forward(false), reverse(false) {}
     explicit ValueGraphEdge(const PathInfos& pths, int cst = TRIVIAL_COST)
-    : cost(cst), paths(pths) {}
+    : cost(cst), paths(pths), forward(false), reverse(false) {}
     
     //ValueGraphEdge(int cst, const PathInfos& pths, const ControlDependences& cd)
     //: cost(cst), paths(pths), controlDependences(cd) {}
@@ -325,6 +342,9 @@ struct ValueGraphEdge
     //! For array nodes. Indicates which region of two arrays are identical.
     ArrayRegion region;
     
+    bool forward;
+    bool reverse;
+    
     ////! All immediate control dependences representing conditions in VG.
     //ControlDependences controlDependences;
 };
@@ -332,7 +352,7 @@ struct ValueGraphEdge
 //! An edge coming from an operator node.
 struct OrderedEdge : ValueGraphEdge
 {
-	explicit OrderedEdge(int idx) : index(idx) {}
+	explicit OrderedEdge(int idx) : ValueGraphEdge(), index(idx) {}
 
 	virtual std::string toString() const
 	{ return boost::lexical_cast<std::string>(index) 
@@ -478,7 +498,12 @@ inline MuNode* isMuNode(ValueGraphNode* node)
 	return dynamic_cast<MuNode*>(node);
 }
 
-bool isArrayNode(ValueGraphNode* node);
+inline ArrayNode* isArrayNode(ValueGraphNode* node)
+{
+	return dynamic_cast<ArrayNode*>(node);
+}
+
+bool isVectorNode(ValueGraphNode* node);
 
 inline FunctionCallNode* isFunctionCallNode(ValueGraphNode* node)
 {

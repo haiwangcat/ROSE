@@ -709,7 +709,11 @@ std::string ValueGraphEdge::toString() const
 #if 1
     str += "cost:" + boost::lexical_cast<std::string>(cost) + "\\n";
     str += paths.toString() + "\\n";
-    str += region.toString();
+    str += region.toString() + "\\n";
+    if (forward)
+        str += "FWD\\n";
+    if (reverse)
+        str += "RVS\\n";
 #endif
     
 #if 0
@@ -743,7 +747,7 @@ std::string StateSavingEdge::toString() const
     return str + ValueGraphEdge::toString();
 }
 
-bool isArrayNode(ValueGraphNode* node)
+bool isVectorNode(ValueGraphNode* node)
 {
     if (ScalarValueNode* valNode = isScalarValueNode(node))
     {

@@ -89,7 +89,7 @@ void EventReverser::buildBasicValueGraph()
 
     // Build a vertex which is the start point of the search.
     //root_ = addValueGraphNode(new ValueGraphNode);
-    root_ = addValueGraphNode(new ValueGraphNode);
+    ssnode_ = addValueGraphNode(new ValueGraphNode);
 
     /***************************************************************************/
     // We search state variables here. This part should use a functor to determine
@@ -239,6 +239,31 @@ void EventReverser::processExpression(SgExpression* expr)
     {
         processVariableReference(expr);
         return;
+    }
+    
+    
+        
+    // We use some special function calls to indicate what is the input and 
+    // output of the program.
+    if (SgCommaOpExp* commaOp = isSgCommaOpExp(expr))
+    {
+        SgExpression* rhs = commaOp->get_rhs_operand();
+        if (SgIntVal* intVal = isSgIntVal(rhs))
+        {
+            int val = intVal->get_value();
+            SgVarRefExp* var = isSgVarRefExp(commaOp->get_lhs_operand());
+            ROSE_ASSERT(var);
+            SgInitializedName* initName = var->get_symbol()->get_declaration();
+            
+            if (val == 123)
+            {
+                addDesiredVariable(initName);
+            }
+            else if (val == 456)
+            {
+                addStateVariable(initName);
+            }
+        }
     }
 
     // Value expression.
@@ -395,6 +420,12 @@ void EventReverser::processExpression(SgExpression* expr)
             if (ifStmt)
                 addValueGraphEdge(nodeVertexMap_[lhs], nodeVertexMap_[rhs],
                         pathNumManager_->getPathNumbers(ifStmt->get_true_body()));
+            else
+            {
+                // Temporarily added.
+                addValueGraphEdge(nodeVertexMap_[lhs], nodeVertexMap_[rhs],
+                        pathNumManager_->getPathNumbers(binOp));
+            }
             
             createOperatorNode(t, binOp, createValueNode(binOp),
                     nodeVertexMap_[lhs], nodeVertexMap_[rhs]);
@@ -474,6 +505,9 @@ void EventReverser::processExpression(SgExpression* expr)
 
         case V_SgCommaOpExp:
             nodeVertexMap_[binOp] = nodeVertexMap_[rhs];
+            break;
+            
+        case V_SgPntrArrRefExp:
             break;
 
         default:
@@ -699,7 +733,7 @@ void EventReverser::addPathsToEdges()
 
             if (isPhiNode(node))
                 addPathsForPhiNodes(tar, processedPhiNodes);
-            else if (tar == root_)
+            else if (tar == ssnode_)
                 stateSavingEdge = edge;
             else
             {
@@ -801,10 +835,12 @@ void EventReverser::addAvailableAndTargetValues()
                 addAvailableValue(node);
         }
         
+#if 0
         // Here we treat any non-local variables as state variables. 
         // Note this is not always true.
         else if (!SageInterface::isAncestor(funcDef_, name[0]->get_scope()))
             addAvailableValue(node);
+#endif
     }
     
     // Collect all target values.
@@ -816,7 +852,8 @@ void EventReverser::addAvailableAndTargetValues()
         
         // Only pick the first initialized name.
         VarName varName(1, valNode->var.name[0]);
-        if (isStateVariable(varName) && valNode->var.version == 0)
+        //if (isStateVariable(varName) && valNode->var.version == 0)
+        if (isDesiredVariable(varName) && valNode->var.version == 0)
         {
             cout << "Target Var:\t" << valNode->var.toString() << endl;
             valuesToRestore_[0].insert(node);
@@ -850,7 +887,7 @@ void EventReverser::addExtraNodesAndEdges()
         VGVertex tar = boost::target(edge, valueGraph_);
 
         // State saving edge.
-        if (tar == root_)
+        if (tar == ssnode_)
             continue;
 
         // If the edge is not connected to an operator node or function call node,
@@ -865,7 +902,9 @@ void EventReverser::addExtraNodesAndEdges()
             if (phiEdge->muEdge)
                 continue;
 
-        addValueGraphEdge(tar, src, valueGraph_[edge]);
+        VGEdge newEdge = addValueGraphEdge(tar, src, valueGraph_[edge]);
+        valueGraph_[newEdge]->reverse = valueGraph_[edge]->forward;
+        valueGraph_[newEdge]->forward = valueGraph_[edge]->reverse;
     }
 
     //! Add + and - nodes and edges for + and - operations.
@@ -1134,7 +1173,7 @@ void EventReverser::addValueGraphStateSavingEdges(
     }
 #endif
     
-    VGEdge newEdge = boost::add_edge(src, root_, valueGraph_).first;
+    VGEdge newEdge = boost::add_edge(src, ssnode_, valueGraph_).first;
     PathInfos paths;
     //ControlDependences controlDeps;
     
@@ -1159,6 +1198,7 @@ void EventReverser::addValueGraphStateSavingEdges(
             paths.erase(iter);
     }
     
+    cout << "SS==> " << valueGraph_[src]->toString() << " " << cost << endl;
     valueGraph_[newEdge] = new StateSavingEdge(
             cost, paths, killer, scopeKiller);
     
@@ -1771,6 +1811,7 @@ EventReverser::VGVertex EventReverser::createValueNode(SgNode* lhsNode, SgNode* 
             rhsVertex = nodeVertexMap_[rhsNode];
     }
 
+#if 0
     // If rhsNode just contains a rvalue, combine those two nodes.
     if (lhsNode && rhsNode)
     {
@@ -1787,7 +1828,8 @@ EventReverser::VGVertex EventReverser::createValueNode(SgNode* lhsNode, SgNode* 
             return rhsVertex;
         }
     }
-
+#endif
+    
     if (lhsNode)
     {
         //VersionedVariable var = getVersionedVariable(lhsNode, false);
@@ -1825,6 +1867,21 @@ EventReverser::VGVertex EventReverser::createOperatorNode(
         addValueGraphOrderedEdge(op, rhs, 1);
 
     return op;
+}
+
+std::set<VersionedVariable> EventReverser::getReachingDefinitions(SgNode* node)
+{
+    std::set<VersionedVariable> vars;
+    
+    const SSA::NodeReachingDefTable& defTable =
+        ssa_->getReachingDefsAtNode_(node);
+    typedef map<VarName, SSA::ReachingDefPtr>::value_type PT;
+    foreach(const PT& pt, defTable)
+    {
+        int version = pt.second->getRenamingNumber();
+        vars.insert(VersionedVariable(pt.first, version));
+    }
+    return vars;
 }
 
 void EventReverser::addPhiEdges()
@@ -1959,6 +2016,29 @@ void EventReverser::addPhiEdges()
             {
                 if (backEdges.count(cfgEdge))
                 {
+                    phiNode->isMuNode = true;
+                    SgBasicBlock* loopBody = isSgBasicBlock(phiNode->astNode);
+                    ROSE_ASSERT(loopBody);
+                    
+                    if (isVectorNode(phiNode))
+                        continue;
+                    
+                    // Connet the mu node with the last def in the loop body.
+                    set<VersionedVariable> reachingDefs = 
+                            getReachingDefinitions(loopBody->get_statements().back());
+                    foreach (const VersionedVariable& var, reachingDefs)
+                    {
+                        if (phiNode->var.name == var.name)
+                        {
+                            cout << var << "---" << phiNode->var << endl;
+                            ROSE_ASSERT(varVertexMap_.count(var));
+                            ROSE_ASSERT(varVertexMap_.count(phiNode->var));
+                            VGEdge newEdge = addValueGraphEdge(varVertexMap_[var], varVertexMap_[phiNode->var]);
+                            valueGraph_[newEdge]->reverse = true;
+                            //addValueGraphEdge(varVertexMap_[phiNode->var], varVertexMap_[var]);
+                        }
+                    }
+#if 0
                     if (newMuNode == NULL)
                     {
                         MuNode* muNode = new MuNode(*phiNode);
@@ -2016,15 +2096,18 @@ void EventReverser::addPhiEdges()
 #endif
                         
                         //cout << muNode->toString() << ' ' << preheader->unparseToString() << endl;
-                        addStateSavingEdges(muNode->var.name, preheader);
+                        //addStateSavingEdges(muNode->var.name, preheader);
                         
+#if 0
                         // For a Mu node, we duplicate it and connect all Mu edges to it.
                         duplicatedNode = boost::add_vertex(valueGraph_);
                         newMuNode = new MuNode(*muNode);
                         newMuNode->isCopy = true;
                         valueGraph_[duplicatedNode] = newMuNode;
+#endif
                     }
-                    addValueGraphPhiEdge(duplicatedNode, varVertexMap_[defVar], cfgEdge);
+                    //addValueGraphPhiEdge(duplicatedNode, varVertexMap_[defVar], cfgEdge);
+#endif
                 }
                 else
                 {
@@ -2109,7 +2192,7 @@ void EventReverser::addStateSavingEdges()
             addValueGraphStateSavingEdges(v, NULL);
         }
         
-        
+#if 0
         // For a mu node, make it available for its own DAG
         // Note this a kind of hack when doing this. A mu node is available in its
         // own DAG. The path information only contains those paths in this DAG.
@@ -2119,7 +2202,7 @@ void EventReverser::addStateSavingEdges()
                 continue;
             
             // Only if the Mu node is a copy when it is available.
-            VGEdge newEdge = boost::add_edge(v, root_, valueGraph_).first;
+            VGEdge newEdge = boost::add_edge(v, ssnode_, valueGraph_).first;
             PathInfos paths = pathNumManager_->getPathNumbers(funcDef_);
 
             // The real paths only contains the paths in its own DAG.
@@ -2130,6 +2213,8 @@ void EventReverser::addStateSavingEdges()
             //ControlDependences controlDeps;
             valueGraph_[newEdge] = new StateSavingEdge(0, realPaths, NULL);
         }
+#endif
+        
         
 #if 0
         // Give every value node one more SS edge.
@@ -2390,7 +2475,7 @@ void EventReverser::removeUselessEdges()
         if (isAvailableValue(src))
         {
             VGVertex tar = boost::target(e, valueGraph_);
-            if (tar != root_)
+            if (tar != ssnode_)
                 edgesToRemove.push_back(e);
         }
     }
@@ -2482,6 +2567,7 @@ void EventReverser::valueGraphToDot(const std::string& filename) const
             boost::bind(&EventReverser::writeValueGraphNode, this, ::_1, ::_2),
             boost::bind(&EventReverser::writeValueGraphEdge, this, ::_1, ::_2),
             boost::default_writer(), vertexIDMap);
+    ofile.close();
 }
 
 void EventReverser::routeGraphToDot(const std::string& filename) const
@@ -2501,6 +2587,7 @@ void EventReverser::routeGraphToDot(const std::string& filename) const
             boost::bind(&EventReverser::writeValueGraphNode, this, ::_1, ::_2),
             boost::bind(&EventReverser::writeValueGraphEdge, this, ::_1, ::_2),
             boost::default_writer(), vertexIDMap);
+    ofile.close();
 }
 
 SgNode* EventReverser::RouteGraphEdgeComp::getAstNode(const VGEdge& edge) const
@@ -2610,7 +2697,7 @@ void EventReverser::writeValueGraphNode(std::ostream& out, VGVertex node) const
     }
     out << "[label=\"" << str << "\"";
     
-    if (node == root_)
+    if (node == ssnode_)
         out << ", color=blue";
     
     ValueGraphNode* vgNode = valueGraph_[node];

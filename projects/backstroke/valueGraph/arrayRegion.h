@@ -94,6 +94,8 @@ struct ArrayRegion
         std::cout << type << ' ' << diff << ' ' << var1 << ' ' << var2 << std::endl;
     }
     
+    bool isInductionVar() const;
+    
     RegionType type;
     bool diff;
     

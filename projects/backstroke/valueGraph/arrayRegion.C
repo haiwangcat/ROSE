@@ -27,6 +27,8 @@ std::string ArrayRegion::toString() const
 {
     switch (type)
     {
+    case Universal:
+        return "U";
     case SingleElement:
         return (diff ? "!{" : "{") + var1.toString() + "}";
     case ClosedInterval:
@@ -34,8 +36,21 @@ std::string ArrayRegion::toString() const
     case Empty:
         return "Empty";
     default:
-        return "";
+        return "Unknown";
     }
+}
+
+
+bool ArrayRegion::isInductionVar() const
+{
+    if (type != SingleElement || diff) return false;
+    
+    std::string name = var1.var.name[0]->get_name();
+    
+    if (name == "i" || name == "j" || name == "k")
+        return true;
+    
+    return false;
 }
 
 ArrayRegion operator & (const ArrayRegion& r1, const ArrayRegion& r2)
@@ -53,8 +68,15 @@ ArrayRegion operator & (const ArrayRegion& r1, const ArrayRegion& r2)
     {
         if (r1.var1 == r2.var1)
             return ArrayRegion(Empty);
+        else
+        {
+            if (r2.diff)
+                return r1;
+            else
+                return r2;
+        }
     }
-    ROSE_ASSERT(false);    
+    //ROSE_ASSERT(false);    
     return ArrayRegion(Empty);
 }
 
@@ -73,6 +95,30 @@ ArrayRegion operator | (const ArrayRegion& r1, const ArrayRegion& r2)
     if (r1 == !r2 || r2 == !r1)
         return ArrayRegion();
     
+    if (r1.type == SingleElement && r2.type == SingleElement &&
+        r2.diff != r1.diff)
+    {
+        if (r1.var1 == r2.var1)
+            return ArrayRegion();
+        else
+        {
+            if (r2.diff)
+                return r2;
+            else
+                return r1;
+        }
+    }
+    
+    if (r1.type == SingleElement && r2.type == SingleElement &&
+        !r2.diff && !r1.diff)
+    {
+        if (r1.var1 == r2.var1)
+            return r1;
+        else
+            return ArrayRegion(Empty);
+    }
+    
+    std::cout << r1 << ' ' << r2 << std::endl;
     ROSE_ASSERT(false);    
     return ArrayRegion(Empty);
 }

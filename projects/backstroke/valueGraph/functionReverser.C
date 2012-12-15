@@ -308,7 +308,7 @@ void EventReverser::collectAvailableValues()
         }
     }
     // Put root as the available values.
-    availableValues_[0].insert(root_);
+    availableValues_[0].insert(ssnode_);
     for (size_t i = 1, s = availableValues_.size(); i != s; ++i)
     {
         availableValues_[i].insert(
@@ -342,6 +342,30 @@ void EventReverser::buildPathNumDeclForRvsCmtFunc(
     SageInterface::prependStatement(SageInterface::copyStatement(restoreNum), cmtScope);
     SageInterface::prependStatement(SageInterface::copyStatement(pathNumDecl), cmtScope);
 }
+
+#if 0
+void postprocessRouteGraph()
+{
+    // Remove all temporary nodes in the RG.
+    foreach (VGVertex v, boost::vertices(routeGraph_))
+    {
+        SgValueGraphNode* node = routeGraph_[v];
+        if (ScalarValueNode* valNode = isScalarValueNode(node))
+        {
+            if (valNode->isTemp())
+            {
+                ROSE_ASSERT(boost::out_degree(v, routeGraph_) == 1);
+                ROSE_ASSERT(boost::in_degree(v, routeGraph_) == 1);
+                
+                VGVertex src = boost::source(*(in_edges(v, routeGraph_)), routeGraph_);
+                VGVertex tgt = boost::source(*(in_edges(v, routeGraph_)), routeGraph_);
+            }
+        }
+        if ()
+    }
+   
+}
+#endif
 
 void EventReverser::buildRouteGraph(const map<VGEdge, EdgeInfo>& routes)
 {
@@ -400,13 +424,13 @@ void EventReverser::buildRouteGraph(const map<VGEdge, EdgeInfo>& routes)
     if (boost::num_vertices(routeGraph_) == 0)
     {
         routeGraphRoot_ = boost::add_vertex(routeGraph_);
-        routeGraph_[routeGraphRoot_] = valueGraph_[root_];
+        routeGraph_[routeGraphRoot_] = valueGraph_[ssnode_];
     }
     else
     {
         // Set the root of the route graph.
-        ROSE_ASSERT(nodeTable.count(root_));
-        routeGraphRoot_ = nodeTable[root_];
+        ROSE_ASSERT(nodeTable.count(ssnode_));
+        routeGraphRoot_ = nodeTable[ssnode_];
     }
     
     // Switch all nodes in valuesToRestore_ to those in route graph.
@@ -710,27 +734,38 @@ EventReverser::getGraphNodesInTopologicalOrder(
     return nodes;
 }
 
-pair<ScalarValueNode*, ScalarValueNode*>
+pair<ValueNode*, ValueNode*>
 EventReverser::getOperands(VGVertex opNode) const
 {
-    ScalarValueNode* lhsNode = NULL;
-    ScalarValueNode* rhsNode = NULL;
+    ValueNode* lhsNode = NULL;
+    ValueNode* rhsNode = NULL;
 
     // If it's a unary operation.
     if (boost::out_degree(opNode, valueGraph_) == 1)
     {
         VGVertex lhs = *(boost::adjacent_vertices(opNode, valueGraph_).first);
-        lhsNode = isScalarValueNode(valueGraph_[lhs]);
+        lhsNode = isValueNode(valueGraph_[lhs]);
     }
     else
     {
         foreach (const VGEdge& edge, boost::out_edges(opNode, valueGraph_))
         {
             VGVertex tar = boost::target(edge, valueGraph_);
+            ValueNode* operand = isValueNode(valueGraph_[tar]);
+            //cout << operand->toString() << endl;
+            
+            if (operand && operand->isTemp())
+            {
+                ROSE_ASSERT(boost::out_degree(tar, valueGraph_) == 1);
+                VGEdge e = *(boost::out_edges(tar, valueGraph_).first);
+                VGVertex newTar = boost::target(e, valueGraph_);
+                operand = isValueNode(valueGraph_[newTar]);
+            }
+            
             if (isOrderedEdge(valueGraph_[edge])->index == 0)
-                lhsNode = isScalarValueNode(valueGraph_[tar]);
+                lhsNode = operand;
             else
-                rhsNode = isScalarValueNode(valueGraph_[tar]);
+                rhsNode = operand;
         }
     }
     return make_pair(lhsNode, rhsNode);
@@ -1165,6 +1200,27 @@ namespace
     
 }
 
+bool EventReverser::isInLoop(const EventReverser::VGEdge& edge)
+{
+    VGVertex v;
+    
+    if (isStateSavingEdge(valueGraph_[edge]))
+        v = boost::source(edge, routeGraph_);
+    else
+        v = boost::target(edge, routeGraph_);
+    
+    SgNode* node = routeGraph_[v]->astNode;
+    if (v == ssnode_)
+        return false;
+    while (node != NULL)
+    {
+        if (isSgDoWhileStmt(node))
+            return true;
+        node = node->get_parent();
+    }
+    return false;
+}
+
 void EventReverser::generateCodeForBasicBlock(
         const vector<VGEdge>& edges,
         SgScopeStatement* rvsScope,
@@ -1199,6 +1255,8 @@ void EventReverser::generateCodeForBasicBlock(
     // modify several values, and the order of those pushes and pops should be correct.
     // Without this table, the order may be wrong.
     map<SgStatement*, SgStatement*> pushLocations;
+    
+    SgScopeStatement* loop = NULL;
 
     // Generate the reverse code in reverse topological order of the route DAG.
     foreach (const VGEdge& edge, edges)
@@ -1212,7 +1270,9 @@ void EventReverser::generateCodeForBasicBlock(
         ValueNode* valNode = isValueNode(routeGraph_[src]);
         if (valNode == NULL)        continue;
         if (valNode->isAvailable()) continue;
+        if (valNode->isTemp()) continue;
         if (isSgThisExp(valNode->astNode)) continue;
+        
 
         SgStatement* pushFuncStmt = NULL;
         SgStatement* rvsStmt = NULL;
@@ -1379,8 +1439,8 @@ void EventReverser::generateCodeForBasicBlock(
         else if (OperatorNode* opNode = isOperatorNode(routeGraph_[tgt]))
         {
             // Rebuild the operation.
-            ScalarValueNode* lhsNode = NULL;
-            ScalarValueNode* rhsNode = NULL;
+            ValueNode* lhsNode = NULL;
+            ValueNode* rhsNode = NULL;
             boost::tie(lhsNode, rhsNode) = getOperands(tgt);
 
             rvsStmt = buildOperationStatement(valNode, opNode->type, lhsNode, rhsNode);
@@ -1460,8 +1520,22 @@ void EventReverser::generateCodeForBasicBlock(
 
         // Add the generated statement to the scope.
         if (rvsStmt)
-            appendStatement(rvsStmt, rvsScope);
-        
+        {
+            // Here we find all edges belonging to a loop.
+            if (isInLoop(edge))
+            {
+                if (loop == NULL)
+                {
+                    SgExpression* expr = buildIntVal(1);
+                    loop = buildBasicBlock();
+                    SgStatement* doWhile = buildDoWhileStmt(loop, expr);
+                    appendStatement(doWhile, rvsScope);
+                }
+                appendStatement(rvsStmt, loop);
+            }
+            else
+                appendStatement(rvsStmt, rvsScope);
+        }
         if (cmtStmt)
             appendStatement(cmtStmt, cmtScope);
     }
@@ -2193,7 +2267,7 @@ namespace
         // Convert all for loops into while loops
         convertForToWhile(funcDef);
         
-        BackstrokeNorm::normalizeEvent(funcDef->get_declaration());
+        //BackstrokeNorm::normalizeEvent(funcDef->get_declaration());
         
         //cout << funcDef->unparseToString() << endl;
         
