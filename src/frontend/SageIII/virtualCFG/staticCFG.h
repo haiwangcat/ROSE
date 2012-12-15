@@ -17,10 +17,6 @@ class SgDirectedGraphEdge;
 namespace StaticCFG 
 {
 
-using VirtualCFG::CFGNode;
-using VirtualCFG::CFGEdge;
-
-
 class CFG
 {
 protected:
@@ -28,7 +24,7 @@ protected:
     SgIncidenceDirectedGraph* graph_;
 
     //! A map from CFGNode in virtualCFG to node from staticCFG.
-    std::map<CFGNode, SgGraphNode*> all_nodes_;
+    std::map<VirtualCFG::CFGNode, SgGraphNode*> all_nodes_;
 
     //! The start node to begin CFG build.
     SgNode* start_;
@@ -46,11 +42,11 @@ public:
     CFG() : graph_(NULL), start_(NULL), entry_(NULL), exit_(NULL) {}
 
     //! Turn a graph node into a CFGNode which is defined in VirtualCFG namespace.
-    CFGNode toCFGNode(SgGraphNode* node);
+    VirtualCFG::CFGNode toCFGNode(SgGraphNode* node);
     
     //! Turn a CFG node into a GraphNode which is defined in VirtualCFG namespace.
     //! Returns NULL if CFGNode is not present
-    SgGraphNode *toGraphNode(CFGNode &n) { return ((all_nodes_.count(n)==0) ?  NULL : all_nodes_[n]);}
+    SgGraphNode *toGraphNode(VirtualCFG::CFGNode &n) { return ((all_nodes_.count(n)==0) ?  NULL : all_nodes_[n]);}
     
     //! The constructor building the CFG.
     /*! The valid nodes are SgProject, SgStatement, SgExpression and SgInitializedName. */

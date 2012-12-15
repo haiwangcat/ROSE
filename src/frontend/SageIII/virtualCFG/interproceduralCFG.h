@@ -16,9 +16,6 @@ class SgDirectedGraphEdge;
 namespace StaticCFG 
 {
 
-using VirtualCFG::CFGNode;
-using VirtualCFG::CFGEdge;
-
 
 class InterproceduralCFG : public CFG
 {

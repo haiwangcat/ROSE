@@ -7,7 +7,6 @@
 namespace StaticCFG
 {
 
-
 void CFG::clearNodesAndEdges()
 {
     if (graph_ != NULL)
@@ -342,7 +341,7 @@ void CFG::printEdge(std::ostream & o, SgDirectedGraphEdge* edge, bool isInEdge)
 {
     // Note that CFGEdge will do some checks which forbids us to use it to represent an InterestingEdge. 
     AstAttribute* attr = edge->getAttribute("info");
-    if (CFGEdgeAttribute<CFGEdge>* edge_attr = dynamic_cast<CFGEdgeAttribute<CFGEdge>*>(attr))
+    if (CFGEdgeAttribute<VirtualCFG::CFGEdge>* edge_attr = dynamic_cast<CFGEdgeAttribute<CFGEdge>*>(attr))
     {
         CFGEdge e = edge_attr->getEdge();
         o << e.source().id() << " -> " << e.target().id() << " [label=\"" << escapeString(e.toString()) <<
