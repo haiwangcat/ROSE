@@ -57,6 +57,11 @@ while (my $file = $files->next_file) {
 	    delete $index{lc $name};
 	  }
 	}
+      } elsif (/\b__TH[I]S_HEADER_IS_USED__\b/) { # The [I] is to make sure we don't match this particular occurrence
+	# If a header file really is used but just not included in any source code, then you may indicate so in the
+	# header by adding a line that matches this pattern.
+	my($basename) = $file = ~ /([^\/]+)$/;
+	delete $index{lc $basename};
       }
     }
     close FILE;
@@ -68,7 +73,8 @@ my @remaining = map {@$_} values %index;
 
 # Lowered the number of unused headers by removing unused headers from: ./tests/CompileTests/OvertureCode
 # $warning = "" if @remaining > 281; # as of 2010-11-06 there are 281 violations; do not allow more!
-$warning = "" if @remaining > 199; # as of 2010-11-06 there are 281 violations; do not allow more!
+# $warning = "" if @remaining > 199; # as of 2010-11-06 there are 281 violations; do not allow more!
+$warning = "" if @remaining > 182; # as of 2012-08-23 there are 182 violations; do not allow more!
 
 print $desc if @remaining;
 print "  $_$warning\n" for sort @remaining;

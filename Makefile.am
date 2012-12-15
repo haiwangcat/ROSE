@@ -106,7 +106,7 @@ enforce_policies:
 # EXTRA_DIST = cmake CMakeLists.txt rose_config.h.in.cmake stamp-h.in stamp-h1.in rose.docs.in COPYRIGHT \
 #              LicenseInformation ROSE_ResearchPapers README.OSX README.Cygwin build ChangeLog2 bincompat-sig
 EXTRA_DIST = cmake CMakeLists.txt rose_config.h.in.cmake stamp-h.in stamp-h1.in rose.docs.in COPYRIGHT \
-             LicenseInformation ROSE_ResearchPapers README.Cygwin build ChangeLog2 bincompat-sig
+             LicenseInformation ROSE_ResearchPapers build ChangeLog2 bincompat-sig
 
 # Liao, 12/11/2009. we should force this rule to run every time we want to make a distribution
 # otherwise the stale one can go into the distribution package
@@ -295,6 +295,7 @@ docs: FORCE_DOCS_TO_BE_MADE
 	   echo "    Generate all possible documentation cd docs; make documentation;"; \
 	   $(MAKE) -Ctutorial docs && \
 	   $(MAKE) -Cprojects/haskellport docs && \
+	   $(MAKE) -Cprojects/minitermite docs && \
 	   $(MAKE) -Ctests/roseTests/astInterfaceTests check && \
 	   $(MAKE) -Ctests/roseTests/ompLoweringTests check && \
 	   $(MAKE) -Ctests/CompileTests/UPC_tests check && \

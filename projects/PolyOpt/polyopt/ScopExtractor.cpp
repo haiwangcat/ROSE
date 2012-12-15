@@ -184,7 +184,7 @@ ScopExtractor::inspectBottomUpFunctionBody(SgProject* project, SgNode* root)
   SageInterface::removeUnusedLabels(root);
 
   // d- Ensure all loops/conditionals bodies are a BB.
-  //SageInterface::changeAllBodiesToBlocks(root);
+  //SageInterface::changeAllLoopBodiesToBlocks(root);
 
   // 2- Traverse the sub-tree.
   ScopExtractorVisitor scopTraversal(root, polyoptions);

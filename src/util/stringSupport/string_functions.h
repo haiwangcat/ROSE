@@ -149,11 +149,13 @@ namespace StringUtility
            std::string listToString ( const std::list<int> & X, bool separateStrings = false );
       //! Generate a string from a list of strings
            std::string listToString ( const std::list<std::string> & X, bool separateStrings = false );
-      //! Generate a list of strings from a string (list elements are delimited by "\n")
+      //! Generate a list of strings from a string (list elements are delimited by "\n"). \sa prefixLines().
            std::list<std::string> stringToList ( const std::string & X );
 
       //! Generate a string from a vector of strings
            std::string listToString ( const std::vector<std::string> & X, bool separateStrings = false );
+
+           std::list<std::string> tokenize ( std::string X, char delim );
 
        //! Remove redundant lines (substrings must be separated by "\n". FIXME (spelling)
            std::string removeRedundentSubstrings ( std::string X ); // sic
@@ -223,7 +225,8 @@ namespace StringUtility
            std::string stripFileSuffixFromFileName     ( const std::string & fileNameWithSuffix ); 
            //! Get the absolute path from the relative path
            std::string getAbsolutePathFromRelativePath ( const std::string & relativePath, bool printErrorIfAny /* = false */ );       
-           //! Get the file name suffix (extension), fileName could be either base name or name with full path
+           //! Get the file name suffix (extension) without the leading dot, fileName could be either base name or name with full path. 
+           // If no dot is found in the input fileName, the function just returns the original fileName
            std::string fileNameSuffix                  ( const std::string & fileName );          
 
   // True only if this is a valid C++ source file name extension (suffix). Duplicate of CommandlineProcessing::isCppFileNameSuffix(). 
@@ -439,6 +442,16 @@ namespace StringUtility
 
        /** Returns true if the string ends with line termination. */
        bool isLineTerminated(const std::string &s);
+
+       /** Converts a multi-line string to a single line.  This function converts a multi-line string to a single line by
+        *  replacing line-feeds and carriage-returns (and their surrounding white space) with a user-supplied replacement
+        *  string (that defaults to a single space). Line termination (and it's surrounding white space) that appears at the
+        *  front or back of the input string is removed without replacing it.
+        *
+        *  See roseTests/utilTests/stringTests.C for lots of examples.
+        *
+        *  A new string is returned. */
+       std::string makeOneLine(const std::string &s, std::string replacement=" ");
 
    };
 

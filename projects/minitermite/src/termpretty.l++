@@ -1,0 +1,111 @@
+%{ /* -*- C++ -*- */
+using namespace std;
+#include <limits>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <boost/program_options.hpp>
+#include "minitermite.h"
+#include <rose_config.h>
+int indent = 0;
+int level;
+void indent_line();
+%}
+%option yylineno noyywrap
+
+quoted \"([^\"\\]*(\\.[^\"\\]*)*)\"
+singlequoted \'([^\'\\]*(\\.[^\'\\]*)*)\'
+variable [A-Z][A-Za-z_]*
+int \-?[0-9]+
+node [a-z][A-Za-z_]*\_node
+annotation [a-z][A-Za-z_]*annotation
+atom [a-z][A-Za-z_]*
+comma \,
+open_par [(\[]
+close_par [)\]]
+
+%%
+
+[ \t\n]
+{quoted}      		if (indent < level) { cout << yytext; }
+{singlequoted}		if (indent < level) { cout << yytext; }
+{variable}		if (indent < level) { cout << yytext; }
+{int}			if (indent < level) { cout << yytext; }
+{node}			if (indent < level) { cout << "\n"; indent_line(); cout << yytext; }
+{annotation}		if (indent < level) { cout << "\n"; indent_line(); cout << yytext; }
+{atom}			if (indent < level) { cout << yytext; }
+{open_par}              {
+                           indent++; 
+			   if (indent < level) {
+			     cout << yytext<<"\n"; 
+			     indent_line(); 
+			   }
+			   else if (indent == level) {
+			     cout << yytext<<"...";
+			   }
+			}
+{close_par}             { 
+                          indent--; 
+			  if (indent < level) {
+			     cout << yytext <<"\n"; 
+			     indent_line(); 
+			   }
+                        }
+{comma}			if (indent < level) { cout << ","; }
+.			if (indent < level) { cout << yytext; }
+
+%%
+
+namespace po = boost::program_options;
+
+void indent_line() {
+	for(int j = 0; j < indent; j++) {
+		cout << "   :";
+	}
+}
+
+int main(int argc, char**argv) {
+  // Declare the supported options.
+  po::options_description desc
+    ("This program was built against " PACKAGE_STRING ",\n"
+     "please report bugs to <" PACKAGE_BUGREPORT ">.\n\n"
+     "Supported options");
+
+  desc.add_options()
+    ("help", "produce help message")
+    ("version", "display the version")
+    ("level,l", po::value<int>(), "display terms only up to level N")
+    ("input-file", po::value< vector<string> >(), "input file")
+    ;
+
+  po::positional_options_description p;
+  p.add("input-file", 1);
+
+  po::variables_map vm;
+  po::store(po::command_line_parser(argc, argv).
+	    options(desc).positional(p).run(), vm);
+  po::notify(vm);
+
+  if (vm.count("help")) {
+    cout << desc << "\n";
+    return 0;
+  }
+
+  if (vm.count("version")) {
+    cout << "termpretty version " << PACKAGE_VERSION << "\n";
+    return 0;
+  }
+
+  level = numeric_limits<int>::max();
+  if (vm.count("level")) {
+    level = vm["level"].as<int>();
+  } 
+
+  if (vm.count("input-file"))
+    yyin = fopen(vm["input-file"].as< vector<string> >()[0].c_str(), "r" );
+  else
+    yyin = stdin;
+  yylex();
+}
+
+

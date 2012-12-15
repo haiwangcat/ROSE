@@ -1,0 +1,111 @@
+POLYOPT INSTALL
+================
+
+Prerequisites
+=============
+* JDK(for Fortran support)
+* BOOST LIBRARY
+* ROSE COMPILER
+
+
+I. BOOST INSTALLATION
+=====================
+1) Boost sources can be obtained from: http://www.boost.org/users/download/
+   e.g  http://sourceforge.net/projects/boost/files/boost/1.46.1/boost_1_46_1.tar.gz/download
+
+2) Extract
+   tar -zxvf boost_<version>.tar.gz
+   e.g tar -zxvf boost_1_46_1.tar.gz
+
+For installations you may follow instructions at http://www.boost.org/map.html under the 'Getting Started' link or you may follow the link given in index.html file in the boost archive from step 1.
+e.g http://www.boost.org/doc/libs/1_46_1/more/getting_started/unix-variants.html
+
+Or depending upon the boost version the following may work:
+3) Install:
+   $> cd boost_<version>                                          #e.g cd boost_1_46_1
+   $> ./bootstrap.sh
+   $> ./bjam install --prefix=<boost-install-path>                #e.g mkdir INSTALL && ./bjam install --prefix=/home/polyopt/boost_1_46_1/INSTALL 
+
+
+
+
+II. ROSE INSTALLATION
+======================
+(http://www.rosecompiler.org/)
+
+1) Get Rose: https://outreach.scidac.gov/projects/rose/
+
+2) Extract and Setup
+   $> tar -zxvf rose-<version>.tar.gz                             #e.g tar -zxvf rose-0.9.5a-without-EDG-14791.tar.gz
+   $> cd rose_<version>                                           #e.g cd rose-0.9.5a-14791
+
+   Plese Note: for rose versions 14735 and less you must apply this patch.
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+Index: src/ROSETTA/Grammar/Node.code
+===================================================================
+--- src/ROSETTA/Grammar/Node.code	(revision 877)
++++ src/ROSETTA/Grammar/Node.code	(working copy)
+@@ -13,7 +13,7 @@
+ #include "Cxx_Grammar.h"
+ 
+ #include "processSupport.h"
+-#define __builtin_constant_p (exp) (0)
++#define __builtin_constant_p(exp) (0)
+ 
+ 
+ class PreprocessingInfo;
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    e.g 
+      copy the above patch in a file.
+      cd rose-0.9.5a-14391/; patch -p0 < <path-to-the-patch-file>
+
+   Make the BUILD directory
+   $> mkdir BUILD
+
+3) Configure
+   $> cd BUILD
+   $> ../configure --prefix=<rose-install-path> --with-boost=<boost-install-path> --with-java=<path-to-jdk-root>
+   
+   e.g: 
+      mkdir /home/polyopt/rose-0.9.5a-14791/INSTALL && ../configure --prefix=/home/polyopt/rose-0.9.5a-14791/INSTALL --with-boost=/home/polyopt/boost_1_46_1/INSTALL --with-java=/usr/lib/jvm/java-6-openjdk/
+
+   Note: If Fortran support is not required than --with-java option can be omitted. Instead the option --without-java must be given.
+
+4) Setup LD_LIBRARY_PATH for libjvm.so and the boost libraries from I.3)
+   e.g: 
+      export LD_LIBRARY_PATH=/usr/lib/jvm/java-6-openjdk/jre/lib/amd64/server/:/home/polyopt/boost_1_46_1/INSTALL/lib
+      Again: If Fortran support is not required the path to libjvm.so can be omitted.
+
+5) Build
+   $> make
+
+6) Install
+   $> make install
+
+For more details on installation please refer http://www.rosecompiler.org/ROSE_InstallationInstructions.pdf
+
+
+
+III. POLYOPT INSTALLATION
+=========================
+1.) Setup Env Variables
+    $> export BOOST_ROOT=<boost-install-path>                         #Boost install path from step I.3)
+    $> export ROSE_ROOT=<rose-install-path>                           #ROSE  install path from step II.3)
+
+    $> export LD_LIBRARY_PATH=<path-to-boost-libraries>:<path-to-rose-libraries>:<path-to-libjvm>
+
+      <path-to-boost-libraries> := <boost-install-path>/lib    #From step I.3
+      <path-to-rose-libraries>  := <rose-install-path>/lib     #From step II.3
+
+      Again: java can be ommitted here if Fortran support is not required.
+
+    e.g:
+      export LD_LIBRARY_PATH=/usr/lib/jvm/java-6-openjdk/jre/lib/amd64/server/:/home/polyopt/boost_1_46_1/INSTALL/lib:/home/polyopt/rose-0.9.5a-14791/INSTALL/lib
+
+2.) Build PolyOpt
+   $> ./install.sh
+
+3.) Invoke:
+    On successful compilation an executable src/PolyOpt will be generated.
+    Please note that rose and boost libraries must be in your LD_LIBRARY_PATH before invoking PolyOpt
+    $> src/PolyOpt --polyopt-help

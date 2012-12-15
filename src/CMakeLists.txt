@@ -102,6 +102,7 @@ set( STORAGECLASSES_SRC
       ${CMAKE_SOURCE_DIR}/src/util/stringSupport/FileNameClassifier.C
       ${CMAKE_SOURCE_DIR}/src/util/rose_getline.C
       ${CMAKE_BINARY_DIR}/src/util/rose_paths.C
+      ${CMAKE_SOURCE_DIR}/src/util/rose_strtoull.C
       ${CMAKE_SOURCE_DIR}/src/util/stringSupport/escape.C
       ${CMAKE_SOURCE_DIR}/src/util/graphs/TypedFusion.C
       ${CMAKE_SOURCE_DIR}/src/util/graphs/DGBaseGraphImpl.C
@@ -785,11 +786,12 @@ ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/astPostProcessing.C
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/resolveFortranReferences.C 
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/insertFortranContainsStatement.C 
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/markLhsValues.C 
-     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupUseAndUsingDeclarations.C 
+     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupUseAndUsingDeclarations.C
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/buildStatementNumbering.C
-     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupCxxSymbolTablesToSupportAliasingSymbols.C 
+     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupCxxSymbolTablesToSupportAliasingSymbols.C
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/normalizeTypedefSequenceLists.C
      ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupConstantFoldedValues.C
+     ${CMAKE_SOURCE_DIR}/src/frontend/SageIII/astPostProcessing/fixupSelfReferentialMacros.C
    )
 
 

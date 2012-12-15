@@ -646,10 +646,10 @@ SageTools::isMaxFuncCall(SgNode* node)
 bool
 SageTools::isFloorFuncCall(SgNode* node)
 {
+
   SgConditionalExp* tern = isSgConditionalExp(node);
   if (! tern)
     return false;
-
   // Parse first conditional: n * d < 0 OR 0|1 (when n and d are constants)
   SgLessThanOp* ltop = isSgLessThanOp(tern->get_conditional_exp());
   if (!ltop)
@@ -664,31 +664,37 @@ SageTools::isFloorFuncCall(SgNode* node)
   n = isSgExpression(mmop->get_lhs_operand());
   if (! (d && n))
     return false;
-
-  // Parse first true clause / 2nd conditional: d < 0
+  // Parse first true clause / 2nd conditional: d < 0 OR 0|1
   SgConditionalExp* tern2 = isSgConditionalExp(tern->get_true_exp());
   if (! tern2)
-      return false;
-  SgLessThanOp* ltop2 = isSgLessThanOp(tern2->get_conditional_exp());
-  if (! ltop2)
-      return false;
-  SgIntVal* v1 = isSgIntVal(ltop2->get_lhs_operand());
-  SgIntVal* v2 = isSgIntVal(ltop2->get_rhs_operand());
-  if (! (v1 && v2 && v1->get_value() == d->get_value() && v2->get_value() == 0))
     return false;
-
+  SgLessThanOp* ltop2 = isSgLessThanOp(tern2->get_conditional_exp());
+  SgIntVal* vl = isSgIntVal(tern2->get_conditional_exp());
+  SgIntVal* v1;
+  SgIntVal* v2;
+  if (!vl && !ltop2)
+    return false;
+  if (vl && vl->get_value() != 0 && vl->get_value() != 1)
+    return false;
+  else if (ltop2)
+    {
+      v1 = isSgIntVal(ltop2->get_lhs_operand());
+      v2 = isSgIntVal(ltop2->get_rhs_operand());
+      if (! (v1 && v2 && v1->get_value() == d->get_value()
+	     && v2->get_value() == 0))
+	return false;
+    }
   // Parse 2nd true clause: -((-(n)+(d)+1)/(d))
   SgMinusOp* mop = isSgMinusOp(tern2->get_true_exp());
   if (! mop)
     return false;
-
   SgDivideOp* dop = isSgDivideOp(mop->get_operand_i());
   if (! dop)
     return false;
   v1 = isSgIntVal(dop->get_rhs_operand());
   SgAddOp* aop = isSgAddOp(dop->get_lhs_operand());
   if (aop == NULL || v1->get_value() != d->get_value())
-      return false;
+    return false;
   SgAddOp* aop2 = isSgAddOp(aop->get_lhs_operand());
   v1 = isSgIntVal(aop->get_rhs_operand());
   if (! (aop2 && v1 && v1->get_value() == 1))
@@ -700,14 +706,13 @@ SageTools::isFloorFuncCall(SgNode* node)
   SgExpression* e = isSgExpression(mop->get_operand_i());
   if (! (e && checkTreeAreEquivalent(e, n)))
     return false;
-
   // Parse 2nd false clause: -((-(n)+(d)-1)/(d)))
   mop = isSgMinusOp(tern2->get_false_exp());
   if (! mop)
     return false;
   dop = isSgDivideOp(mop->get_operand_i());
   if (! dop)
-      return false;
+    return false;
   SgSubtractOp* sop = isSgSubtractOp(dop->get_lhs_operand());
   v1 = isSgIntVal(dop->get_rhs_operand());
   if (! (sop && v1->get_value() == d->get_value()))
@@ -723,7 +728,6 @@ SageTools::isFloorFuncCall(SgNode* node)
   e = isSgExpression(mop->get_operand_i());
   if (! (e && checkTreeAreEquivalent(e, n)))
     return false;
-
   // Parse 1st false clause: (n)/(d)
   dop = isSgDivideOp(tern->get_false_exp());
   if (! dop)
@@ -780,18 +784,25 @@ SageTools::isCeilFuncCall(SgNode* node)
   if (! checkTreeExpAreEquivalent(e, n))
     return false;
 
-  // Demangle first false clause / 2nd conditional: d < 0
+  // Demangle first false clause / 2nd conditional: d < 0 OR 0|1
   SgConditionalExp* tern2 = isSgConditionalExp(tern->get_false_exp());
   if (! tern2)
     return false;
   SgLessThanOp* ltop2 = isSgLessThanOp(tern2->get_conditional_exp());
-  if (! ltop2)
+  SgIntVal* vl = isSgIntVal(tern2->get_conditional_exp());
+  SgIntVal* v2;
+  if (!vl && !ltop2)
     return false;
-  v1 = isSgIntVal(ltop2->get_lhs_operand());
-  SgIntVal* v2 = isSgIntVal(ltop2->get_rhs_operand());
-  if (! (v1 && v2 && v1->get_value() == d->get_value() && v2->get_value() == 0))
+  if (vl && vl->get_value() != 0 && vl->get_value() != 1)
     return false;
-
+  else if (ltop2)
+    {
+      v1 = isSgIntVal(ltop2->get_lhs_operand());
+      v2 = isSgIntVal(ltop2->get_rhs_operand());
+      if (! (v1 && v2 && v1->get_value() == d->get_value() &&
+	     v2->get_value() == 0))
+    return false;
+    }
   // Demangle 2nd true clause: (((-n)+(-d)-1)/(-d))
   dop = isSgDivideOp(tern2->get_true_exp());
   if (! dop)
@@ -875,10 +886,10 @@ static bool checkGeneralEquivalence(SgNode* n1,
 	  if (val1 != val2)
 	    return false;
 	}
-      if (isSgVariableSymbol(*i1))
+      if (isSgVarRefExp(*i1))
 	{
-	  SgVariableSymbol* v1 = isSgVariableSymbol(*i1);
-	  SgVariableSymbol* v2 = isSgVariableSymbol(*i2);
+	  SgVariableSymbol* v1 = isSgVarRefExp(*i1)->get_symbol();
+	  SgVariableSymbol* v2 = isSgVarRefExp(*i2)->get_symbol();
 	  if (v1->get_name().getString() !=
 	      v2->get_name().getString())
 	    return false;

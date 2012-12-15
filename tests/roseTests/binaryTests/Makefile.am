@@ -240,7 +240,7 @@ yicesSemanticsExe_SOURCES = semantics.C
 yicesSemanticsExe_CPPFLAGS = -DPOLICY_SELECTOR=4 -DSOLVER_SELECTOR=1
 yicesSemanticsExe_LDADD = $(ROSE_LIBS_WITH_PATH) $(ROSE_SEPARATE_LIBS) $(RT_LIBS)
 EXTRA_DIST += semantics.conf yicesSemanticsExe.ans
-if HAVE_YICES
+if ROSE_HAVE_YICES
 STATIC_TEST_TARGETS += yicesSemanticsExe.passed
 yicesSemanticsExe.passed: semantics.conf yicesSemanticsExe
 	@$(RTH_RUN) CMD=yicesSemanticsExe INPUT=i686-test1.O3.bin $< $@
@@ -255,7 +255,7 @@ yicesSemanticsLib_SOURCES = semantics.C
 yicesSemanticsLib_CPPFLAGS = -DPOLICY_SELECTOR=4 -DSOLVER_SELECTOR=2
 yicesSemanticsLib_LDADD = $(ROSE_LIBS_WITH_PATH) $(ROSE_SEPARATE_LIBS) $(RT_LIBS)
 EXTRA_DIST += semantics.conf yicesSemanticsLib.ans
-if HAVE_LIBYICES
+if ROSE_HAVE_LIBYICES
 STATIC_TEST_TARGETS += yicesSemanticsLib.passed
 yicesSemanticsLib.passed: semantics.conf yicesSemanticsLib
 	@$(RTH_RUN) CMD=yicesSemanticsLib INPUT=i686-test1.O3.bin $< $@
@@ -437,6 +437,15 @@ cory001.passed: cory001.conf cory001
 noinst_PROGRAMS += cory002
 cory002_SOURCES = cory002.C
 cory002_LDADD = $(LIBS_WITH_RPATH) $(ROSE_SEPARATE_LIBS)
+
+# Test symbolic semantics memory read-after-write
+noinst_PROGRAMS += testSymReadWrite
+testSymReadWrite_SOURCES = testSymReadWrite.C
+testSymReadWrite_LDADD = $(LIBS_WITH_RPATH) $(ROSE_SEPARATE_LIBS)
+STATIC_TEST_TARGETS += testSymReadWrite.passed
+EXTRA_DIST += testSymReadWrite.conf testSymReadWrite.ans
+testSymReadWrite.passed: testSymReadWrite.conf testSymReadWrite.ans testSymReadWrite
+	@$(RTH_RUN) INPUT=memreadwrite $< $@
 
 ###############################################################################################################################
 # DEMOS

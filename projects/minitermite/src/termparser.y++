@@ -1,0 +1,129 @@
+%{ // -*- C++ -*-
+/*
+Copyright 2006 Christoph Bonitz <christoph.bonitz@gmail.com>
+     2007-2008 Adrian Prantl <adrian@complang.tuwien.ac.at>
+*/
+using namespace std;
+#include <iostream>  
+#include <vector>
+#include <string>
+#include <assert.h>
+#include "minitermite.h"
+using namespace term;
+
+extern int   yylex();
+extern char* yytext;
+extern int   yylineno;
+extern int   colno;
+Term*  prote;
+
+void yyerror(const char *);
+
+%}
+
+/*Token declarations*/
+%token <strValue> VARIABLE 
+%token <strValue> ATOM 
+%token <strValue> OPERATOR
+%token <strValue> STRING
+%token <intValue> INT 
+%token <floatValue> FLOAT
+
+
+
+
+/*data structure*/
+%union {
+	std::string* strValue;
+	int intValue;
+	double floatValue;
+        term::STLTerm* singleTerm;
+        std::vector<term::Term*>* termList;
+}
+
+
+
+/*nonterminal types*/
+%type <singleTerm> term
+%type <singleTerm> infix_pair
+%type <singleTerm> pterm
+%type <termList>   terms
+%type <singleTerm> comp_term
+%type <singleTerm> plist
+
+
+%%
+
+/*grammar*/
+pterm:
+ comp_term {prote = $1; $$ = $1;}
+| comp_term OPERATOR { assert(((string)(*$2)) == "."); prote = $1; $$ = $1;}
+;
+term:
+  STRING      { $$ = new term::STLAtom(*$1);  } 
+ | ATOM       { $$ = new term::STLAtom(*$1);  }
+ | OPERATOR   { $$ = new term::STLAtom(*$1);    
+   // The problem here is that we can't really decide the difference
+   // between the string-atom '->' and the operator '->'
+   }
+ | VARIABLE   { $$ = new term::STLVariable(*$1);}
+ | comp_term  { $$ = $1;                     }
+ | infix_pair { $$ = $1;                     }
+ | plist      { $$ = $1;                     }
+ | INT        { $$ = new term::STLInt($1);      }
+ | FLOAT      { $$ = new term::STLFloat($1);   }
+ | '(' term ')'{ $$ = $2;                    } 
+;
+
+comp_term:
+ ATOM '(' terms ')' {
+	STLCompTerm *t = new term::STLCompTerm(*$1);
+	vector<term::Term*>::iterator it;
+	it = $3->begin();
+	while(it != $3->end()) {
+		t->addSubterm(*it);
+		it++;
+	}
+	$$ = t;
+	}
+;
+
+/*TODO: no operator precedence yet*/
+infix_pair:
+ term OPERATOR term {
+	STLInfixOperator *ifx = new term::STLInfixOperator(*$2);
+	ifx->addSubterm($1);
+	ifx->addSubterm($3);
+	$$ = ifx;
+	}
+;
+
+
+terms:
+ terms ',' term {$1->push_back($3); $$=$1;} 
+ | term {$$ = new vector<term::Term*>(); $$->push_back($1);}
+;
+
+plist:
+ '[' terms ']' {
+	STLList *t = new term::STLList();
+	vector<term::Term*>::iterator it;
+	it = $2->begin();
+	while(it != $2->end()) {
+		t->addElement(*it);
+		it++;
+	}
+	$$ = t;
+	} |
+ '[' ']' {STLList* t = new term::STLList(); $$ = t;}
+;
+
+
+%%
+void yyerror(const char* msg) {
+  std::cerr << std::string(msg) 
+	    << " at line " << yylineno 
+	    << ", col. " << colno << ", "
+	    << "near token \"" << yytext << "\"" << std::endl;
+  exit(1);
+}

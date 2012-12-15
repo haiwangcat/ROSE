@@ -10,6 +10,7 @@ SUBDIRS 		=
 MAINTAINERCLEANFILES	= Makefile.in
 
 EXTRA_DIST		=			\
+			pace_tiling_api.c	\
 			polyopt.pdf		\
 			htmldoc.tar.gz
 

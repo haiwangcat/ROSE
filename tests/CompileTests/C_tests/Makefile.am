@@ -74,6 +74,7 @@ TESTCODES_REQUIRED_TO_PASS = \
      testAnsiC.c \
      YardenPragmaPackExample.c \
      commentTest.c \
+     test_multiline_string_01.c \
      test2003_12.c \
      test2004_20.c \
      test2005_172.c \
@@ -108,7 +109,13 @@ TESTCODES_REQUIRED_TO_PASS = \
      complex_01.c \
      constants.c
 
-
+# DQ (10/11/2012): Don't process this file within OSX since the socket API is different there.
+if !OS_MACOSX
+if !ROSE_USE_CLANG_FRONTEND
+TESTCODES_REQUIRED_TO_PASS += \
+     test2012_12_release.c
+endif
+endif
 
 if ROSE_USE_CLANG_FRONTEND
    TESTCODES_REQUIRED_TO_PASS += \
@@ -166,9 +173,8 @@ endif
 
 #Liao, 5/16/2009 add a set of self-verifiable test code with main() 
 # and let them run during make check
-TESTCODES_REQUIRED_TO_RUN = \
-     test2009_18.c \
-     test2009_20.c
+# TV, 9/7/12 do not run them if using Clang
+TESTCODES_REQUIRED_TO_RUN =
 
 if !ROSE_USE_CLANG_FRONTEND
    TESTCODES_REQUIRED_TO_RUN += \
@@ -182,6 +188,7 @@ TESTCODE_CURRENTLY_FAILING = \
      test2006_100.c \
      test2006_134.c \
      test2006_136.c \
+     test2007_70.c \
      test2009_06.c \
      test2010_02.c \
      test2010_03.c \
@@ -191,7 +198,8 @@ TESTCODE_CURRENTLY_FAILING = \
      test2011_04.c \
      Yarden_client.c
 
-
+# DQ (10/9/2012): Found existing test for transparent unions.
+# test2007_70.c tests for transparent union support.
 
 # Automake's testing mechanism (which defines the "make check" rule) requires passing tests.
 TESTCODES = \
@@ -269,7 +277,8 @@ test2008_02.o: $(srcdir)/test2008_02.c
 #include $(top_srcdir)/config/QMTest_makefile.inc
 
 EXTRA_DIST = $(ALL_TESTCODES) builtin-types.def callee.c caller.c c-common.def \
-             test2006_134.h test2010_08.h predict.def test2010_15.h
+             test2006_134.h test2010_08.h predict.def test2010_15.h \
+             test2009_18.c test2009_20.c
 
 copyFiles:
 	cp $(srcdir)/*.h $(top_srcdir)/tests/CompileTests/C_tests

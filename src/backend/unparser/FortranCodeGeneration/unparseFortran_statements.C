@@ -15,6 +15,19 @@
 
 using namespace std;
 
+inline bool
+namesMatch ( const string &x, const string &y )
+   {
+  // This function checks a case insensitive match of x against y.
+  // This is required because Fortran is case insensitive.
+
+     size_t x_length = x.length();
+     size_t y_length = y.length();
+     ROSE_ASSERT(x_length > 0 && y_length > 0);
+     return (x_length == y_length) ? strncasecmp(x.c_str(),y.c_str(),x_length) == 0 : false;
+   }
+
+
 FortranCodeGeneration_locatedNode::FortranCodeGeneration_locatedNode(Unparser* unp, std::string fname)
    : UnparseLanguageIndependentConstructs(unp,fname)
    {
@@ -1229,14 +1242,30 @@ FortranCodeGeneration_locatedNode::unparseAttributeSpecificationStatement(SgStat
 
      const SgStringList & localList = attributeSpecificationStatement->get_name_list();
 
+  // We need to recognize the commonblockobject in the list
+     Rose_STL_Container<SgNode*> commonBlockList = NodeQuery::querySubTree (attributeSpecificationStatement->get_scope(),V_SgCommonBlockObject);
   // printf ("In unparseAttributeSpecificationStatement(): localList size = %zu \n",localList.size());
 
      SgStringList::const_iterator i = localList.begin();
+     string outputName = "";
      while (i != localList.end())
         {
        // printf ("Output name = %s \n",(*i).c_str());
+          outputName = *i;
+          for (Rose_STL_Container<SgNode*>::iterator j = commonBlockList.begin(); j != commonBlockList.end(); j++)
+            {
+               SgCommonBlockObject* commonBlockObject = isSgCommonBlockObject(*j);
+               ROSE_ASSERT(commonBlockObject);
+               string blockName = commonBlockObject->get_block_name();
+//               std::cout << "commonblock:" << commonBlockObject << blockName << std::endl;
+               if (namesMatch(blockName, outputName))
+                {
+                  outputName = "/" + outputName + "/";
+                  break;
+                }
+            }
 
-          curprint(*i);
+          curprint(outputName);
 
           i++;
 
@@ -2081,15 +2110,14 @@ FortranCodeGeneration_locatedNode::unparseBasicBlockStmt(SgStatement* stmt, SgUn
 
      SgStatementPtrList::iterator p = basic_stmt->get_statements().begin();
      for ( ; p != basic_stmt->get_statements().end(); ++p)
-        { 
+     {
        // cout << "stmt: " << hex << (*p) << dec << endl;
           ROSE_ASSERT((*p) != NULL);
          // FMZ: for module file, only output the variable declarations (not definitions)
-         if (!info.outputFortranModFile() ||
-                        (*p)->variantT()==V_SgVariableDeclaration) {
-          unparseStatement((*p), info);
-        }
-        }
+         if ( !info.outputFortranModFile() || (*p)->variantT()==V_SgVariableDeclaration
+                 || (*p)->variantT()==V_SgAttributeSpecificationStatement )  // DXN (02/07/2012): unparse attribute statements also
+             unparseStatement((*p), info);
+     }
 
   // Liao (10/14/2010): This helps handle cases such as 
   //    c$OMP END PARALLEL

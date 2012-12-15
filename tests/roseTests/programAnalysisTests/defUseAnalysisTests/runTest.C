@@ -15,7 +15,7 @@ void testOneFunction( std::string funcParamName,
 		      multimap <string, int> results,
 		      multimap <string, int> useresults) {
   if (debug)
-    cout << " \n\n------------------------------------------\ntesting ... " << argvList[1] << endl;
+    cout <<"\n\n------------------------------------------\ntesting ... " << argvList[1] << endl;
   // Build the AST used by ROSE
   SgProject* project = frontend(argvList);
   // Call the Def-Use Analysis
@@ -28,9 +28,9 @@ void testOneFunction( std::string funcParamName,
   if (debug==false)
     defuse->dfaToDOT();
 
-  //std::list<SgNode*> vars = NodeQuery::querySubTree(project, V_SgFunctionDefinition); 
+  //std::list<SgNode*> vars = NodeQuery::querySubTree(project, V_SgFunctionDefinition);
   //std::list<SgNode*>::const_iterator i = vars.begin();
-  NodeQuerySynthesizedAttributeType vars = NodeQuery::querySubTree(project, V_SgFunctionDefinition); 
+  NodeQuerySynthesizedAttributeType vars = NodeQuery::querySubTree(project, V_SgFunctionDefinition);
   NodeQuerySynthesizedAttributeType::const_iterator i = vars.begin();
   for (; i!=vars.end();++i) {
     SgFunctionDefinition* func = isSgFunctionDefinition(*i);
@@ -206,8 +206,8 @@ void runCurrentFile(vector<string> &argvList, bool debug, bool debug_map) {
 
 void usage() {
   cout << " Usage: " << endl;
-  cout << "   runTest all [startNr]   --- to test all testcases" << endl;
-  cout << "   runTest [file]          --- to test one file" << endl;
+  cout << "   runTest all [startNr [stopNr]]   --- to test all testcases between startNr and stopNr, inclusive" << endl;
+  cout << "   runTest [file]                   --- to test one file" << endl;
   exit(1);
 }
 
@@ -244,17 +244,15 @@ int main( int argc, char * argv[] )
   }  
   
   if (allTests==true) {
-    bool debug =false;
-    string startNr = "";
-    if (argc>2)
-      startNr = argv[2];
-    bool testAll = false;
-    int startNrInt = 0;
-    if (startNr=="")
-      testAll=true;
-    else 
-      startNrInt = strToInt(startNr);
-    //cout << "start: " << startNrInt << "  all: " << testAll << endl;
+    bool debug =true;
+    size_t startNr = 0;
+    size_t stopNr = (size_t)(-1);
+    if (argc>2) {
+        startNr = strtol(argv[2], NULL, 0);
+        if (argc>3) {
+            stopNr = strtol(argv[3], NULL, 0);
+        }
+    }
 
     argvList.resize(2);
     argvList[0]=argv[0];
@@ -266,54 +264,54 @@ int main( int argc, char * argv[] )
     std::string srcdir = srcdirVar;
     srcdir += "/";
 
-    if (startNrInt<=1 || testAll) {
-      // ------------------------------ TESTCASE 1 -----------------------------------------
+    if (startNr<=1 && 1<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 1 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test1.C";
       results.clear();      useresults.clear();
       results.insert(pair<string,int>("a", 8));
       results.insert(pair<string,int>("a", 17));    
       results.insert(pair<string,int>("c", 18));
-      testOneFunction("::main",argvList, debug, 21, results,useresults);
+      testOneFunction("::foo",argvList, debug, 21, results,useresults);
     }
 
-    if (startNrInt<=2 || testAll) {
-      // ------------------------------ TESTCASE 2 -----------------------------------------
+    if (startNr<=2 && 2<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 2 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test2.C";
       results.clear();      useresults.clear();
       results.insert(pair<string,int>("a", 8));
       results.insert(pair<string,int>("a", 17));    
       results.insert(pair<string,int>("c", 18));
-      testOneFunction("::main",argvList, debug, 19, results,useresults);
+      testOneFunction("::foo",argvList, debug, 21, results,useresults);
     }
 
-    if (startNrInt<=3 || testAll) {
-      // ------------------------------ TESTCASE 3 -----------------------------------------
+    if (startNr<=3 && 3<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 3 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test3.C";
       results.clear();       useresults.clear();
       results.insert(pair<string,int>("d", 15));
-      testOneFunction("::main", argvList, debug, 17, results,useresults);
+      testOneFunction("::foo", argvList, debug, 17, results,useresults);
     }
 
-    if (startNrInt<=4 || testAll) {
-      // ------------------------------ TESTCASE 4 -----------------------------------------
+    if (startNr<=4 && 4<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 4 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test4.C";
       results.clear();       useresults.clear();
       results.insert(pair<string,int>("::globalvar", 12));
-      testOneFunction("::main", argvList, debug, 14, results, useresults);
+      testOneFunction("::foo", argvList, debug, 14, results, useresults);
     }
 
-    if (startNrInt<=5 || testAll) {
-      // ------------------------------ TESTCASE 5 -----------------------------------------
+    if (startNr<=5 && 5<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 5 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test5.C";
       results.clear();       useresults.clear();
       results.insert(pair<string,int>("x", 10));
       results.insert(pair<string,int>("y", 16));    
       useresults.insert(pair<string,int>("x", 13));    
-      testOneFunction("::main", argvList, debug, 18, results, useresults);
+      testOneFunction("::foo", argvList, debug, 18, results, useresults);
     }
 
-    if (startNrInt<=6 || testAll) {
-      // ------------------------------ TESTCASE 6 -----------------------------------------
+    if (startNr<=6 && 6<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 6 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test6.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("x", 14));
@@ -322,22 +320,22 @@ int main( int argc, char * argv[] )
       results.insert(pair<string,int>("z", 10));    
       useresults.insert(pair<string,int>("x", 16));    
       useresults.insert(pair<string,int>("z", 22));    
-      testOneFunction("::main", argvList, debug, 26, results,useresults);
+      testOneFunction("::foo", argvList, debug, 26, results,useresults);
     }
 
-    if (startNrInt<=7 || testAll) {
-      // ------------------------------ TESTCASE 7 -----------------------------------------
+    if (startNr<=7 && 7<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 7 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test7.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("i", 6));
       results.insert(pair<string,int>("i", 15));
       useresults.insert(pair<string,int>("i", 8));    
       useresults.insert(pair<string,int>("i", 14));    
-      testOneFunction("::main", argvList, debug, 16, results,useresults);
+      testOneFunction("::foo", argvList, debug, 16, results,useresults);
     }
 
-    if (startNrInt<=8 || testAll) {
-      // ------------------------------ TESTCASE 8 -----------------------------------------
+    if (startNr<=8 && 8<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 8 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test8.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("x", 24));
@@ -346,11 +344,11 @@ int main( int argc, char * argv[] )
       useresults.insert(pair<string,int>("i", 15));    
       useresults.insert(pair<string,int>("p", 26));    
       useresults.insert(pair<string,int>("x", 28));    
-      testOneFunction("::main", argvList, debug, 31, results,useresults);
+      testOneFunction("::foo", argvList, debug, 31, results,useresults);
     }
 
-    if (startNrInt<=9 || testAll) {
-      // ------------------------------ TESTCASE 9 -----------------------------------------
+    if (startNr<=9 && 9<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 9 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test9.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("array", 4));
@@ -358,17 +356,17 @@ int main( int argc, char * argv[] )
       results.insert(pair<string,int>("i", 31));
       useresults.insert(pair<string,int>("i", 15));    
       // useresults.insert(pair<string,int>("array", 20)); // tps: fixed this    
-      testOneFunction("::main", argvList, debug, 30, results,useresults);
+      testOneFunction("::foo", argvList, debug, 30, results,useresults);
     }
 
-    if (startNrInt<=10 || testAll) {
-      // ------------------------------ TESTCASE 10 -----------------------------------------
+    if (startNr<=10 && 10<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 10 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test10.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("z", 13));
       results.insert(pair<string,int>("z", 22));
       results.insert(pair<string,int>("res", 23));
-      testOneFunction("::main", argvList, debug, 25, results,useresults);
+      testOneFunction("::foo", argvList, debug, 25, results,useresults);
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("x", 3));
       results.insert(pair<string,int>("y", 4));
@@ -376,8 +374,8 @@ int main( int argc, char * argv[] )
       testOneFunction("::f2", argvList, debug, 25, results,useresults);
     }
 
-    if (startNrInt<=11 || testAll) {
-      // ------------------------------ TESTCASE 11 -----------------------------------------
+    if (startNr<=11 && 11<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 11 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test11.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("z", 19));
@@ -389,7 +387,7 @@ int main( int argc, char * argv[] )
       results.insert(pair<string,int>("j", 40)); //41
       results.insert(pair<string,int>("j", 77));
       //      results.insert(pair<string,int>("res", 42));
-      testOneFunction("::main", argvList, debug, 76, results,useresults);
+      testOneFunction("::foo", argvList, debug, 76, results,useresults);
       results.clear();  useresults.clear();
       testOneFunction("::f1", argvList, debug, 76, results,useresults);
       results.clear();  useresults.clear();
@@ -399,36 +397,36 @@ int main( int argc, char * argv[] )
       testOneFunction("::f2", argvList, debug, 76, results,useresults);
     }
 
-    if (startNrInt<=13 || testAll) {
-      // ------------------------------ TESTCASE 13 -----------------------------------------
+    if (startNr<=13 && 13<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 13 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test13.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("::global", 7));
-      testOneFunction("::main", argvList, debug, 9, results,useresults);
+      testOneFunction("::foo", argvList, debug, 9, results,useresults);
     }
 
-    if (startNrInt<=14 || testAll) {
-      // ------------------------------ TESTCASE 14 -----------------------------------------
+    if (startNr<=14 && 14<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 14 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test14.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("a", 12));
       results.insert(pair<string,int>("b", 6));
-      testOneFunction("::main", argvList, debug, 14, results,useresults);
+      testOneFunction("::f", argvList, debug, 14, results,useresults);
     }
 
-    if (startNrInt<=15 || testAll) {
-      // ------------------------------ TESTCASE 15 -----------------------------------------
+    if (startNr<=15 && 15<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 15 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test15.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("i", 12));
       results.insert(pair<string,int>("i", 26));
       results.insert(pair<string,int>("index", 26));
       results.insert(pair<string,int>("index", 8));
-      testOneFunction("::main", argvList, debug, 26, results,useresults);
+      testOneFunction("::foo", argvList, debug, 26, results,useresults);
     }
 
-    if (startNrInt<=18 || testAll) {
-      // ------------------------------ TESTCASE 18 -----------------------------------------
+    if (startNr<=18 && 18<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 18 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test18.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("i", 12));
@@ -440,60 +438,56 @@ int main( int argc, char * argv[] )
       results.insert(pair<string,int>("e", 41));
       useresults.insert(pair<string,int>("i", 15));    
       useresults.insert(pair<string,int>("x", 28));    
-      testOneFunction("::main", argvList, debug, 48, results,useresults);
+      testOneFunction("::foo", argvList, debug, 48, results,useresults);
     }
 
-    if (startNrInt<=19 || testAll) {
-      // ------------------------------ TESTCASE 19 -----------------------------------------
+    if (startNr<=19 && 19<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 19 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test19.C";
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("::global", 2));
       results.insert(pair<string,int>("::global", 8));
       results.insert(pair<string,int>("::global2", 28));
       results.insert(pair<string,int>("a", 24));
-      testOneFunction("::main", argvList, debug, 30, results,useresults);
+      testOneFunction("::foo", argvList, debug, 30, results,useresults);
       results.clear();  useresults.clear();
       results.insert(pair<string,int>("::global", 8));
       results.insert(pair<string,int>("::global2", 12));
       testOneFunction("::setMe", argvList, debug, 30, results,useresults);
     }
 
-    if (startNrInt<=20 || testAll) {
-      // ------------------------------ TESTCASE 1 -----------------------------------------
+    if (startNr<=20 && 20<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 20 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test20.C";
       results.clear();      useresults.clear();
-   // DQ (9/24/2011): We have a different value of nodes within the new replacement of constant folded values with the original expression trees.
-   // testOneFunction("::bar",argvList, debug, 8, results,useresults);
-      testOneFunction("::bar",argvList, debug, 7, results,useresults);
+      testOneFunction("::bar", argvList, debug, 8, results, useresults);
     }
 
-    if (startNrInt<=21 || testAll) {
-      // ------------------------------ TESTCASE 1 -----------------------------------------
+    if (startNr<=21 && 21<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 21 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test21.C";
       results.clear();      useresults.clear();
-      testOneFunction("::func",argvList, debug, 10, results,useresults);
+      testOneFunction("::func",argvList, debug, 13, results,useresults);
     }
 
-    if (startNrInt<=22 || testAll) {
-      // ------------------------------ TESTCASE 1 -----------------------------------------
+    if (startNr<=22 && 22<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 22 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test22.C";
       results.clear();      useresults.clear();
-      results.insert(pair<string,int>("b", 7));
-   // DQ (9/24/2011): We have a different value of nodes within the new replacement of constant folded values with the original expression trees.
-   // testOneFunction("::func",argvList, debug, 16, results,useresults);
-      testOneFunction("::func",argvList, debug, 15, results,useresults);
+      results.insert(pair<string,int>("b", 9));
+      testOneFunction("::func",argvList, debug, 19, results,useresults);
     }
 
-    if (startNrInt<=23 || testAll) {
-      // ------------------------------ TESTCASE 1 -----------------------------------------
+    if (startNr<=23 && 23<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 23 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test23.C";
       results.clear();      useresults.clear();
-      results.insert(pair<string,int>("a",12));
-      testOneFunction("::func",argvList, debug, 33, results,useresults);
+      results.insert(pair<string,int>("a",16));
+      testOneFunction("::func",argvList, debug, 44, results,useresults);
     }
 
-    if (startNrInt<=24 || testAll) {
-      // ------------------------------ TESTCASE 1 -----------------------------------------
+    if (startNr<=24 && 24<=stopNr) {
+      std::cout <<"------------------------------ TESTCASE 24 -----------------------------------------\n";
       argvList[1]=srcdir+"tests/test24.C";
       results.clear();      useresults.clear();
       results.insert(pair<string,int>("t",19));

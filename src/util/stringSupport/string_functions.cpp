@@ -2,7 +2,9 @@
 // the automake manual request that we use <> instead of ""
 #include <rose_config.h>
 
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 // DQ (3/22/2009): Added MSVS support for ROSE.
@@ -341,6 +343,18 @@ StringUtility::listToString ( const list<int> & X, bool separateStrings )
 
      return returnString;
    }
+
+std::list<std::string>
+StringUtility:: tokenize ( std::string X, char delim ) {
+    std::list<std::string> l;
+    std::string token;
+    std::istringstream iss(X);
+    while (getline(iss, token, delim)) {
+        l.push_back(token);
+    }
+    return l;
+}
+
 // DQ (8/31/2009): This now compiles properly (at least for analysis, it might still fail for the code generation).
 // #ifdef USE_ROSE   
 #if 0
@@ -1350,7 +1364,7 @@ StringUtility::stripFileSuffixFromFileName ( const string & fileNameWithSuffix )
 //
 //Rama: I am not sure if this mechanism can deal with files ending with .
 //Like "test."
-//I am not clear about the purpose of the function too. So, not modyfying it.
+//I am not clear about the purpose of the function too. So, not modifying it.
 string
 StringUtility::fileNameSuffix ( const string & fileNameWithSuffix )
    {
@@ -1507,6 +1521,29 @@ bool
 StringUtility::isLineTerminated(const std::string &s)
 {
     return !s.empty() && ('\n'==s[s.size()-1] || '\r'==s[s.size()-1]);
+}
+
+std::string
+StringUtility::makeOneLine(const std::string &s, std::string replacement)
+{
+    std::string result, spaces;
+    bool eat_spaces = false;
+    for (size_t i=0; i<s.size(); ++i) {
+        if ('\n'==s[i] || '\r'==s[i]) {
+            spaces = result.empty() ? "" : replacement;
+            eat_spaces = true;
+        } else if (isspace(s[i])) {
+            if (!eat_spaces)
+                spaces += s[i];
+        } else {
+            result += spaces + s[i];
+            spaces = "";
+            eat_spaces = false;
+        }
+    }
+    if (!eat_spaces)
+        result += spaces;
+    return result;
 }
 
 void

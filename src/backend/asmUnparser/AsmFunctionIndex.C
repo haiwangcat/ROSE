@@ -1,6 +1,8 @@
 #include "sage3basic.h"
 
-#define __STD_FORMAT_MACROS
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 #include "AsmFunctionIndex.h"

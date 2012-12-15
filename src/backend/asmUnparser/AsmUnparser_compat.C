@@ -1,6 +1,7 @@
 /* These are backward compatibility functions now implemented in terms of AsmUnparser */
 #include "sage3basic.h"
 #include "AsmUnparser_compat.h"
+#include "BinaryControlFlow.h"
 
 /* FIXME: this should be a SgAsmInstruction class method. */
 std::string unparseInstruction(SgAsmInstruction* insn, const AsmUnparser::LabelMap *labels) {
@@ -102,10 +103,36 @@ unparseAsmStatement(SgAsmStatement* stmt)
 std::string
 unparseAsmInterpretation(SgAsmInterpretation* interp)
 {
-    std::ostringstream s;
     AsmUnparser unparser;
+
+    // Build a control flow graph, but exclude all the basic blocks that are marked as disassembly leftovers.
+    struct NoLeftovers: public BinaryAnalysis::ControlFlow::VertexFilter {
+        virtual bool operator()(BinaryAnalysis::ControlFlow*, SgAsmBlock *blk) {
+            SgAsmFunction *func = SageInterface::getEnclosingNode<SgAsmFunction>(blk);
+            return func && 0==(func->get_reason() & SgAsmFunction::FUNC_LEFTOVERS);
+        }
+    } vertex_filter;
+    BinaryAnalysis::ControlFlow cfg_analyzer;
+    cfg_analyzer.set_vertex_filter(&vertex_filter);
+    BinaryAnalysis::ControlFlow::Graph cfg;
+    cfg_analyzer.build_cfg_from_ast(interp, cfg/*out*/);
+
+    // We will try to disassemble static data blocks (i.e., disassembling data as instructions), but we need to choose an
+    // appropriate disassembler.  We don't have available the disassembler that was originally used, so we'll obtain a default
+    // disassembler based on the interpretation's first file header (if it has one).
+    Disassembler *disassembler = Disassembler::lookup(interp)->clone();
+    if (disassembler) {
+        disassembler->set_search(Disassembler::SEARCH_DEFAULT | Disassembler::SEARCH_DEADEND |
+                                 Disassembler::SEARCH_UNKNOWN | Disassembler::SEARCH_UNUSED);
+        unparser.staticDataDisassembler.init(disassembler);
+    }
+
+    // Unparse the interpretation to a string.
+    std::ostringstream s;
     unparser.add_function_labels(interp);
+    unparser.add_control_flow_graph(cfg);
     unparser.unparse(s, interp);
+    delete disassembler;
     return s.str();
 }
 
